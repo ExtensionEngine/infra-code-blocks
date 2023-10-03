@@ -1,0 +1,55 @@
+{
+  "name": "@studion/infra-code-blocks",
+  "version": "0.0.0",
+  "description": "Studion common infra components",
+  "keywords": [
+    "infrastructure",
+    "Pulumi",
+    "components",
+    "Studion"
+  ],
+  "homepage": "https://github.com/ExtensionEngine/infra-code-blocks#readme",
+  "bugs": {
+    "url": "https://github.com/ExtensionEngine/infra-code-blocks/issues"
+  },
+  "repository": "git+https://github.com/ExtensionEngine/infra-code-blocks.git",
+  "license": "MIT",
+  "author": {
+    "name": "Studion",
+    "email": "info@gostudion.com",
+    "url": "https://www.gostudion.com"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "npm run clean && tsc",
+    "clean": "rm -rf dist",
+    "format": "prettier -w .",
+    "release": "release-it",
+    "test": ""
+  },
+  "prettier": "@studion/prettier-config",
+  "dependencies": {
+    "@pulumi/aws": "^5.0.0",
+    "@pulumi/awsx": "^1.0.0",
+    "@pulumi/pulumi": "^3.0.0",
+    "@upstash/pulumi": "^0.2.0"
+  },
+  "devDependencies": {
+    "@studion/prettier-config": "^0.1.0",
+    "@types/node": "^18",
+    "prettier": "^3.0.3",
+    "release-it": "^16.2.1",
+    "typescript": "^5.2.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "release-it": {
+    "github": {
+      "release": true
+    }
+  }
+}
