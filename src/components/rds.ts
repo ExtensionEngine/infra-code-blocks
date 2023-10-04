@@ -16,6 +16,15 @@ export type RdsArgs = {
 };
 export type RdsInstance = aws.rds.Instance;
 
+const defaults = {
+  publiclyAccessible: false,
+  applyImmediately: false,
+  skipFinalSnapshot: false,
+  allocatedStorage: 20,
+  maxAllocatedStorage: 100,
+  instanceClass: 'db.t3.micro',
+};
+
 export class Rds extends pulumi.ComponentResource {
   instance: RdsInstance;
 
@@ -25,6 +34,8 @@ export class Rds extends pulumi.ComponentResource {
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:rds:Instance', name, {}, opts);
+
+    const argsWithDefaults = Object.assign({}, defaults, args);
 
     const kms = new aws.kms.Key(
       `${name}-rds-key`,
@@ -44,19 +55,19 @@ export class Rds extends pulumi.ComponentResource {
         identifier: name,
         engine: 'postgres',
         engineVersion: '14.9',
-        allocatedStorage: args.allocatedStorage || 20,
-        maxAllocatedStorage: args.maxAllocatedStorage || 100,
-        instanceClass: args.instanceClass || 'db.t3.micro',
-        dbName: args.dbName,
-        username: args.username,
-        password: args.password,
-        dbSubnetGroupName: args.subnetGroupName,
-        vpcSecurityGroupIds: args.securityGroupIds,
+        allocatedStorage: argsWithDefaults.allocatedStorage,
+        maxAllocatedStorage: argsWithDefaults.maxAllocatedStorage,
+        instanceClass: argsWithDefaults.instanceClass,
+        dbName: argsWithDefaults.dbName,
+        username: argsWithDefaults.username,
+        password: argsWithDefaults.password,
+        dbSubnetGroupName: argsWithDefaults.subnetGroupName,
+        vpcSecurityGroupIds: argsWithDefaults.securityGroupIds,
         storageEncrypted: true,
         kmsKeyId: kms.arn,
-        publiclyAccessible: args.publiclyAccessible || false,
-        skipFinalSnapshot: args.skipFinalSnapshot || false,
-        applyImmediately: args.applyImmediately || false,
+        publiclyAccessible: argsWithDefaults.publiclyAccessible,
+        skipFinalSnapshot: argsWithDefaults.skipFinalSnapshot,
+        applyImmediately: argsWithDefaults.applyImmediately,
         autoMinorVersionUpgrade: true,
         maintenanceWindow: 'Mon:07:00-Mon:07:30',
         finalSnapshotIdentifier: `${name}-final-snapshot`,

@@ -51,6 +51,16 @@ export type EcsServiceArgs = {
   taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
 };
 
+const defaults = {
+  desiredCount: 1,
+  minCount: 1,
+  maxCount: 10,
+  size: 'small',
+  environment: [],
+  taskExecutionRoleInlinePolicies: [],
+  taskRoleInlinePolicies: [],
+};
+
 export class EcsService extends pulumi.ComponentResource {
   constructor(
     name: string,
@@ -58,6 +68,8 @@ export class EcsService extends pulumi.ComponentResource {
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:ecs:Service', name, {}, opts);
+
+    const argsWithDefaults = Object.assign({}, defaults, args);
 
     const logGroup = new aws.cloudwatch.LogGroup(
       `${name}-log-group`,
@@ -77,7 +89,7 @@ export class EcsService extends pulumi.ComponentResource {
           'arn:aws:iam::aws:policy/CloudWatchFullAccess',
           'arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess',
         ],
-        inlinePolicies: args.taskExecutionRoleInlinePolicies || [],
+        inlinePolicies: argsWithDefaults.taskExecutionRoleInlinePolicies,
       },
       { parent: this },
     );
@@ -87,12 +99,12 @@ export class EcsService extends pulumi.ComponentResource {
       {
         name: `${name}-ecs-task-role`,
         assumeRolePolicy,
-        inlinePolicies: args.taskRoleInlinePolicies || [],
+        inlinePolicies: argsWithDefaults.taskRoleInlinePolicies,
       },
       { parent: this },
     );
 
-    const parsedSize = pulumi.all([args.size || 'small']).apply(([size]) => {
+    const parsedSize = pulumi.all([argsWithDefaults.size]).apply(([size]) => {
       const mapCapabilities = ({ cpu, memory }: CustomSize) => ({
         cpu: String(cpu),
         memory: String(memory),
@@ -119,9 +131,9 @@ export class EcsService extends pulumi.ComponentResource {
         containerDefinitions: pulumi
           .all([
             name,
-            args.image,
-            args.port,
-            args.environment || [],
+            argsWithDefaults.image,
+            argsWithDefaults.port,
+            argsWithDefaults.environment,
             logGroup.name,
             awsRegion,
           ])
@@ -159,35 +171,39 @@ export class EcsService extends pulumi.ComponentResource {
       `${name}-service`,
       {
         name,
-        cluster: args.cluster.id,
+        cluster: argsWithDefaults.cluster.id,
         launchType: 'FARGATE',
-        desiredCount: args.desiredCount || 1,
+        desiredCount: argsWithDefaults.desiredCount,
         taskDefinition: taskDefinition.arn,
         loadBalancers: [
           {
             containerName: name,
-            containerPort: args.port,
-            targetGroupArn: args.lbTargetGroup.arn,
+            containerPort: argsWithDefaults.port,
+            targetGroupArn: argsWithDefaults.lbTargetGroup.arn,
           },
         ],
         networkConfiguration: {
           assignPublicIp: true,
-          subnets: args.subnets,
-          securityGroups: args.securityGroupIds,
+          subnets: argsWithDefaults.subnets,
+          securityGroups: argsWithDefaults.securityGroupIds,
         },
       },
       {
         parent: this,
-        dependsOn: [args.lb, args.lbTargetGroup, args.lbListener],
+        dependsOn: [
+          argsWithDefaults.lb,
+          argsWithDefaults.lbTargetGroup,
+          argsWithDefaults.lbListener,
+        ],
       },
     );
 
     const autoscalingTarget = new aws.appautoscaling.Target(
       `${name}-autoscale-target`,
       {
-        minCapacity: args.minCount || 1,
-        maxCapacity: args.maxCount || 10,
-        resourceId: pulumi.interpolate`service/${args.cluster.name}/${service.name}`,
+        minCapacity: argsWithDefaults.minCount,
+        maxCapacity: argsWithDefaults.maxCount,
+        resourceId: pulumi.interpolate`service/${argsWithDefaults.cluster.name}/${service.name}`,
         serviceNamespace: 'ecs',
         scalableDimension: 'ecs:service:DesiredCount',
       },
