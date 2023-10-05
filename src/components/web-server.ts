@@ -1,8 +1,10 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
+import * as awsx from '@pulumi/awsx';
 import { CustomSize, Size } from './types';
 import { PredefinedSize } from '../constants';
 import { ContainerDefinition } from '@pulumi/aws/ecs';
+import { AcmCertificate } from './acm-certificate';
 const config = new pulumi.Config('aws');
 const awsRegion = config.get('region');
 
@@ -31,20 +33,61 @@ export type RoleInlinePolicy = {
   policy?: pulumi.Input<string>;
 };
 
-export type EcsServiceArgs = {
+export type WebServerArgs = {
+  /**
+   * The ECR image used to start a container.
+   */
   image: pulumi.Input<string>;
+  /**
+   * Exposed service port.
+   */
   port: pulumi.Input<number>;
+  /**
+   * The aws.ecs.Cluster resource.
+   */
   cluster: aws.ecs.Cluster;
-  subnets: pulumi.Input<pulumi.Input<string>[]>;
-  securityGroupIds: pulumi.Input<pulumi.Input<string>[]>;
-  lb: aws.lb.LoadBalancer;
-  lbTargetGroup: aws.lb.TargetGroup;
-  lbListener: aws.lb.Listener;
+  /**
+   * The domain which will be used to access the service.
+   * The domain or subdomain must belong to the provided hostedZone.
+   */
+  domain: pulumi.Input<string>;
+  /**
+   * The ID of the hosted zone.
+   */
+  hostedZoneId: pulumi.Input<string>;
+  /**
+   * The awsx.ec2.Vpc resource.
+   */
+  vpc: awsx.ec2.Vpc;
+  /**
+   * Number of instances of the task definition to place and keep running. Defaults to 1.
+   */
   desiredCount?: pulumi.Input<number>;
+  /**
+   * Min capacity of the scalable target. Defaults to 1.
+   */
   minCount?: pulumi.Input<number>;
+  /**
+   * Max capacity of the scalable target. Defaults to 10.
+   */
   maxCount?: pulumi.Input<number>;
+  /**
+   * CPU and memory size used for running the container. Defaults to "small".
+   * Available predefined options are:
+   * - small (0.25 vCPU, 0.5 GB memory)
+   * - medium (0.5 vCPU, 1 GB memory)
+   * - large (1 vCPU memory, 2 GB memory)
+   * - xlarge (2 vCPU, 4 GB memory)
+   */
   size?: pulumi.Input<Size>;
+  /**
+   * The environment variables to pass to a container. Defaults to [].
+   */
   environment?: aws.ecs.KeyValuePair[];
+  /**
+   * Path for the health check request. Defaults to "/healtcheck".
+   */
+  healtCheckPath?: pulumi.Input<string>;
   taskExecutionRoleInlinePolicies?: pulumi.Input<
     pulumi.Input<RoleInlinePolicy>[]
   >;
@@ -57,25 +100,162 @@ const defaults = {
   maxCount: 10,
   size: 'small',
   environment: [],
+  healtCheckPath: '/healtcheck',
   taskExecutionRoleInlinePolicies: [],
   taskRoleInlinePolicies: [],
 };
 
-export class EcsService extends pulumi.ComponentResource {
+export class WebServer extends pulumi.ComponentResource {
+  certificate: AcmCertificate;
+  logGroup: aws.cloudwatch.LogGroup;
+  lbSecurityGroup: aws.ec2.SecurityGroup;
+  lb: aws.lb.LoadBalancer;
+  lbTargetGroup: aws.lb.TargetGroup;
+  lbHttpListener: aws.lb.Listener;
+  lbTlsListener: aws.lb.Listener;
+  serviceSecurityGroup: aws.ec2.SecurityGroup;
+  taskDefinition: aws.ecs.TaskDefinition;
+  service: aws.ecs.Service;
+
   constructor(
     name: string,
-    args: EcsServiceArgs,
+    args: WebServerArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:ecs:Service', name, {}, opts);
+    super('studion:WebServer', name, {}, opts);
 
     const argsWithDefaults = Object.assign({}, defaults, args);
 
-    const logGroup = new aws.cloudwatch.LogGroup(
+    this.certificate = new AcmCertificate(
+      `${argsWithDefaults.domain}-acm-certificate`,
+      {
+        domain: argsWithDefaults.domain,
+        hostedZoneId: argsWithDefaults.hostedZoneId,
+      },
+      { parent: this },
+    );
+
+    this.logGroup = new aws.cloudwatch.LogGroup(
       `${name}-log-group`,
       {
         retentionInDays: 14,
         name: `/ecs/${name}`,
+      },
+      { parent: this },
+    );
+
+    this.lbSecurityGroup = new aws.ec2.SecurityGroup(
+      `${name}-lb-security-group`,
+      {
+        vpcId: argsWithDefaults.vpc.vpcId,
+        ingress: [
+          {
+            protocol: 'tcp',
+            fromPort: 80,
+            toPort: 80,
+            cidrBlocks: ['0.0.0.0/0'],
+          },
+          {
+            protocol: 'tcp',
+            fromPort: 443,
+            toPort: 443,
+            cidrBlocks: ['0.0.0.0/0'],
+          },
+        ],
+        egress: [
+          {
+            fromPort: 0,
+            toPort: 0,
+            protocol: '-1',
+            cidrBlocks: ['0.0.0.0/0'],
+          },
+        ],
+      },
+      { parent: this },
+    );
+
+    this.lb = new aws.lb.LoadBalancer(
+      `${name}-lb`,
+      {
+        name: `${name}-lb`,
+        loadBalancerType: 'application',
+        subnets: argsWithDefaults.vpc.publicSubnetIds,
+        securityGroups: [this.lbSecurityGroup.id],
+        internal: false,
+        ipAddressType: 'ipv4',
+      },
+      { parent: this },
+    );
+
+    this.lbTargetGroup = new aws.lb.TargetGroup(
+      `${name}-lb-tg`,
+      {
+        name: `${name}-lb-tg`,
+        port: argsWithDefaults.port,
+        protocol: 'HTTP',
+        targetType: 'ip',
+        vpcId: argsWithDefaults.vpc.vpcId,
+        healthCheck: {
+          healthyThreshold: 3,
+          unhealthyThreshold: 2,
+          interval: 60,
+          timeout: 5,
+          path: argsWithDefaults.healtCheckPath,
+        },
+      },
+      { parent: this, dependsOn: [this.lb] },
+    );
+
+    this.lbHttpListener = new aws.lb.Listener(
+      `${name}-lb-listener-80`,
+      {
+        loadBalancerArn: this.lb.arn,
+        port: 80,
+        defaultActions: [
+          {
+            type: 'redirect',
+            redirect: {
+              port: '443',
+              protocol: 'HTTPS',
+              statusCode: 'HTTP_301',
+            },
+          },
+        ],
+      },
+      { parent: this },
+    );
+
+    this.lbTlsListener = new aws.lb.Listener(
+      `${name}-lb-listener-443`,
+      {
+        loadBalancerArn: this.lb.arn,
+        port: 443,
+        protocol: 'HTTPS',
+        sslPolicy: 'ELBSecurityPolicy-2016-08',
+        certificateArn: this.certificate.certificate.arn,
+        defaultActions: [
+          {
+            type: 'forward',
+            targetGroupArn: this.lbTargetGroup.arn,
+          },
+        ],
+      },
+      { parent: this },
+    );
+
+    const albAliasRecord = new aws.route53.Record(
+      `${name}-route53-record`,
+      {
+        type: 'A',
+        name: argsWithDefaults.domain,
+        zoneId: argsWithDefaults.hostedZoneId,
+        aliases: [
+          {
+            name: this.lb.dnsName,
+            zoneId: this.lb.zoneId,
+            evaluateTargetHealth: true,
+          },
+        ],
       },
       { parent: this },
     );
@@ -118,7 +298,7 @@ export class EcsService extends pulumi.ComponentResource {
       throw Error('Incorrect EcsService size argument');
     });
 
-    const taskDefinition = new aws.ecs.TaskDefinition(
+    this.taskDefinition = new aws.ecs.TaskDefinition(
       `${name}-task-definition`,
       {
         family: `${name}-task-definition`,
@@ -134,7 +314,7 @@ export class EcsService extends pulumi.ComponentResource {
             argsWithDefaults.image,
             argsWithDefaults.port,
             argsWithDefaults.environment,
-            logGroup.name,
+            this.logGroup.name,
             awsRegion,
           ])
           .apply(
@@ -167,33 +347,58 @@ export class EcsService extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    const service = new aws.ecs.Service(
+    this.serviceSecurityGroup = new aws.ec2.SecurityGroup(
+      `${name}-security-group`,
+      {
+        vpcId: argsWithDefaults.vpc.vpcId,
+        ingress: [
+          {
+            fromPort: 0,
+            toPort: 0,
+            protocol: '-1',
+            securityGroups: [this.lbSecurityGroup.id],
+          },
+        ],
+        egress: [
+          {
+            fromPort: 0,
+            toPort: 0,
+            protocol: '-1',
+            cidrBlocks: ['0.0.0.0/0'],
+          },
+        ],
+      },
+      { parent: this },
+    );
+
+    this.service = new aws.ecs.Service(
       `${name}-service`,
       {
         name,
         cluster: argsWithDefaults.cluster.id,
         launchType: 'FARGATE',
         desiredCount: argsWithDefaults.desiredCount,
-        taskDefinition: taskDefinition.arn,
+        taskDefinition: this.taskDefinition.arn,
         loadBalancers: [
           {
             containerName: name,
             containerPort: argsWithDefaults.port,
-            targetGroupArn: argsWithDefaults.lbTargetGroup.arn,
+            targetGroupArn: this.lbTargetGroup.arn,
           },
         ],
         networkConfiguration: {
           assignPublicIp: true,
-          subnets: argsWithDefaults.subnets,
-          securityGroups: argsWithDefaults.securityGroupIds,
+          subnets: argsWithDefaults.vpc.publicSubnetIds,
+          securityGroups: [this.serviceSecurityGroup.id],
         },
       },
       {
         parent: this,
         dependsOn: [
-          argsWithDefaults.lb,
-          argsWithDefaults.lbTargetGroup,
-          argsWithDefaults.lbListener,
+          this.lb,
+          this.lbTargetGroup,
+          this.lbHttpListener,
+          this.lbTlsListener,
         ],
       },
     );
@@ -203,7 +408,7 @@ export class EcsService extends pulumi.ComponentResource {
       {
         minCapacity: argsWithDefaults.minCount,
         maxCapacity: argsWithDefaults.maxCount,
-        resourceId: pulumi.interpolate`service/${argsWithDefaults.cluster.name}/${service.name}`,
+        resourceId: pulumi.interpolate`service/${argsWithDefaults.cluster.name}/${this.service.name}`,
         serviceNamespace: 'ecs',
         scalableDimension: 'ecs:service:DesiredCount',
       },

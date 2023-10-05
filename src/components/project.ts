@@ -3,63 +3,57 @@ import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 import * as upstash from '@upstash/pulumi';
 import { Rds, RdsArgs } from './rds';
-import { EcsService, EcsServiceArgs } from './ecs';
+import { WebServer, WebServerArgs } from './web-server';
 import { Redis, RedisArgs } from './redis';
+import { StaticSite, StaticSiteArgs } from './static-site';
 import { Environment } from '../constants';
 
-export type Service = Rds | Redis | EcsService;
+export type Service = Rds | Redis | StaticSite | WebServer;
 export type Services = Record<string, Service>;
 
-type ServiceArgs = { serviceName: string };
+type ServiceArgs = {
+  /**
+   * The unique name for the service.
+   */
+  serviceName: string;
+};
 
-export type DatabaseService = {
-  type: 'DATABASE';
-} & ServiceArgs &
-  Pick<
-    RdsArgs,
-    | 'dbName'
-    | 'username'
-    | 'password'
-    | 'allocatedStorage'
-    | 'maxAllocatedStorage'
-    | 'instanceClass'
-    | 'applyImmediately'
-  >;
+export type DatabaseService = { type: 'DATABASE' } & ServiceArgs &
+  Omit<RdsArgs, 'vpc'>;
 
-export type RedisService = {
-  type: 'REDIS';
-} & ServiceArgs &
+export type RedisService = { type: 'REDIS' } & ServiceArgs &
   Pick<RedisArgs, 'dbName' | 'region'>;
+
+export type StaticSiteService = { type: 'STATIC_SITE' } & ServiceArgs &
+  Omit<StaticSiteArgs, 'hostedZoneId'>;
 
 export type WebServerService = {
   type: 'WEB_SERVER';
   environment?:
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
-  healtCheckPath?: pulumi.Input<string>;
 } & ServiceArgs &
-  Pick<
-    EcsServiceArgs,
-    'image' | 'port' | 'desiredCount' | 'minCount' | 'maxCount' | 'size'
-  >;
+  Omit<WebServerArgs, 'cluster' | 'vpc' | 'hostedZoneId' | 'environment'>;
 
 export type Environment = (typeof Environment)[keyof typeof Environment];
 
 export type ProjectArgs = {
-  services: (DatabaseService | RedisService | WebServerService)[];
+  services: (
+    | DatabaseService
+    | RedisService
+    | StaticSiteService
+    | WebServerService
+  )[];
+  hostedZoneId: pulumi.Input<string>;
   environment: Environment;
 };
 
 export class Project extends pulumi.ComponentResource {
   name: string;
+  hostedZoneId: pulumi.Input<string>;
   environment: Environment;
   vpc: awsx.ec2.Vpc;
-  dbSubnetGroup: aws.rds.SubnetGroup | null = null;
-  dbSecurityGroup: aws.ec2.SecurityGroup | null = null;
   cluster: aws.ecs.Cluster | null = null;
-  lbSecurityGroup: aws.ec2.SecurityGroup | null = null;
-  lb: aws.lb.LoadBalancer | null = null;
-  ecsServiceSecurityGroup: aws.ec2.SecurityGroup | null = null;
   upstashProvider: upstash.Provider | null = null;
   services: Services = {};
 
@@ -69,8 +63,9 @@ export class Project extends pulumi.ComponentResource {
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:Project', name, {}, opts);
-    const { services, environment } = args;
+    const { services, environment, hostedZoneId } = args;
     this.name = name;
+    this.hostedZoneId = hostedZoneId;
     this.environment = environment;
 
     this.vpc = this.createVpc();
@@ -93,42 +88,16 @@ export class Project extends pulumi.ComponentResource {
   }
 
   private createServices(services: ProjectArgs['services']) {
-    const hasDatabaseService = services.some(it => it.type === 'DATABASE');
     const hasRedisService = services.some(it => it.type === 'REDIS');
     const hasWebServerService = services.some(it => it.type === 'WEB_SERVER');
-    if (hasDatabaseService) this.createDatabasePrerequisites();
     if (hasRedisService) this.createRedisPrerequisites();
     if (hasWebServerService) this.createWebServerPrerequisites();
     services.forEach(it => {
       if (it.type === 'DATABASE') this.createDatabaseService(it);
       if (it.type === 'REDIS') this.createRedisService(it);
+      if (it.type === 'STATIC_SITE') this.createStaticSiteService(it);
       if (it.type === 'WEB_SERVER') this.createWebServerService(it);
     });
-  }
-
-  private createDatabasePrerequisites() {
-    this.dbSubnetGroup = new aws.rds.SubnetGroup(
-      'db-subnet-group',
-      {
-        subnetIds: this.vpc.privateSubnetIds,
-      },
-      { parent: this },
-    );
-    this.dbSecurityGroup = new aws.ec2.SecurityGroup(
-      'db-security-group',
-      {
-        vpcId: this.vpc.vpcId,
-        ingress: [
-          {
-            protocol: 'tcp',
-            fromPort: 5432,
-            toPort: 5432,
-            cidrBlocks: [this.vpc.vpc.cidrBlock],
-          },
-        ],
-      },
-      { parent: this },
-    );
   }
 
   private createRedisPrerequisites() {
@@ -146,152 +115,64 @@ export class Project extends pulumi.ComponentResource {
       { name: this.name },
       { parent: this },
     );
-    this.lbSecurityGroup = new aws.ec2.SecurityGroup(
-      'ecs-lb-security-group',
-      {
-        vpcId: this.vpc.vpcId,
-        ingress: [
-          {
-            fromPort: 80,
-            toPort: 80,
-            protocol: 'tcp',
-            cidrBlocks: ['0.0.0.0/0'],
-          },
-        ],
-        egress: [
-          {
-            fromPort: 0,
-            toPort: 0,
-            protocol: '-1',
-            cidrBlocks: ['0.0.0.0/0'],
-          },
-        ],
-      },
-      { parent: this },
-    );
-    this.lb = new aws.lb.LoadBalancer(
-      'ecs-load-balancer',
-      {
-        loadBalancerType: 'application',
-        subnets: this.vpc.publicSubnetIds,
-        securityGroups: [this.lbSecurityGroup.id],
-        internal: false,
-        ipAddressType: 'ipv4',
-      },
-      { parent: this },
-    );
-    this.ecsServiceSecurityGroup = new aws.ec2.SecurityGroup(
-      'ecs-service-security-group',
-      {
-        vpcId: this.vpc.vpcId,
-        ingress: [
-          {
-            fromPort: 0,
-            toPort: 0,
-            protocol: '-1',
-            securityGroups: [this.lbSecurityGroup.id],
-          },
-        ],
-        egress: [
-          {
-            fromPort: 0,
-            toPort: 0,
-            protocol: '-1',
-            cidrBlocks: ['0.0.0.0/0'],
-          },
-        ],
-      },
-      { parent: this },
-    );
   }
 
   private createDatabaseService(options: DatabaseService) {
-    if (!this.dbSecurityGroup || !this.dbSubnetGroup) return;
     const { serviceName, type, ...rdsOptions } = options;
-    const instance = new Rds(
+    const service = new Rds(
       serviceName,
       {
         ...rdsOptions,
-        subnetGroupName: this.dbSubnetGroup.name,
-        securityGroupIds: [this.dbSecurityGroup.id],
+        vpc: this.vpc,
       },
       { parent: this },
     );
-    this.services[serviceName] = instance;
+    this.services[serviceName] = service;
   }
 
   private createRedisService(options: RedisService) {
     if (!this.upstashProvider) return;
     const { serviceName, ...redisOptions } = options;
-    const instance = new Redis(serviceName, redisOptions, {
+    const service = new Redis(serviceName, redisOptions, {
       parent: this,
       provider: this.upstashProvider,
     });
-    this.services[options.serviceName] = instance;
+    this.services[options.serviceName] = service;
+  }
+
+  private createStaticSiteService(options: StaticSiteService) {
+    const { serviceName, ...staticSiteOptions } = options;
+    const service = new StaticSite(
+      serviceName,
+      {
+        ...staticSiteOptions,
+        hostedZoneId: this.hostedZoneId,
+      },
+      { parent: this },
+    );
+    this.services[serviceName] = service;
   }
 
   private createWebServerService(options: WebServerService) {
-    if (!this.cluster || !this.ecsServiceSecurityGroup || !this.lb) {
-      return;
-    }
-    const {
-      serviceName,
-      environment,
-      healtCheckPath = '/healtcheck',
-      ...ecsOptions
-    } = options;
+    if (!this.cluster) return;
 
-    const lbTargetGroup = new aws.lb.TargetGroup(
-      `${serviceName}-tg`,
-      {
-        port: ecsOptions.port,
-        protocol: 'HTTP',
-        targetType: 'ip',
-        vpcId: this.vpc.vpcId,
-        healthCheck: {
-          healthyThreshold: 3,
-          unhealthyThreshold: 2,
-          interval: 60,
-          timeout: 5,
-          path: healtCheckPath,
-        },
-      },
-      { parent: this, dependsOn: [this.lb] },
-    );
-    const lbListener = new aws.lb.Listener(
-      `${serviceName}-lb-listener`,
-      {
-        loadBalancerArn: this.lb.arn,
-        port: 80,
-        defaultActions: [
-          {
-            type: 'forward',
-            targetGroupArn: lbTargetGroup.arn,
-          },
-        ],
-      },
-      { parent: this, dependsOn: [this.lb, lbTargetGroup] },
-    );
-
+    const { serviceName, environment, ...ecsOptions } = options;
     const parsedEnv =
       typeof environment === 'function'
         ? environment(this.services)
         : environment;
 
-    const instance = new EcsService(
+    const service = new WebServer(
       serviceName,
       {
         ...ecsOptions,
         cluster: this.cluster,
-        subnets: this.vpc.publicSubnetIds,
-        securityGroupIds: [this.ecsServiceSecurityGroup.id],
-        lb: this.lb,
-        lbTargetGroup,
-        lbListener,
+        vpc: this.vpc,
+        hostedZoneId: this.hostedZoneId,
         environment: parsedEnv,
       },
       { parent: this },
     );
-    this.services[options.serviceName] = instance;
+    this.services[options.serviceName] = service;
   }
 }

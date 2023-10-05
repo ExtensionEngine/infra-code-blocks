@@ -1,20 +1,45 @@
 import * as aws from '@pulumi/aws';
+import * as awsx from '@pulumi/awsx';
 import * as pulumi from '@pulumi/pulumi';
 
 export type RdsArgs = {
+  /**
+   * The name of the database to create when the DB instance is created.
+   */
   dbName: pulumi.Input<string>;
+  /**
+   * Username for the master DB user.
+   */
   username: pulumi.Input<string>;
+  /**
+   * Password for the master DB user.
+   */
   password: pulumi.Input<string>;
-  subnetGroupName: pulumi.Input<string>;
-  securityGroupIds: pulumi.Input<pulumi.Input<string>[]>;
-  publiclyAccessible?: pulumi.Input<boolean>;
+  /**
+   * The awsx.ec2.Vpc resource.
+   */
+  vpc: awsx.ec2.Vpc;
+  /**
+   * Specifies whether any database modifications are applied immediately, or during the next maintenance window. Default is false.
+   */
   applyImmediately?: pulumi.Input<boolean>;
+  /**
+   * Determines whether a final DB snapshot is created before the DB instance is deleted.
+   */
   skipFinalSnapshot?: pulumi.Input<boolean>;
+  /**
+   * The allocated storage in gibibytes.
+   */
   allocatedStorage?: pulumi.Input<number>;
+  /**
+   * The upper limit to which Amazon RDS can automatically scale the storage of the DB instance.
+   */
   maxAllocatedStorage?: pulumi.Input<number>;
+  /**
+   * The instance type of the RDS instance.
+   */
   instanceClass?: pulumi.Input<string>;
 };
-export type RdsInstance = aws.rds.Instance;
 
 const defaults = {
   publiclyAccessible: false,
@@ -26,7 +51,10 @@ const defaults = {
 };
 
 export class Rds extends pulumi.ComponentResource {
-  instance: RdsInstance;
+  instance: aws.rds.Instance;
+  kms: aws.kms.Key;
+  dbSubnetGroup: aws.rds.SubnetGroup;
+  dbSecurityGroup: aws.ec2.SecurityGroup;
 
   constructor(
     name: string,
@@ -37,7 +65,31 @@ export class Rds extends pulumi.ComponentResource {
 
     const argsWithDefaults = Object.assign({}, defaults, args);
 
-    const kms = new aws.kms.Key(
+    this.dbSubnetGroup = new aws.rds.SubnetGroup(
+      `${name}-subnet-group`,
+      {
+        subnetIds: argsWithDefaults.vpc.privateSubnetIds,
+      },
+      { parent: this },
+    );
+
+    this.dbSecurityGroup = new aws.ec2.SecurityGroup(
+      `${name}-security-group`,
+      {
+        vpcId: argsWithDefaults.vpc.vpcId,
+        ingress: [
+          {
+            protocol: 'tcp',
+            fromPort: 5432,
+            toPort: 5432,
+            cidrBlocks: [argsWithDefaults.vpc.vpc.cidrBlock],
+          },
+        ],
+      },
+      { parent: this },
+    );
+
+    this.kms = new aws.kms.Key(
       `${name}-rds-key`,
       {
         customerMasterKeySpec: 'SYMMETRIC_DEFAULT',
@@ -61,11 +113,11 @@ export class Rds extends pulumi.ComponentResource {
         dbName: argsWithDefaults.dbName,
         username: argsWithDefaults.username,
         password: argsWithDefaults.password,
-        dbSubnetGroupName: argsWithDefaults.subnetGroupName,
-        vpcSecurityGroupIds: argsWithDefaults.securityGroupIds,
+        dbSubnetGroupName: this.dbSubnetGroup.name,
+        vpcSecurityGroupIds: [this.dbSecurityGroup.id],
         storageEncrypted: true,
-        kmsKeyId: kms.arn,
-        publiclyAccessible: argsWithDefaults.publiclyAccessible,
+        kmsKeyId: this.kms.arn,
+        publiclyAccessible: false,
         skipFinalSnapshot: argsWithDefaults.skipFinalSnapshot,
         applyImmediately: argsWithDefaults.applyImmediately,
         autoMinorVersionUpgrade: true,
