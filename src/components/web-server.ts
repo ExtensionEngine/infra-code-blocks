@@ -43,14 +43,14 @@ export type WebServerArgs = {
    */
   port: pulumi.Input<number>;
   /**
-   * The aws.ecs.Cluster resource.
-   */
-  cluster: aws.ecs.Cluster;
-  /**
    * The domain which will be used to access the service.
    * The domain or subdomain must belong to the provided hostedZone.
    */
   domain: pulumi.Input<string>;
+  /**
+   * The aws.ecs.Cluster resource.
+   */
+  cluster: aws.ecs.Cluster;
   /**
    * The ID of the hosted zone.
    */

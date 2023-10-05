@@ -44,17 +44,27 @@ export type ProjectArgs = {
     | StaticSiteService
     | WebServerService
   )[];
-  hostedZoneId: pulumi.Input<string>;
   environment: Environment;
+  hostedZoneId?: pulumi.Input<string>;
 };
+
+export class MissingHostedZoneId extends Error {
+  constructor(serviceType: string) {
+    super(
+      `Project::hostedZoneId argument must be provided 
+      in order to create ${serviceType} service`,
+    );
+    this.name = this.constructor.name;
+  }
+}
 
 export class Project extends pulumi.ComponentResource {
   name: string;
-  hostedZoneId: pulumi.Input<string>;
   environment: Environment;
   vpc: awsx.ec2.Vpc;
-  cluster: aws.ecs.Cluster | null = null;
-  upstashProvider: upstash.Provider | null = null;
+  cluster?: aws.ecs.Cluster;
+  hostedZoneId?: pulumi.Input<string>;
+  upstashProvider?: upstash.Provider;
   services: Services = {};
 
   constructor(
@@ -142,6 +152,7 @@ export class Project extends pulumi.ComponentResource {
 
   private createStaticSiteService(options: StaticSiteService) {
     const { serviceName, ...staticSiteOptions } = options;
+    if (!this.hostedZoneId) throw new MissingHostedZoneId(options.type);
     const service = new StaticSite(
       serviceName,
       {
@@ -155,6 +166,7 @@ export class Project extends pulumi.ComponentResource {
 
   private createWebServerService(options: WebServerService) {
     if (!this.cluster) return;
+    if (!this.hostedZoneId) throw new MissingHostedZoneId(options.type);
 
     const { serviceName, environment, ...ecsOptions } = options;
     const parsedEnv =
