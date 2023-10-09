@@ -2,7 +2,7 @@ import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 import * as pulumi from '@pulumi/pulumi';
 
-export type RdsArgs = {
+export type DatabaseArgs = {
   /**
    * The name of the database to create when the DB instance is created.
    */
@@ -50,7 +50,7 @@ const defaults = {
   instanceClass: 'db.t3.micro',
 };
 
-export class Rds extends pulumi.ComponentResource {
+export class Database extends pulumi.ComponentResource {
   instance: aws.rds.Instance;
   kms: aws.kms.Key;
   dbSubnetGroup: aws.rds.SubnetGroup;
@@ -58,10 +58,10 @@ export class Rds extends pulumi.ComponentResource {
 
   constructor(
     name: string,
-    args: RdsArgs,
+    args: DatabaseArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:rds:Instance', name, {}, opts);
+    super('studion:database:Instance', name, {}, opts);
 
     const argsWithDefaults = Object.assign({}, defaults, args);
 

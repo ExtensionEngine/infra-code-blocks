@@ -2,13 +2,13 @@ import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 import * as upstash from '@upstash/pulumi';
-import { Rds, RdsArgs } from './rds';
+import { Database, DatabaseArgs } from './database';
 import { WebServer, WebServerArgs } from './web-server';
 import { Redis, RedisArgs } from './redis';
 import { StaticSite, StaticSiteArgs } from './static-site';
 import { Environment } from '../constants';
 
-export type Service = Rds | Redis | StaticSite | WebServer;
+export type Service = Database | Redis | StaticSite | WebServer;
 export type Services = Record<string, Service>;
 
 type ServiceArgs = {
@@ -19,7 +19,7 @@ type ServiceArgs = {
 };
 
 export type DatabaseService = { type: 'DATABASE' } & ServiceArgs &
-  Omit<RdsArgs, 'vpc'>;
+  Omit<DatabaseArgs, 'vpc'>;
 
 export type RedisService = { type: 'REDIS' } & ServiceArgs &
   Pick<RedisArgs, 'dbName' | 'region'>;
@@ -128,11 +128,11 @@ export class Project extends pulumi.ComponentResource {
   }
 
   private createDatabaseService(options: DatabaseService) {
-    const { serviceName, type, ...rdsOptions } = options;
-    const service = new Rds(
+    const { serviceName, type, ...databaseOptions } = options;
+    const service = new Database(
       serviceName,
       {
-        ...rdsOptions,
+        ...databaseOptions,
         vpc: this.vpc,
       },
       { parent: this },
