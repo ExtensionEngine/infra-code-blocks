@@ -24,7 +24,7 @@ export class Redis extends pulumi.ComponentResource {
   instance: upstash.RedisDatabase;
 
   constructor(name: string, args: RedisArgs, opts: RedisOptions) {
-    super('studion:redis:Instance', name, {}, opts);
+    super('studion:Redis', name, {}, opts);
 
     const argsWithDefaults = Object.assign({}, defaults, args);
 

@@ -42,7 +42,6 @@ export type DatabaseArgs = {
 };
 
 const defaults = {
-  publiclyAccessible: false,
   applyImmediately: false,
   skipFinalSnapshot: false,
   allocatedStorage: 20,
@@ -61,7 +60,7 @@ export class Database extends pulumi.ComponentResource {
     args: DatabaseArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:database:Instance', name, {}, opts);
+    super('studion:Database', name, {}, opts);
 
     const argsWithDefaults = Object.assign({}, defaults, args);
 

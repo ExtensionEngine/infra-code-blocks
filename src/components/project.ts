@@ -7,6 +7,7 @@ import { WebServer, WebServerArgs } from './web-server';
 import { Redis, RedisArgs } from './redis';
 import { StaticSite, StaticSiteArgs } from './static-site';
 import { Environment } from '../constants';
+import { Ec2SSMConnect } from './ec2-ssm-connect';
 
 export type Service = Database | Redis | StaticSite | WebServer;
 export type Services = Record<string, Service>;
@@ -46,6 +47,7 @@ export type ProjectArgs = {
   )[];
   environment: Environment;
   hostedZoneId?: pulumi.Input<string>;
+  enableSSMConnect?: pulumi.Input<boolean>;
 };
 
 export class MissingHostedZoneId extends Error {
@@ -65,6 +67,7 @@ export class Project extends pulumi.ComponentResource {
   cluster?: aws.ecs.Cluster;
   hostedZoneId?: pulumi.Input<string>;
   upstashProvider?: upstash.Provider;
+  ec2SSMConnect?: Ec2SSMConnect;
   services: Services = {};
 
   constructor(
@@ -80,6 +83,14 @@ export class Project extends pulumi.ComponentResource {
 
     this.vpc = this.createVpc();
     this.createServices(services);
+
+    if (args.enableSSMConnect) {
+      const sshConfig = new pulumi.Config('ssh');
+      this.ec2SSMConnect = new Ec2SSMConnect(`${name}-ssm-connect`, {
+        vpc: this.vpc,
+        sshPublicKey: sshConfig.require('publicKey'),
+      });
+    }
 
     this.registerOutputs();
   }

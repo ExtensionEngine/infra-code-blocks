@@ -5,8 +5,9 @@ import { CustomSize, Size } from './types';
 import { PredefinedSize } from '../constants';
 import { ContainerDefinition } from '@pulumi/aws/ecs';
 import { AcmCertificate } from './acm-certificate';
+
 const config = new pulumi.Config('aws');
-const awsRegion = config.get('region');
+const awsRegion = config.require('region');
 
 const assumeRolePolicy: aws.iam.PolicyDocument = {
   Version: '2012-10-17',
