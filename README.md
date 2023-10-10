@@ -284,5 +284,7 @@ export type WebServerArgs = {
 
 ## 🚧 TODO
 
-- [ ] Allow connection with RDS via ec2 instance
+- [x] Allow connection with RDS via ec2 instance
+- [x] Execute commands from ecs service
 - [ ] Add worker service for executing tasks
+- [ ] Update docs, describe each service, describe required stack configs...

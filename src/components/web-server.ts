@@ -275,12 +275,35 @@ export class WebServer extends pulumi.ComponentResource {
       { parent: this },
     );
 
+    const execCmdInlinePolicy = {
+      name: 'ecs-exec',
+      policy: JSON.stringify({
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Sid: 'AllowContainerToCreateECSExecSSMChannel',
+            Effect: 'Allow',
+            Action: [
+              'ssmmessages:CreateControlChannel',
+              'ssmmessages:CreateDataChannel',
+              'ssmmessages:OpenControlChannel',
+              'ssmmessages:OpenDataChannel',
+            ],
+            Resource: '*',
+          },
+        ],
+      }),
+    };
+
     const taskRole = new aws.iam.Role(
       `${name}-ecs-task-role`,
       {
         name: `${name}-ecs-task-role`,
         assumeRolePolicy,
-        inlinePolicies: argsWithDefaults.taskRoleInlinePolicies,
+        inlinePolicies: [
+          execCmdInlinePolicy,
+          ...argsWithDefaults.taskRoleInlinePolicies,
+        ],
       },
       { parent: this },
     );
@@ -322,6 +345,7 @@ export class WebServer extends pulumi.ComponentResource {
             ([containerName, image, port, environment, logGroup, region]) => {
               return JSON.stringify([
                 {
+                  readonlyRootFilesystem: true,
                   name: containerName,
                   image,
                   essential: true,
@@ -380,6 +404,7 @@ export class WebServer extends pulumi.ComponentResource {
         launchType: 'FARGATE',
         desiredCount: argsWithDefaults.desiredCount,
         taskDefinition: this.taskDefinition.arn,
+        enableExecuteCommand: true,
         loadBalancers: [
           {
             containerName: name,
