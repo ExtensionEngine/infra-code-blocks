@@ -78,14 +78,16 @@ type ProjectArgs = {
   )[];
   environment: Environment;
   hostedZoneId?: pulumi.Input<string>;
+  enableSSMConnect?: pulumi.Input<boolean>;
 };
 ```
 
-| Argument       |                               Description                               |
-| :------------- | :---------------------------------------------------------------------: |
-| services \*    |                              Service list.                              |
-| environment \* |                            Environment name.                            |
-| hostedZoneId   | Route53 hosted zone ID responsible for managing records for the domain. |
+| Argument         |                                                                         Description                                                                          |
+| :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| services \*      |                                                                        Service list.                                                                         |
+| environment \*   |                                                                      Environment name.                                                                       |
+| hostedZoneId     |                                           Route53 hosted zone ID responsible for managing records for the domain.                                            |
+| enableSSMConnect | Setup ec2 instance and SSM in order to connect to the database in the private subnet. Please refer to the [SSM Connect](#ssm-connect) section for more info. |
 
 ```ts
 type DatabaseService = {
@@ -282,9 +284,90 @@ export type WebServerArgs = {
 };
 ```
 
+## SSM Connect
+
+The [Database](#database) component deploys a database instance inside a private subnet,
+and it's not publicly accessible from outside of VPC.
+<br>
+In order to connect to the database we need to deploy the ec2 instance which will be used
+to open an SSH tunnel to the database instance.
+<br>
+Because of security reasons, ec2 instance is also deployed inside private subnet
+which means we can't directly connect to it. For that purpose, we use AWS System Manager
+which enables us to connect to the ec2 instance even though it's inside private subnet.
+
+![AWS RDS connection schema](/assets/images/ssm-rds.png)
+
+**Prerequisites**
+
+1. Install the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/install-plugin-macos-overview.html#install-plugin-macos)
+2. Generate a new ssh key pair or use the existing one.
+
+```bash
+$ ssh-keygen -f my_rsa
+```
+
+3. Set stack config property by running:
+
+```bash
+$ pulumi config set ssh:publicKey "ssh-rsa Z...9= mymac@Studions-MBP.localdomain"
+```
+
+SSM Connect can be enabled by setting `enableSSMConnect` property to `true`.
+
+```ts
+const project = new studion.Project('demo-project', {
+  enableSSMConnect: true,
+  ...
+});
+
+export const ec2InstanceId = project.ec2SSMConnect?.ec2.id;
+```
+
+Open up your terminal and run the following command:
+
+```bash
+$ aws ssm start-session --target EC2_INSTANCE_ID --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["22"], "localPortNumber":["9999"]}'
+```
+
+Where `EC2_INSTANCE_ID` is an ID of the EC2 instance that is created for you. ID can be
+obtained by exporting it from the stack.
+
+Next, open another terminal window and run the following command:
+
+```bash
+$ ssh ec2-user@localhost -p 9999 -N -L 5555:DATABASE_ADDRESS:DATABASE_PORT -i SSH_PRIVATE_KEY
+```
+
+Where `DATABASE_ADDRESS` and `DATABASE_PORT` are the address and port of the database instance,
+and `SSH_PRIVATE_KEY` is the path to the SSH private key.
+
+And that is it! 🥳
+Now you can use your favorite database client to connect to the database.
+
+![RDS connection](/assets/images/rds-connection.png)
+
+It is important that for the host you set `localhost` and for the port you set `5555`
+because we have an SSH tunnel open that forwards traffic from localhost:5555 to the
+DATABASE_ADDRESS:DATABASE_PORT. For the user, password, and database field, set values
+which are set in the `Project`.
+
+```ts
+const project = new studion.Project('demo-project', {
+  enableSSMConnect: true,
+  services: [
+    {
+      type: 'DATABASE',
+      dbName: 'database_name',
+      username: 'username',
+      password: 'password',
+      ...
+    }
+  ]
+});
+```
+
 ## 🚧 TODO
 
-- [x] Allow connection with RDS via ec2 instance
-- [x] Execute commands from ecs service
 - [ ] Add worker service for executing tasks
 - [ ] Update docs, describe each service, describe required stack configs...

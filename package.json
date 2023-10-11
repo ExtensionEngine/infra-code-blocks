@@ -24,10 +24,10 @@
     "dist"
   ],
   "scripts": {
-    "build": "npm run clean && tsc",
     "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
     "format": "prettier -w .",
-    "release": "release-it",
+    "release": "npm run build && release-it",
     "test": ""
   },
   "prettier": "@studion/prettier-config",
