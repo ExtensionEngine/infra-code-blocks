@@ -284,6 +284,34 @@ export type WebServerArgs = {
 };
 ```
 
+#### Exec into running ECS task
+
+**Prerequisites**
+
+1. Install the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/install-plugin-macos-overview.html#install-plugin-macos)
+
+```bash
+$ brew install --cask session-manager-plugin
+```
+
+2. Install jq
+
+```bash
+$ brew install jq
+```
+
+In order to exec into running ECS container run the following command:
+
+```bash
+aws ecs execute-command  \
+  --cluster CLUSTER_NAME \
+  --task $(aws ecs list-tasks --cluster CLUSTER_NAME --family TASK_FAMILY_NAME | jq -r '.taskArns[0] | split("/")[2]') \
+  --command "/bin/sh" \
+  --interactive
+```
+
+Where the `CLUSTER_NAME` is the name of the ECS cluster and `TASK_FAMILY_NAME` is the name of the task family that task belongs to.
+
 ## SSM Connect
 
 The [Database](#database) component deploys a database instance inside a private subnet,
@@ -301,6 +329,11 @@ which enables us to connect to the ec2 instance even though it's inside private 
 **Prerequisites**
 
 1. Install the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/install-plugin-macos-overview.html#install-plugin-macos)
+
+```bash
+$ brew install --cask session-manager-plugin
+```
+
 2. Generate a new ssh key pair or use the existing one.
 
 ```bash

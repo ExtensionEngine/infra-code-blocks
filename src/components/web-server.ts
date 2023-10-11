@@ -345,7 +345,7 @@ export class WebServer extends pulumi.ComponentResource {
             ([containerName, image, port, environment, logGroup, region]) => {
               return JSON.stringify([
                 {
-                  readonlyRootFilesystem: true,
+                  readonlyRootFilesystem: false,
                   name: containerName,
                   image,
                   essential: true,
