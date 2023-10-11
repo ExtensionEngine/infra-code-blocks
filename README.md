@@ -177,7 +177,15 @@ const project = new studion.Project('demo-project', {
 
 ### Database
 
-RDS Postgres instance.
+AWS RDS Postgres instance.
+
+Features:
+
+- enabled encryption with a symmetric encryption key
+- deployed inside a private subnet
+- backup enabled with retention period set to 14 days
+
+<br>
 
 ```ts
 new Database(name: string, args: DatabaseArgs, opts?: pulumi.CustomResourceOptions);
@@ -205,7 +213,7 @@ type DatabaseArgs = {
 
 ### Redis
 
-Upstash Redis instance.
+[Upstash](https://upstash.com) Redis instance.
 
 ```ts
 new Redis(name: string, args: RedisArgs, opts: RedisOptions);
@@ -230,7 +238,16 @@ interface RedisOptions extends pulumi.ComponentResourceOptions {
 
 ### Static Site
 
-A static site that will be deployed using S3 + Cloudfront.
+AWS S3 + Cloudfront static site.
+
+Features:
+
+- creates TLS certificate for the specified domain
+- redirects HTTP traffic to HTTPS
+- enables http2 and http3 protocols
+- uses North America and Europe edge locations
+
+<br>
 
 ```ts
 new StaticSite(name: string, args: StaticSiteArgs, opts?: pulumi.ComponentResourceOptions );
@@ -251,7 +268,17 @@ type StaticSiteArgs = {
 
 ### Web Server
 
-A web server that will be deployed to ECS Fargate service with autoscaling enabled.
+AWS ECS Fargate web server.
+
+Features:
+
+- Memory and CPU autoscaling enabled
+- creates TLS certificate for the specified domain
+- redirects HTTP traffic to HTTPS
+- creates CloudWatch log group
+- comes with predefined cpu and memory options: `small`, `medium`, `large`, `xlarge`
+
+<br>
 
 ```ts
 new WebServer(name: string, args: WebServerArgs, opts?: pulumi.ComponentResourceOptions );
@@ -310,7 +337,7 @@ aws ecs execute-command  \
   --interactive
 ```
 
-Where the `CLUSTER_NAME` is the name of the ECS cluster and `TASK_FAMILY_NAME` is the name of the task family that task belongs to.
+Where `CLUSTER_NAME` is the name of the ECS cluster and `TASK_FAMILY_NAME` is the name of the task family that task belongs to.
 
 ## SSM Connect
 
