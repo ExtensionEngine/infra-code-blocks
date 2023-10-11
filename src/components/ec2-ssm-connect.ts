@@ -37,6 +37,18 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
             toPort: 22,
             cidrBlocks: ['0.0.0.0/0'],
           },
+          {
+            protocol: 'tcp',
+            fromPort: 80,
+            toPort: 80,
+            cidrBlocks: ['0.0.0.0/0'],
+          },
+          {
+            protocol: 'tcp',
+            fromPort: 443,
+            toPort: 443,
+            cidrBlocks: ['0.0.0.0/0'],
+          },
         ],
         egress: [
           { protocol: '-1', fromPort: 0, toPort: 0, cidrBlocks: ['0.0.0.0/0'] },
@@ -82,48 +94,6 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
       { parent: this, dependsOn: [ssmPolicyAttachment] },
     );
 
-    this.ssmVpcEndpoint = new aws.ec2.VpcEndpoint(
-      `${name}-ssm-vpc-endpoint`,
-      {
-        vpcId: args.vpc.vpcId,
-        ipAddressType: 'ipv4',
-        serviceName: `com.amazonaws.${awsRegion}.ssm`,
-        vpcEndpointType: 'Interface',
-        subnetIds: [subnetId],
-        securityGroupIds: [this.ec2SecurityGroup.id],
-        privateDnsEnabled: true,
-      },
-      { parent: this },
-    );
-
-    this.ec2MessagesVpcEndpoint = new aws.ec2.VpcEndpoint(
-      `${name}-ec2messages-vpc-endpoint`,
-      {
-        vpcId: args.vpc.vpcId,
-        ipAddressType: 'ipv4',
-        serviceName: `com.amazonaws.${awsRegion}.ec2messages`,
-        vpcEndpointType: 'Interface',
-        subnetIds: [subnetId],
-        securityGroupIds: [this.ec2SecurityGroup.id],
-        privateDnsEnabled: true,
-      },
-      { parent: this },
-    );
-
-    this.ssmMessagesVpcEndpoint = new aws.ec2.VpcEndpoint(
-      `${name}-ssmmessages-vpc-endpoint`,
-      {
-        vpcId: args.vpc.vpcId,
-        ipAddressType: 'ipv4',
-        serviceName: `com.amazonaws.${awsRegion}.ssmmessages`,
-        vpcEndpointType: 'Interface',
-        subnetIds: [subnetId],
-        securityGroupIds: [this.ec2SecurityGroup.id],
-        privateDnsEnabled: true,
-      },
-      { parent: this },
-    );
-
     this.sshKeyPair = new aws.ec2.KeyPair(
       `${name}-ec2-keypair`,
       {
@@ -147,6 +117,48 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
         },
       },
       { parent: this },
+    );
+
+    this.ssmVpcEndpoint = new aws.ec2.VpcEndpoint(
+      `${name}-ssm-vpc-endpoint`,
+      {
+        vpcId: args.vpc.vpcId,
+        ipAddressType: 'ipv4',
+        serviceName: `com.amazonaws.${awsRegion}.ssm`,
+        vpcEndpointType: 'Interface',
+        subnetIds: [subnetId],
+        securityGroupIds: [this.ec2SecurityGroup.id],
+        privateDnsEnabled: true,
+      },
+      { parent: this, dependsOn: [this.ec2] },
+    );
+
+    this.ec2MessagesVpcEndpoint = new aws.ec2.VpcEndpoint(
+      `${name}-ec2messages-vpc-endpoint`,
+      {
+        vpcId: args.vpc.vpcId,
+        ipAddressType: 'ipv4',
+        serviceName: `com.amazonaws.${awsRegion}.ec2messages`,
+        vpcEndpointType: 'Interface',
+        subnetIds: [subnetId],
+        securityGroupIds: [this.ec2SecurityGroup.id],
+        privateDnsEnabled: true,
+      },
+      { parent: this, dependsOn: [this.ec2] },
+    );
+
+    this.ssmMessagesVpcEndpoint = new aws.ec2.VpcEndpoint(
+      `${name}-ssmmessages-vpc-endpoint`,
+      {
+        vpcId: args.vpc.vpcId,
+        ipAddressType: 'ipv4',
+        serviceName: `com.amazonaws.${awsRegion}.ssmmessages`,
+        vpcEndpointType: 'Interface',
+        subnetIds: [subnetId],
+        securityGroupIds: [this.ec2SecurityGroup.id],
+        privateDnsEnabled: true,
+      },
+      { parent: this, dependsOn: [this.ec2] },
     );
 
     this.registerOutputs();
