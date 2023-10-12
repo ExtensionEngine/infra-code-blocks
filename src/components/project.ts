@@ -79,10 +79,8 @@ export class Project extends pulumi.ComponentResource {
     this.createServices(services);
 
     if (args.enableSSMConnect) {
-      const sshConfig = new pulumi.Config('ssh');
       this.ec2SSMConnect = new Ec2SSMConnect(`${name}-ssm-connect`, {
         vpc: this.vpc,
-        sshPublicKey: sshConfig.require('publicKey'),
       });
     }
 

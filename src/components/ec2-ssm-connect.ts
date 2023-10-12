@@ -7,7 +7,6 @@ const awsRegion = config.require('region');
 
 export type Ec2SSMConnectArgs = {
   vpc: awsx.ec2.Vpc;
-  sshPublicKey: pulumi.Input<string>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
@@ -19,7 +18,6 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
   ec2MessagesVpcEndpoint: aws.ec2.VpcEndpoint;
   ssmMessagesVpcEndpoint: aws.ec2.VpcEndpoint;
   ec2: aws.ec2.Instance;
-  sshKeyPair: aws.ec2.KeyPair;
 
   constructor(
     name: string,
@@ -97,21 +95,12 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
       { parent: this, dependsOn: [ssmPolicyAttachment] },
     );
 
-    this.sshKeyPair = new aws.ec2.KeyPair(
-      `${name}-ec2-keypair`,
-      {
-        publicKey: args.sshPublicKey,
-      },
-      { parent: this },
-    );
-
     this.ec2 = new aws.ec2.Instance(
       `${name}-ec2`,
       {
         ami: 'ami-067d1e60475437da2',
         associatePublicIpAddress: false,
         instanceType: 't2.micro',
-        keyName: this.sshKeyPair.keyName,
         iamInstanceProfile: ssmProfile.name,
         subnetId,
         vpcSecurityGroupIds: [this.ec2SecurityGroup.id],
