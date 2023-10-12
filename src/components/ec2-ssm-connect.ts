@@ -8,6 +8,9 @@ const awsRegion = config.require('region');
 export type Ec2SSMConnectArgs = {
   vpc: awsx.ec2.Vpc;
   sshPublicKey: pulumi.Input<string>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
 };
 
 export class Ec2SSMConnect extends pulumi.ComponentResource {
@@ -114,6 +117,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
         vpcSecurityGroupIds: [this.ec2SecurityGroup.id],
         tags: {
           Name: `${name}-ec2`,
+          ...args.tags,
         },
       },
       { parent: this },

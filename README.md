@@ -208,12 +208,31 @@ type DatabaseArgs = {
   allocatedStorage?: pulumi.Input<number>;
   maxAllocatedStorage?: pulumi.Input<number>;
   instanceClass?: pulumi.Input<string>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
 };
 ```
 
 ### Redis
 
 [Upstash](https://upstash.com) Redis instance.
+
+**Prerequisites**
+
+1. Stack Config
+
+| Name              |     Description     | Secret |
+| :---------------- | :-----------------: | :----: |
+| upstash:email \*  | Upstash user email. |  true  |
+| upstash:apiKey \* |  Upstash API key.   |  true  |
+
+```bash
+$ pulumi config set --secret upstash:email myemail@example.com
+$ pulumi config set --secret upstash:apiKey my-api-key
+```
+
+<br>
 
 ```ts
 new Redis(name: string, args: RedisArgs, opts: RedisOptions);
@@ -263,6 +282,9 @@ new StaticSite(name: string, args: StaticSiteArgs, opts?: pulumi.ComponentResour
 type StaticSiteArgs = {
   domain: pulumi.Input<string>;
   hostedZoneId: pulumi.Input<string>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
 };
 ```
 
@@ -308,6 +330,9 @@ export type WebServerArgs = {
     pulumi.Input<RoleInlinePolicy>[]
   >;
   taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
 };
 ```
 

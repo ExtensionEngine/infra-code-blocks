@@ -20,13 +20,13 @@ type ServiceArgs = {
 };
 
 export type DatabaseService = { type: 'DATABASE' } & ServiceArgs &
-  Omit<DatabaseArgs, 'vpc'>;
+  Omit<DatabaseArgs, 'vpc' | 'tags'>;
 
 export type RedisService = { type: 'REDIS' } & ServiceArgs &
   Pick<RedisArgs, 'dbName' | 'region'>;
 
 export type StaticSiteService = { type: 'STATIC_SITE' } & ServiceArgs &
-  Omit<StaticSiteArgs, 'hostedZoneId'>;
+  Omit<StaticSiteArgs, 'hostedZoneId' | 'tags'>;
 
 export type WebServerService = {
   type: 'WEB_SERVER';
@@ -34,7 +34,10 @@ export type WebServerService = {
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
 } & ServiceArgs &
-  Omit<WebServerArgs, 'cluster' | 'vpc' | 'hostedZoneId' | 'environment'>;
+  Omit<
+    WebServerArgs,
+    'cluster' | 'vpc' | 'hostedZoneId' | 'environment' | 'tags'
+  >;
 
 export type Environment = (typeof Environment)[keyof typeof Environment];
 
@@ -89,6 +92,9 @@ export class Project extends pulumi.ComponentResource {
       this.ec2SSMConnect = new Ec2SSMConnect(`${name}-ssm-connect`, {
         vpc: this.vpc,
         sshPublicKey: sshConfig.require('publicKey'),
+        tags: {
+          Env: this.environment,
+        },
       });
     }
 
@@ -102,6 +108,9 @@ export class Project extends pulumi.ComponentResource {
         numberOfAvailabilityZones: 2,
         enableDnsHostnames: true,
         enableDnsSupport: true,
+        tags: {
+          Env: this.environment,
+        },
       },
       { parent: this },
     );
@@ -133,7 +142,12 @@ export class Project extends pulumi.ComponentResource {
   private createWebServerPrerequisites() {
     this.cluster = new aws.ecs.Cluster(
       `${this.name}-cluster`,
-      { name: this.name },
+      {
+        name: this.name,
+        tags: {
+          Env: this.environment,
+        },
+      },
       { parent: this },
     );
   }
@@ -145,6 +159,9 @@ export class Project extends pulumi.ComponentResource {
       {
         ...databaseOptions,
         vpc: this.vpc,
+        tags: {
+          Env: this.environment,
+        },
       },
       { parent: this },
     );
@@ -169,6 +186,9 @@ export class Project extends pulumi.ComponentResource {
       {
         ...staticSiteOptions,
         hostedZoneId: this.hostedZoneId,
+        tags: {
+          Env: this.environment,
+        },
       },
       { parent: this },
     );
@@ -193,6 +213,9 @@ export class Project extends pulumi.ComponentResource {
         vpc: this.vpc,
         hostedZoneId: this.hostedZoneId,
         environment: parsedEnv,
+        tags: {
+          Env: this.environment,
+        },
       },
       { parent: this },
     );

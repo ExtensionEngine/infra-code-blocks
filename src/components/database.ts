@@ -39,6 +39,12 @@ export type DatabaseArgs = {
    * The instance type of the RDS instance.
    */
   instanceClass?: pulumi.Input<string>;
+  /**
+   * A map of tags to assign to the resource.
+   */
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
 };
 
 const defaults = {
@@ -124,6 +130,7 @@ export class Database extends pulumi.ComponentResource {
         finalSnapshotIdentifier: `${name}-final-snapshot`,
         backupWindow: '06:00-06:30',
         backupRetentionPeriod: 14,
+        tags: argsWithDefaults.tags,
       },
       { parent: this },
     );

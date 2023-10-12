@@ -93,6 +93,12 @@ export type WebServerArgs = {
     pulumi.Input<RoleInlinePolicy>[]
   >;
   taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
+  /**
+   * A map of tags to assign to the resource.
+   */
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
 };
 
 const defaults = {
@@ -276,7 +282,7 @@ export class WebServer extends pulumi.ComponentResource {
     );
 
     const execCmdInlinePolicy = {
-      name: 'ecs-exec',
+      name: `${name}-ecs-exec`,
       policy: JSON.stringify({
         Version: '2012-10-17',
         Statement: [
@@ -368,6 +374,7 @@ export class WebServer extends pulumi.ComponentResource {
               ] as ContainerDefinition[]);
             },
           ),
+        tags: argsWithDefaults.tags,
       },
       { parent: this },
     );
@@ -417,6 +424,7 @@ export class WebServer extends pulumi.ComponentResource {
           subnets: argsWithDefaults.vpc.publicSubnetIds,
           securityGroups: [this.serviceSecurityGroup.id],
         },
+        tags: argsWithDefaults.tags,
       },
       {
         parent: this,

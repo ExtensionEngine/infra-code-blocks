@@ -12,6 +12,12 @@ export type StaticSiteArgs = {
    * The ID of the hosted zone.
    */
   hostedZoneId: pulumi.Input<string>;
+  /**
+   * A map of tags to assign to the resource.
+   */
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
 };
 
 export class StaticSite extends pulumi.ComponentResource {
@@ -43,6 +49,7 @@ export class StaticSite extends pulumi.ComponentResource {
           indexDocument: 'index.html',
           errorDocument: 'index.html',
         },
+        tags: args.tags,
       },
       { parent: this },
     );
@@ -128,6 +135,7 @@ export class StaticSite extends pulumi.ComponentResource {
         restrictions: {
           geoRestriction: { restrictionType: 'none' },
         },
+        tags: args.tags,
       },
       { parent: this },
     );
