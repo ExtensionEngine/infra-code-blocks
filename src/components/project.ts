@@ -6,7 +6,6 @@ import { Database, DatabaseArgs } from './database';
 import { WebServer, WebServerArgs } from './web-server';
 import { Redis, RedisArgs } from './redis';
 import { StaticSite, StaticSiteArgs } from './static-site';
-import { Environment } from '../constants';
 import { Ec2SSMConnect } from './ec2-ssm-connect';
 
 export type Service = Database | Redis | StaticSite | WebServer;
@@ -20,13 +19,13 @@ type ServiceArgs = {
 };
 
 export type DatabaseService = { type: 'DATABASE' } & ServiceArgs &
-  Omit<DatabaseArgs, 'vpc' | 'tags'>;
+  Omit<DatabaseArgs, 'vpc'>;
 
 export type RedisService = { type: 'REDIS' } & ServiceArgs &
   Pick<RedisArgs, 'dbName' | 'region'>;
 
 export type StaticSiteService = { type: 'STATIC_SITE' } & ServiceArgs &
-  Omit<StaticSiteArgs, 'hostedZoneId' | 'tags'>;
+  Omit<StaticSiteArgs, 'hostedZoneId'>;
 
 export type WebServerService = {
   type: 'WEB_SERVER';
@@ -34,12 +33,7 @@ export type WebServerService = {
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
 } & ServiceArgs &
-  Omit<
-    WebServerArgs,
-    'cluster' | 'vpc' | 'hostedZoneId' | 'environment' | 'tags'
-  >;
-
-export type Environment = (typeof Environment)[keyof typeof Environment];
+  Omit<WebServerArgs, 'cluster' | 'vpc' | 'hostedZoneId' | 'environment'>;
 
 export type ProjectArgs = {
   services: (
@@ -48,7 +42,6 @@ export type ProjectArgs = {
     | StaticSiteService
     | WebServerService
   )[];
-  environment: Environment;
   hostedZoneId?: pulumi.Input<string>;
   enableSSMConnect?: pulumi.Input<boolean>;
 };
@@ -65,7 +58,6 @@ export class MissingHostedZoneId extends Error {
 
 export class Project extends pulumi.ComponentResource {
   name: string;
-  environment: Environment;
   vpc: awsx.ec2.Vpc;
   cluster?: aws.ecs.Cluster;
   hostedZoneId?: pulumi.Input<string>;
@@ -79,10 +71,9 @@ export class Project extends pulumi.ComponentResource {
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:Project', name, {}, opts);
-    const { services, environment, hostedZoneId } = args;
+    const { services, hostedZoneId } = args;
     this.name = name;
     this.hostedZoneId = hostedZoneId;
-    this.environment = environment;
 
     this.vpc = this.createVpc();
     this.createServices(services);
@@ -92,9 +83,6 @@ export class Project extends pulumi.ComponentResource {
       this.ec2SSMConnect = new Ec2SSMConnect(`${name}-ssm-connect`, {
         vpc: this.vpc,
         sshPublicKey: sshConfig.require('publicKey'),
-        tags: {
-          Env: this.environment,
-        },
       });
     }
 
@@ -108,9 +96,6 @@ export class Project extends pulumi.ComponentResource {
         numberOfAvailabilityZones: 2,
         enableDnsHostnames: true,
         enableDnsSupport: true,
-        tags: {
-          Env: this.environment,
-        },
       },
       { parent: this },
     );
@@ -144,9 +129,6 @@ export class Project extends pulumi.ComponentResource {
       `${this.name}-cluster`,
       {
         name: this.name,
-        tags: {
-          Env: this.environment,
-        },
       },
       { parent: this },
     );
@@ -159,9 +141,6 @@ export class Project extends pulumi.ComponentResource {
       {
         ...databaseOptions,
         vpc: this.vpc,
-        tags: {
-          Env: this.environment,
-        },
       },
       { parent: this },
     );
@@ -186,9 +165,6 @@ export class Project extends pulumi.ComponentResource {
       {
         ...staticSiteOptions,
         hostedZoneId: this.hostedZoneId,
-        tags: {
-          Env: this.environment,
-        },
       },
       { parent: this },
     );
@@ -213,9 +189,6 @@ export class Project extends pulumi.ComponentResource {
         vpc: this.vpc,
         hostedZoneId: this.hostedZoneId,
         environment: parsedEnv,
-        tags: {
-          Env: this.environment,
-        },
       },
       { parent: this },
     );

@@ -30,7 +30,6 @@ import * as studion from '@studion/infra-code-blocks';
 import * as studion from '@studion/infra-code-blocks';
 
 const project = new studion.Project('demo-project', {
-  environment: 'DEVELOPMENT',
   services: [
     {
       type: 'REDIS',
@@ -76,7 +75,6 @@ type ProjectArgs = {
     | StaticSiteService
     | WebServerService
   )[];
-  environment: Environment;
   hostedZoneId?: pulumi.Input<string>;
   enableSSMConnect?: pulumi.Input<boolean>;
 };
@@ -85,7 +83,6 @@ type ProjectArgs = {
 | Argument         |                                                                         Description                                                                          |
 | :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | services \*      |                                                                        Service list.                                                                         |
-| environment \*   |                                                                      Environment name.                                                                       |
 | hostedZoneId     |                                           Route53 hosted zone ID responsible for managing records for the domain.                                            |
 | enableSSMConnect | Setup ec2 instance and SSM in order to connect to the database in the private subnet. Please refer to the [SSM Connect](#ssm-connect) section for more info. |
 
@@ -101,6 +98,9 @@ type DatabaseService = {
   allocatedStorage?: pulumi.Input<number>;
   maxAllocatedStorage?: pulumi.Input<number>;
   instanceClass?: pulumi.Input<string>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
 };
 ```
 
@@ -118,6 +118,9 @@ export type StaticSiteService = {
   type: 'STATIC_SITE';
   serviceName: string;
   domain: pulumi.Input<string>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
 };
 ```
 
@@ -140,6 +143,9 @@ export type WebServerService = {
     pulumi.Input<RoleInlinePolicy>[]
   >;
   taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
 };
 ```
 
@@ -455,4 +461,4 @@ const project = new studion.Project('demo-project', {
 ## 🚧 TODO
 
 - [ ] Add worker service for executing tasks
-- [ ] Update docs, describe each service, describe required stack configs...
+- [ ] Add MongoDB service

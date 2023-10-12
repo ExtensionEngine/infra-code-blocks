@@ -19,8 +19,3 @@ export const PredefinedSize = {
     memory: MEMORY_1GB * 4, // 4 GB memory
   },
 } as const;
-
-export const Environment = {
-  DEVELOPMENT: 'DEVELOPMENT',
-  PRODUCTION: 'PRODUCTION',
-} as const;

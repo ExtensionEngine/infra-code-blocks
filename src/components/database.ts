@@ -97,6 +97,7 @@ export class Database extends pulumi.ComponentResource {
     this.kms = new aws.kms.Key(
       `${name}-rds-key`,
       {
+        description: `${name} RDS encryption key`,
         customerMasterKeySpec: 'SYMMETRIC_DEFAULT',
         isEnabled: true,
         keyUsage: 'ENCRYPT_DECRYPT',
