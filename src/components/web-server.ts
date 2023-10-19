@@ -82,9 +82,16 @@ export type WebServerArgs = {
    */
   size?: pulumi.Input<Size>;
   /**
-   * The environment variables to pass to a container. Defaults to [].
+   * The environment variables to pass to a container. Don't use this field for
+   * sensitive information such as passwords, API keys, etc. For that purpose,
+   * please use the `secrets` property.
+   * Defaults to [].
    */
   environment?: aws.ecs.KeyValuePair[];
+  /**
+   * The secrets to pass to the container. Defaults to [].
+   */
+  secrets?: aws.ecs.Secret[];
   /**
    * Path for the health check request. Defaults to "/healtcheck".
    */
@@ -107,6 +114,7 @@ const defaults = {
   maxCount: 10,
   size: 'small',
   environment: [],
+  secrets: [],
   healtCheckPath: '/healtcheck',
   taskExecutionRoleInlinePolicies: [],
   taskRoleInlinePolicies: [],
@@ -267,6 +275,21 @@ export class WebServer extends pulumi.ComponentResource {
       { parent: this },
     );
 
+    const secretManagerSecretsInlinePolicy = {
+      name: `${name}-secret-manager-access`,
+      policy: JSON.stringify({
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Sid: 'AllowContainerToGetSecretManagerSecrets',
+            Effect: 'Allow',
+            Action: ['secretsmanager:GetSecretValue'],
+            Resource: '*',
+          },
+        ],
+      }),
+    };
+
     const taskExecutionRole = new aws.iam.Role(
       `${name}-ecs-task-exec-role`,
       {
@@ -276,7 +299,10 @@ export class WebServer extends pulumi.ComponentResource {
           'arn:aws:iam::aws:policy/CloudWatchFullAccess',
           'arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess',
         ],
-        inlinePolicies: argsWithDefaults.taskExecutionRoleInlinePolicies,
+        inlinePolicies: [
+          secretManagerSecretsInlinePolicy,
+          ...argsWithDefaults.taskExecutionRoleInlinePolicies,
+        ],
       },
       { parent: this },
     );
@@ -344,11 +370,20 @@ export class WebServer extends pulumi.ComponentResource {
             argsWithDefaults.image,
             argsWithDefaults.port,
             argsWithDefaults.environment,
+            argsWithDefaults.secrets,
             this.logGroup.name,
             awsRegion,
           ])
           .apply(
-            ([containerName, image, port, environment, logGroup, region]) => {
+            ([
+              containerName,
+              image,
+              port,
+              environment,
+              secrets,
+              logGroup,
+              region,
+            ]) => {
               return JSON.stringify([
                 {
                   readonlyRootFilesystem: false,
@@ -370,6 +405,7 @@ export class WebServer extends pulumi.ComponentResource {
                     },
                   },
                   environment,
+                  secrets,
                 },
               ] as ContainerDefinition[]);
             },

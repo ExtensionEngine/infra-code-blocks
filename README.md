@@ -131,6 +131,7 @@ export type WebServerService = {
   environment?:
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
+  secrets?: aws.ecs.Secret[];
   image: pulumi.Input<string>;
   port: pulumi.Input<number>;
   domain: pulumi.Input<string>;
@@ -176,6 +177,27 @@ const project = new studion.Project('demo-project', {
           { name: 'REDIS_PORT', value: redis.port.apply(port => String(port)) },
         ];
       },
+    },
+  ],
+});
+```
+
+In order to pass sensitive information to the container use `secrets` instead of `environment`. AWS will fetch values from
+Secret Manager based on arn that is provided for the `valueFrom` field.
+
+```ts
+const project = new studion.Project('demo-project', {
+  environment: 'DEVELOPMENT',
+  services: [
+    {
+      type: 'WEB_SERVER',
+      serviceName: 'api',
+      image: imageUri,
+      port: 3000,
+      domain: 'api.my-domain.com',
+      secrets: [
+        { name: 'DB_PASSWORD', valueFrom: 'arn-of-the-secret-manager-secret' },
+      ],
     },
   ],
 });
@@ -331,6 +353,7 @@ export type WebServerArgs = {
   maxCount?: pulumi.Input<number>;
   size?: pulumi.Input<Size>;
   environment?: aws.ecs.KeyValuePair[];
+  secrets?: aws.ecs.Secret[];
   healtCheckPath?: pulumi.Input<string>;
   taskExecutionRoleInlinePolicies?: pulumi.Input<
     pulumi.Input<RoleInlinePolicy>[]
@@ -444,3 +467,4 @@ const project = new studion.Project('demo-project', {
 
 - [ ] Add worker service for executing tasks
 - [ ] Add MongoDB service
+- [ ] Make db username & password fields optional and autogenerate db username & password if they are not provided
