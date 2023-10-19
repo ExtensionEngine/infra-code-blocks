@@ -44,7 +44,6 @@ export class StaticSite extends pulumi.ComponentResource {
     const bucket = new aws.s3.Bucket(
       `${name}-bucket`,
       {
-        bucket: name,
         website: {
           indexDocument: 'index.html',
           errorDocument: 'index.html',

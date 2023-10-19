@@ -32,8 +32,12 @@ export type WebServerService = {
   environment?:
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
+  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
 } & ServiceArgs &
-  Omit<WebServerArgs, 'cluster' | 'vpc' | 'hostedZoneId' | 'environment'>;
+  Omit<
+    WebServerArgs,
+    'cluster' | 'vpc' | 'hostedZoneId' | 'environment' | 'secrets'
+  >;
 
 export type ProjectArgs = {
   services: (
@@ -173,11 +177,14 @@ export class Project extends pulumi.ComponentResource {
     if (!this.cluster) return;
     if (!this.hostedZoneId) throw new MissingHostedZoneId(options.type);
 
-    const { serviceName, environment, ...ecsOptions } = options;
+    const { serviceName, environment, secrets, ...ecsOptions } = options;
     const parsedEnv =
       typeof environment === 'function'
         ? environment(this.services)
         : environment;
+
+    const parsedSecrets =
+      typeof secrets === 'function' ? secrets(this.services) : secrets;
 
     const service = new WebServer(
       serviceName,
@@ -187,6 +194,7 @@ export class Project extends pulumi.ComponentResource {
         vpc: this.vpc,
         hostedZoneId: this.hostedZoneId,
         environment: parsedEnv,
+        secrets: parsedSecrets,
       },
       { parent: this },
     );

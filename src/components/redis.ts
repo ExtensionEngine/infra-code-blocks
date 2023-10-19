@@ -1,5 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as upstash from '@upstash/pulumi';
+import * as aws from '@pulumi/aws';
 
 export type RedisArgs = {
   /**
@@ -22,9 +23,14 @@ export interface RedisOptions extends pulumi.ComponentResourceOptions {
 
 export class Redis extends pulumi.ComponentResource {
   instance: upstash.RedisDatabase;
+  passwordSecret: aws.secretsmanager.Secret;
+  username = 'default';
 
   constructor(name: string, args: RedisArgs, opts: RedisOptions) {
     super('studion:Redis', name, {}, opts);
+
+    const project = pulumi.getProject();
+    const stack = pulumi.getStack();
 
     const argsWithDefaults = Object.assign({}, defaults, args);
 
@@ -37,6 +43,23 @@ export class Redis extends pulumi.ComponentResource {
         tls: true,
       },
       { provider: opts.provider, parent: this },
+    );
+
+    this.passwordSecret = new aws.secretsmanager.Secret(
+      `${name}-password-secret`,
+      {
+        name: `${stack}/${project}/RedisPassword`,
+      },
+      { parent: this, dependsOn: [this.instance] },
+    );
+
+    const passwordSecretValue = new aws.secretsmanager.SecretVersion(
+      `${name}-password-secret-value`,
+      {
+        secretId: this.passwordSecret.id,
+        secretString: this.instance.password,
+      },
+      { parent: this, dependsOn: [this.passwordSecret] },
     );
 
     this.registerOutputs();
