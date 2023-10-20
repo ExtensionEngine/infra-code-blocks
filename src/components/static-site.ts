@@ -21,6 +21,7 @@ export type StaticSiteArgs = {
 };
 
 export class StaticSite extends pulumi.ComponentResource {
+  name: string;
   certificate: AcmCertificate;
   bucket: aws.s3.Bucket;
   cloudfront: aws.cloudfront.Distribution;
@@ -32,29 +33,47 @@ export class StaticSite extends pulumi.ComponentResource {
   ) {
     super('studion:StaticSite', name, {}, opts);
 
+    this.name = name;
+    const { domain, hostedZoneId, tags } = args;
+    this.certificate = this.createTlsCertificate({ domain, hostedZoneId });
+    this.bucket = this.createPublicBucket({ tags });
+    this.cloudfront = this.createCloudfrontDistribution({ domain, tags });
+    this.createDnsRecord({ domain, hostedZoneId });
+
+    this.registerOutputs();
+  }
+
+  private createTlsCertificate({
+    domain,
+    hostedZoneId,
+  }: Pick<StaticSiteArgs, 'domain' | 'hostedZoneId'>) {
     const certificate = new AcmCertificate(
-      `${args.domain}-acm-certificate`,
+      `${domain}-acm-certificate`,
       {
-        domain: args.domain,
-        hostedZoneId: args.hostedZoneId,
+        domain,
+        hostedZoneId,
       },
       { parent: this },
     );
+    return certificate;
+  }
 
+  private createPublicBucket({ tags }: Pick<StaticSiteArgs, 'tags'>) {
     const bucket = new aws.s3.Bucket(
-      `${name}-bucket`,
+      `${this.name}-bucket`,
       {
+        bucketPrefix: `${this.name}-`,
         website: {
           indexDocument: 'index.html',
           errorDocument: 'index.html',
         },
-        tags: args.tags,
+        tags,
       },
       { parent: this },
     );
 
     const bucketPublicAccessBlock = new aws.s3.BucketPublicAccessBlock(
-      `${name}-bucket-access-block`,
+      `${this.name}-bucket-access-block`,
       {
         bucket: bucket.id,
         blockPublicAcls: false,
@@ -66,7 +85,7 @@ export class StaticSite extends pulumi.ComponentResource {
     );
 
     const siteBucketPolicy = new aws.s3.BucketPolicy(
-      `${name}-bucket-policy`,
+      `${this.name}-bucket-policy`,
       {
         bucket: bucket.bucket,
         policy: bucket.bucket.apply(publicReadPolicy),
@@ -88,24 +107,31 @@ export class StaticSite extends pulumi.ComponentResource {
       };
     }
 
+    return bucket;
+  }
+
+  private createCloudfrontDistribution({
+    domain,
+    tags,
+  }: Pick<StaticSiteArgs, 'domain' | 'tags'>) {
     const cloudfront = new aws.cloudfront.Distribution(
-      `${name}-cloudfront`,
+      `${this.name}-cloudfront`,
       {
         enabled: true,
         defaultRootObject: 'index.html',
-        aliases: [args.domain],
+        aliases: [domain],
         isIpv6Enabled: true,
         waitForDeployment: true,
         httpVersion: 'http2and3',
         viewerCertificate: {
-          acmCertificateArn: certificate.certificate.arn,
+          acmCertificateArn: this.certificate.certificate.arn,
           sslSupportMethod: 'sni-only',
           minimumProtocolVersion: 'TLSv1.2_2021',
         },
         origins: [
           {
-            originId: bucket.arn,
-            domainName: bucket.websiteEndpoint,
+            originId: this.bucket.arn,
+            domainName: this.bucket.websiteEndpoint,
             connectionAttempts: 3,
             connectionTimeout: 10,
             customOriginConfig: {
@@ -117,7 +143,7 @@ export class StaticSite extends pulumi.ComponentResource {
           },
         ],
         defaultCacheBehavior: {
-          targetOriginId: bucket.arn,
+          targetOriginId: this.bucket.arn,
           viewerProtocolPolicy: 'redirect-to-https',
           allowedMethods: ['GET', 'HEAD', 'OPTIONS'],
           cachedMethods: ['GET', 'HEAD', 'OPTIONS'],
@@ -134,31 +160,33 @@ export class StaticSite extends pulumi.ComponentResource {
         restrictions: {
           geoRestriction: { restrictionType: 'none' },
         },
-        tags: args.tags,
+        tags,
       },
       { parent: this },
     );
+    return cloudfront;
+  }
 
+  private createDnsRecord({
+    domain,
+    hostedZoneId,
+  }: Pick<StaticSiteArgs, 'domain' | 'hostedZoneId'>) {
     const cdnAliasRecord = new aws.route53.Record(
-      `${name}-cdn-route53-record`,
+      `${this.name}-cdn-route53-record`,
       {
         type: 'A',
-        name: args.domain,
-        zoneId: args.hostedZoneId,
+        name: domain,
+        zoneId: hostedZoneId,
         aliases: [
           {
-            name: cloudfront.domainName,
-            zoneId: cloudfront.hostedZoneId,
+            name: this.cloudfront.domainName,
+            zoneId: this.cloudfront.hostedZoneId,
             evaluateTargetHealth: true,
           },
         ],
       },
       { parent: this },
     );
-
-    this.certificate = certificate;
-    this.bucket = bucket;
-    this.cloudfront = cloudfront;
-    this.registerOutputs();
+    return cdnAliasRecord;
   }
 }
