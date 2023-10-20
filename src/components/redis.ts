@@ -48,7 +48,7 @@ export class Redis extends pulumi.ComponentResource {
     this.passwordSecret = new aws.secretsmanager.Secret(
       `${name}-password-secret`,
       {
-        namePrefix: `${stack}/${project}/RedisPassword`,
+        namePrefix: `${stack}/${project}/RedisPassword-`,
       },
       { parent: this, dependsOn: [this.instance] },
     );

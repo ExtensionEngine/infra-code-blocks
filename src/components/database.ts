@@ -57,6 +57,7 @@ const defaults = {
 };
 
 export class Database extends pulumi.ComponentResource {
+  name: string;
   instance: aws.rds.Instance;
   kms: aws.kms.Key;
   dbSubnetGroup: aws.rds.SubnetGroup;
@@ -70,39 +71,53 @@ export class Database extends pulumi.ComponentResource {
   ) {
     super('studion:Database', name, {}, opts);
 
-    const project = pulumi.getProject();
-    const stack = pulumi.getStack();
+    this.name = name;
 
-    const argsWithDefaults = Object.assign({}, defaults, args);
+    const { vpc, password } = args;
+    this.dbSubnetGroup = this.createSubnetGroup({ vpc });
+    this.dbSecurityGroup = this.createSecurityGroup({ vpc });
+    this.kms = this.createEncryptionKey();
+    this.passwordSecret = this.createPasswordSecret({ password });
+    this.instance = this.createDatabaseInstance(args);
 
-    this.dbSubnetGroup = new aws.rds.SubnetGroup(
-      `${name}-subnet-group`,
+    this.registerOutputs();
+  }
+
+  private createSubnetGroup({ vpc }: Pick<DatabaseArgs, 'vpc'>) {
+    const dbSubnetGroup = new aws.rds.SubnetGroup(
+      `${this.name}-subnet-group`,
       {
-        subnetIds: argsWithDefaults.vpc.isolatedSubnetIds,
+        subnetIds: vpc.isolatedSubnetIds,
       },
       { parent: this },
     );
+    return dbSubnetGroup;
+  }
 
-    this.dbSecurityGroup = new aws.ec2.SecurityGroup(
-      `${name}-security-group`,
+  private createSecurityGroup({ vpc }: Pick<DatabaseArgs, 'vpc'>) {
+    const dbSecurityGroup = new aws.ec2.SecurityGroup(
+      `${this.name}-security-group`,
       {
-        vpcId: argsWithDefaults.vpc.vpcId,
+        vpcId: vpc.vpcId,
         ingress: [
           {
             protocol: 'tcp',
             fromPort: 5432,
             toPort: 5432,
-            cidrBlocks: [argsWithDefaults.vpc.vpc.cidrBlock],
+            cidrBlocks: [vpc.vpc.cidrBlock],
           },
         ],
       },
       { parent: this },
     );
+    return dbSecurityGroup;
+  }
 
-    this.kms = new aws.kms.Key(
-      `${name}-rds-key`,
+  private createEncryptionKey() {
+    const kms = new aws.kms.Key(
+      `${this.name}-rds-key`,
       {
-        description: `${name} RDS encryption key`,
+        description: `${this.name} RDS encryption key`,
         customerMasterKeySpec: 'SYMMETRIC_DEFAULT',
         isEnabled: true,
         keyUsage: 'ENCRYPT_DECRYPT',
@@ -111,28 +126,39 @@ export class Database extends pulumi.ComponentResource {
       },
       { parent: this },
     );
+    return kms;
+  }
 
-    this.passwordSecret = new aws.secretsmanager.Secret(
-      `${name}-password-secret`,
+  private createPasswordSecret({ password }: Pick<DatabaseArgs, 'password'>) {
+    const project = pulumi.getProject();
+    const stack = pulumi.getStack();
+
+    const passwordSecret = new aws.secretsmanager.Secret(
+      `${this.name}-password-secret`,
       {
-        namePrefix: `${stack}/${project}/DatabasePassword`,
+        namePrefix: `${stack}/${project}/DatabasePassword-`,
       },
       { parent: this },
     );
 
     const passwordSecretValue = new aws.secretsmanager.SecretVersion(
-      `${name}-password-secret-value`,
+      `${this.name}-password-secret-value`,
       {
-        secretId: this.passwordSecret.id,
-        secretString: argsWithDefaults.password,
+        secretId: passwordSecret.id,
+        secretString: password,
       },
-      { parent: this, dependsOn: [this.passwordSecret] },
+      { parent: this, dependsOn: [passwordSecret] },
     );
 
-    this.instance = new aws.rds.Instance(
-      `${name}-rds`,
+    return passwordSecret;
+  }
+
+  private createDatabaseInstance(args: DatabaseArgs) {
+    const argsWithDefaults = Object.assign({}, defaults, args);
+    const instance = new aws.rds.Instance(
+      `${this.name}-rds`,
       {
-        identifier: name,
+        identifierPrefix: `${this.name}-`,
         engine: 'postgres',
         engineVersion: '14.9',
         allocatedStorage: argsWithDefaults.allocatedStorage,
@@ -150,14 +176,13 @@ export class Database extends pulumi.ComponentResource {
         applyImmediately: argsWithDefaults.applyImmediately,
         autoMinorVersionUpgrade: true,
         maintenanceWindow: 'Mon:07:00-Mon:07:30',
-        finalSnapshotIdentifier: `${name}-final-snapshot`,
+        finalSnapshotIdentifier: `${this.name}-final-snapshot`,
         backupWindow: '06:00-06:30',
         backupRetentionPeriod: 14,
         tags: argsWithDefaults.tags,
       },
       { parent: this },
     );
-
-    this.registerOutputs();
+    return instance;
   }
 }
