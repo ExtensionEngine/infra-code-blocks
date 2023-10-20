@@ -78,7 +78,7 @@ export class Database extends pulumi.ComponentResource {
     this.dbSubnetGroup = new aws.rds.SubnetGroup(
       `${name}-subnet-group`,
       {
-        subnetIds: argsWithDefaults.vpc.privateSubnetIds,
+        subnetIds: argsWithDefaults.vpc.isolatedSubnetIds,
       },
       { parent: this },
     );
