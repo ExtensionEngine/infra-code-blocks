@@ -1,6 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
+import { Ec2AMI } from '../constants';
 
 const config = new pulumi.Config('aws');
 const awsRegion = config.require('region');
@@ -86,9 +87,9 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     this.ec2 = new aws.ec2.Instance(
       `${name}-ec2`,
       {
-        ami: 'ami-067d1e60475437da2',
+        ami: Ec2AMI.AmazonLinux2023.ARM,
         associatePublicIpAddress: false,
-        instanceType: 't2.micro',
+        instanceType: 't4g.nano',
         iamInstanceProfile: ssmProfile.name,
         subnetId,
         vpcSecurityGroupIds: [this.ec2SecurityGroup.id],

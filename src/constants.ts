@@ -19,3 +19,9 @@ export const PredefinedSize = {
     memory: MEMORY_1GB * 4, // 4 GB memory
   },
 } as const;
+
+export const Ec2AMI = {
+  AmazonLinux2023: {
+    ARM: 'ami-0b40baa8c6b882e6c',
+  },
+};

@@ -53,7 +53,7 @@ const defaults = {
   skipFinalSnapshot: false,
   allocatedStorage: 20,
   maxAllocatedStorage: 100,
-  instanceClass: 'db.t3.micro',
+  instanceClass: 'db.t4g.micro',
 };
 
 export class Database extends pulumi.ComponentResource {
