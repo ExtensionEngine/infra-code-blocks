@@ -98,6 +98,11 @@ export class Project extends pulumi.ComponentResource {
         numberOfAvailabilityZones: 2,
         enableDnsHostnames: true,
         enableDnsSupport: true,
+        subnetSpecs: [
+          { type: awsx.ec2.SubnetType.Public, cidrMask: 24 },
+          { type: awsx.ec2.SubnetType.Private, cidrMask: 24 },
+          { type: awsx.ec2.SubnetType.Isolated, cidrMask: 24 },
+        ],
       },
       { parent: this },
     );
