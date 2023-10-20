@@ -35,6 +35,12 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
         ingress: [
           {
             protocol: 'tcp',
+            fromPort: 22,
+            toPort: 22,
+            cidrBlocks: [args.vpc.vpc.cidrBlock],
+          },
+          {
+            protocol: 'tcp',
             fromPort: 443,
             toPort: 443,
             cidrBlocks: [args.vpc.vpc.cidrBlock],
