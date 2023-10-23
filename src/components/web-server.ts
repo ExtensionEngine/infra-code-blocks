@@ -244,7 +244,7 @@ export class WebServer extends pulumi.ComponentResource {
     const lbTargetGroup = new aws.lb.TargetGroup(
       `${this.name}-lb-tg`,
       {
-        namePrefix: `${this.name}-lb-tg-`,
+        namePrefix: 'lb-tg-',
         port,
         protocol: 'HTTP',
         targetType: 'ip',
@@ -256,7 +256,7 @@ export class WebServer extends pulumi.ComponentResource {
           timeout: 5,
           path: healtCheckPath || defaults.healtCheckPath,
         },
-        tags: commonTags,
+        tags: { ...commonTags, Name: `${this.name}-lb-target-group` },
       },
       { parent: this, dependsOn: [this.lb] },
     );
