@@ -138,7 +138,7 @@ export class Project extends pulumi.ComponentResource {
     this.cluster = new aws.ecs.Cluster(
       `${this.name}-cluster`,
       {
-        name: `${stack}.${this.name}`,
+        name: `${this.name}-${stack}`,
         tags: commonTags,
       },
       { parent: this },

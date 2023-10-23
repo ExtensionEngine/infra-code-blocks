@@ -397,7 +397,7 @@ export class WebServer extends pulumi.ComponentResource {
     const taskDefinition = new aws.ecs.TaskDefinition(
       `${this.name}-task-definition`,
       {
-        family: `${stack}.${this.name}-task-definition`,
+        family: `${this.name}-task-definition-${stack}`,
         networkMode: 'awsvpc',
         executionRoleArn: taskExecutionRole.arn,
         taskRoleArn: taskRole.arn,

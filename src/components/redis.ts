@@ -38,7 +38,7 @@ export class Redis extends pulumi.ComponentResource {
     this.instance = new upstash.RedisDatabase(
       name,
       {
-        databaseName: `${stack}.${argsWithDefaults.dbName}`,
+        databaseName: `${argsWithDefaults.dbName}-${stack}`,
         region: argsWithDefaults.region,
         eviction: true,
         tls: true,
