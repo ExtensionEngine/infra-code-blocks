@@ -230,13 +230,13 @@ export class WebServer extends pulumi.ComponentResource {
     const lb = new aws.lb.LoadBalancer(
       `${this.name}-lb`,
       {
-        namePrefix: `${this.name}-lb-`,
+        namePrefix: 'lb-',
         loadBalancerType: 'application',
         subnets: vpc.publicSubnetIds,
         securityGroups: [lbSecurityGroup.id],
         internal: false,
         ipAddressType: 'ipv4',
-        tags: commonTags,
+        tags: { ...commonTags, Name: `${this.name}-lb` },
       },
       { parent: this },
     );
