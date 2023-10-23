@@ -264,7 +264,7 @@ export class WebServer extends pulumi.ComponentResource {
     const lbHttpListener = new aws.lb.Listener(
       `${this.name}-lb-listener-80`,
       {
-        loadBalancerArn: this.lb.arn,
+        loadBalancerArn: lb.arn,
         port: 80,
         defaultActions: [
           {
@@ -292,7 +292,7 @@ export class WebServer extends pulumi.ComponentResource {
         defaultActions: [
           {
             type: 'forward',
-            targetGroupArn: this.lbTargetGroup.arn,
+            targetGroupArn: lbTargetGroup.arn,
           },
         ],
         tags: commonTags,
