@@ -1,6 +1,7 @@
 import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
 import { AcmCertificate } from './acm-certificate';
+import { commonTags } from '../constants';
 
 export type StaticSiteArgs = {
   /**
@@ -67,7 +68,7 @@ export class StaticSite extends pulumi.ComponentResource {
           indexDocument: 'index.html',
           errorDocument: 'index.html',
         },
-        tags,
+        tags: { ...commonTags, ...tags },
       },
       { parent: this },
     );
@@ -160,7 +161,7 @@ export class StaticSite extends pulumi.ComponentResource {
         restrictions: {
           geoRestriction: { restrictionType: 'none' },
         },
-        tags,
+        tags: { ...commonTags, ...tags },
       },
       { parent: this },
     );

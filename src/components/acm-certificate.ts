@@ -1,5 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
+import { commonTags } from '../constants';
 
 export type AcmCertificateArgs = {
   domain: pulumi.Input<string>;
@@ -18,7 +19,7 @@ export class AcmCertificate extends pulumi.ComponentResource {
 
     this.certificate = new aws.acm.Certificate(
       `${args.domain}-certificate`,
-      { domainName: args.domain, validationMethod: 'DNS' },
+      { domainName: args.domain, validationMethod: 'DNS', tags: commonTags },
       { parent: this },
     );
 

@@ -500,9 +500,4 @@ const project = new studion.Project('demo-project', {
 
 - [ ] Add worker service for executing tasks
 - [ ] Add MongoDB service
-- [x] reduce ec2 security group rules and change cidr block to be within VPC
-- [x] change db private subnet ids to isolated subnet ids
-- [x] change default instance classes to t4g
-- [x] extract ami images/ instance classes, etc...
-- [x] remove duplicated types
-- [ ] extract constructor code to private methods...
+- [ ] Enable RDS password rotation

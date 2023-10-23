@@ -2,7 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 import { CustomSize, Size } from '../types/size';
-import { PredefinedSize } from '../constants';
+import { PredefinedSize, commonTags } from '../constants';
 import { ContainerDefinition } from '@pulumi/aws/ecs';
 import { AcmCertificate } from './acm-certificate';
 
@@ -184,6 +184,7 @@ export class WebServer extends pulumi.ComponentResource {
       {
         retentionInDays: 14,
         namePrefix: `/ecs/${this.name}-`,
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -221,6 +222,7 @@ export class WebServer extends pulumi.ComponentResource {
             cidrBlocks: ['0.0.0.0/0'],
           },
         ],
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -234,6 +236,7 @@ export class WebServer extends pulumi.ComponentResource {
         securityGroups: [lbSecurityGroup.id],
         internal: false,
         ipAddressType: 'ipv4',
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -253,6 +256,7 @@ export class WebServer extends pulumi.ComponentResource {
           timeout: 5,
           path: healtCheckPath || defaults.healtCheckPath,
         },
+        tags: commonTags,
       },
       { parent: this, dependsOn: [this.lb] },
     );
@@ -272,6 +276,7 @@ export class WebServer extends pulumi.ComponentResource {
             },
           },
         ],
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -290,6 +295,7 @@ export class WebServer extends pulumi.ComponentResource {
             targetGroupArn: this.lbTargetGroup.arn,
           },
         ],
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -334,6 +340,7 @@ export class WebServer extends pulumi.ComponentResource {
           secretManagerSecretsInlinePolicy,
           ...argsWithDefaults.taskExecutionRoleInlinePolicies,
         ],
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -367,6 +374,7 @@ export class WebServer extends pulumi.ComponentResource {
           execCmdInlinePolicy,
           ...argsWithDefaults.taskRoleInlinePolicies,
         ],
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -441,7 +449,7 @@ export class WebServer extends pulumi.ComponentResource {
               ] as ContainerDefinition[]);
             },
           ),
-        tags: argsWithDefaults.tags,
+        tags: { ...commonTags, ...argsWithDefaults.tags },
       },
       { parent: this },
     );
@@ -472,6 +480,7 @@ export class WebServer extends pulumi.ComponentResource {
             cidrBlocks: ['0.0.0.0/0'],
           },
         ],
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -497,7 +506,7 @@ export class WebServer extends pulumi.ComponentResource {
           subnets: argsWithDefaults.vpc.publicSubnetIds,
           securityGroups: [serviceSecurityGroup.id],
         },
-        tags: argsWithDefaults.tags,
+        tags: { ...commonTags, ...argsWithDefaults.tags },
       },
       {
         parent: this,
@@ -545,6 +554,7 @@ export class WebServer extends pulumi.ComponentResource {
         resourceId: pulumi.interpolate`service/${argsWithDefaults.cluster.name}/${this.service.name}`,
         serviceNamespace: 'ecs',
         scalableDimension: 'ecs:service:DesiredCount',
+        tags: commonTags,
       },
       { parent: this },
     );

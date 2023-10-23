@@ -1,6 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as upstash from '@upstash/pulumi';
 import * as aws from '@pulumi/aws';
+import { commonTags } from '../constants';
 
 export type RedisArgs = {
   /**
@@ -49,6 +50,7 @@ export class Redis extends pulumi.ComponentResource {
       `${name}-password-secret`,
       {
         namePrefix: `${stack}/${project}/RedisPassword-`,
+        tags: commonTags,
       },
       { parent: this, dependsOn: [this.instance] },
     );

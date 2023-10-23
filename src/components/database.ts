@@ -1,6 +1,7 @@
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 import * as pulumi from '@pulumi/pulumi';
+import { commonTags } from '../constants';
 
 export type DatabaseArgs = {
   /**
@@ -88,6 +89,7 @@ export class Database extends pulumi.ComponentResource {
       `${this.name}-subnet-group`,
       {
         subnetIds: vpc.isolatedSubnetIds,
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -107,6 +109,7 @@ export class Database extends pulumi.ComponentResource {
             cidrBlocks: [vpc.vpc.cidrBlock],
           },
         ],
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -123,6 +126,7 @@ export class Database extends pulumi.ComponentResource {
         keyUsage: 'ENCRYPT_DECRYPT',
         multiRegion: false,
         enableKeyRotation: true,
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -137,6 +141,7 @@ export class Database extends pulumi.ComponentResource {
       `${this.name}-password-secret`,
       {
         namePrefix: `${stack}/${project}/DatabasePassword-`,
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -179,7 +184,7 @@ export class Database extends pulumi.ComponentResource {
         finalSnapshotIdentifier: `${this.name}-final-snapshot`,
         backupWindow: '06:00-06:30',
         backupRetentionPeriod: 14,
-        tags: argsWithDefaults.tags,
+        tags: { ...commonTags, ...argsWithDefaults.tags },
       },
       { parent: this },
     );

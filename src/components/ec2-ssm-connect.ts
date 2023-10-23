@@ -1,7 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
-import { Ec2AMI } from '../constants';
+import { Ec2AMI, commonTags } from '../constants';
 
 const config = new pulumi.Config('aws');
 const awsRegion = config.require('region');
@@ -50,6 +50,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
           { protocol: '-1', fromPort: 0, toPort: 0, cidrBlocks: ['0.0.0.0/0'] },
         ],
         vpcId: args.vpc.vpcId,
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -69,6 +70,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
             },
           ],
         },
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -86,6 +88,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
       `${name}-ssm-profile`,
       {
         role: role.name,
+        tags: commonTags,
       },
       { parent: this, dependsOn: [ssmPolicyAttachment] },
     );
@@ -100,6 +103,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
         subnetId,
         vpcSecurityGroupIds: [this.ec2SecurityGroup.id],
         tags: {
+          ...commonTags,
           Name: `${name}-ec2`,
           ...args.tags,
         },
@@ -117,6 +121,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
         subnetIds: [subnetId],
         securityGroupIds: [this.ec2SecurityGroup.id],
         privateDnsEnabled: true,
+        tags: commonTags,
       },
       { parent: this, dependsOn: [this.ec2] },
     );
@@ -131,6 +136,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
         subnetIds: [subnetId],
         securityGroupIds: [this.ec2SecurityGroup.id],
         privateDnsEnabled: true,
+        tags: commonTags,
       },
       { parent: this, dependsOn: [this.ec2] },
     );
@@ -145,6 +151,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
         subnetIds: [subnetId],
         securityGroupIds: [this.ec2SecurityGroup.id],
         privateDnsEnabled: true,
+        tags: commonTags,
       },
       { parent: this, dependsOn: [this.ec2] },
     );

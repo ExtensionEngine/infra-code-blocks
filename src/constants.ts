@@ -1,3 +1,5 @@
+import * as pulumi from '@pulumi/pulumi';
+
 const CPU_1_VCPU = 1024;
 const MEMORY_1GB = 1024;
 
@@ -24,4 +26,9 @@ export const Ec2AMI = {
   AmazonLinux2023: {
     ARM: 'ami-0b40baa8c6b882e6c',
   },
+};
+
+export const commonTags = {
+  Env: pulumi.getStack(),
+  Project: pulumi.getProject(),
 };

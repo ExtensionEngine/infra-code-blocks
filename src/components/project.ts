@@ -7,6 +7,7 @@ import { WebServer, WebServerArgs } from './web-server';
 import { Redis, RedisArgs } from './redis';
 import { StaticSite, StaticSiteArgs } from './static-site';
 import { Ec2SSMConnect } from './ec2-ssm-connect';
+import { commonTags } from '../constants';
 
 export type Service = Database | Redis | StaticSite | WebServer;
 export type Services = Record<string, Service>;
@@ -103,6 +104,7 @@ export class Project extends pulumi.ComponentResource {
           { type: awsx.ec2.SubnetType.Private, cidrMask: 24 },
           { type: awsx.ec2.SubnetType.Isolated, cidrMask: 24 },
         ],
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -136,6 +138,7 @@ export class Project extends pulumi.ComponentResource {
       `${this.name}-cluster`,
       {
         name: this.name,
+        tags: commonTags,
       },
       { parent: this },
     );
