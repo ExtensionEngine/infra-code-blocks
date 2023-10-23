@@ -160,6 +160,7 @@ export class Database extends pulumi.ComponentResource {
 
   private createDatabaseInstance(args: DatabaseArgs) {
     const argsWithDefaults = Object.assign({}, defaults, args);
+    const stack = pulumi.getStack();
     const instance = new aws.rds.Instance(
       `${this.name}-rds`,
       {
@@ -181,7 +182,7 @@ export class Database extends pulumi.ComponentResource {
         applyImmediately: argsWithDefaults.applyImmediately,
         autoMinorVersionUpgrade: true,
         maintenanceWindow: 'Mon:07:00-Mon:07:30',
-        finalSnapshotIdentifier: `${this.name}-final-snapshot`,
+        finalSnapshotIdentifier: `${this.name}-final-snapshot-${stack}`,
         backupWindow: '06:00-06:30',
         backupRetentionPeriod: 14,
         tags: { ...commonTags, ...argsWithDefaults.tags },
