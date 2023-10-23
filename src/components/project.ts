@@ -134,10 +134,11 @@ export class Project extends pulumi.ComponentResource {
   }
 
   private createWebServerPrerequisites() {
+    const stack = pulumi.getStack();
     this.cluster = new aws.ecs.Cluster(
       `${this.name}-cluster`,
       {
-        name: this.name,
+        name: `${stack}.${this.name}`,
         tags: commonTags,
       },
       { parent: this },

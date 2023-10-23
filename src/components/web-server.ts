@@ -311,6 +311,7 @@ export class WebServer extends pulumi.ComponentResource {
 
   private createTaskDefinition(args: WebServerArgs) {
     const argsWithDefaults = Object.assign({}, defaults, args);
+    const stack = pulumi.getStack();
 
     const secretManagerSecretsInlinePolicy = {
       name: `${this.name}-secret-manager-access`,
@@ -396,7 +397,7 @@ export class WebServer extends pulumi.ComponentResource {
     const taskDefinition = new aws.ecs.TaskDefinition(
       `${this.name}-task-definition`,
       {
-        family: `${this.name}-task-definition`,
+        family: `${stack}.${this.name}-task-definition`,
         networkMode: 'awsvpc',
         executionRoleArn: taskExecutionRole.arn,
         taskRoleArn: taskRole.arn,
