@@ -284,7 +284,7 @@ export class WebServer extends pulumi.ComponentResource {
     const lbTlsListener = new aws.lb.Listener(
       `${this.name}-lb-listener-443`,
       {
-        loadBalancerArn: this.lb.arn,
+        loadBalancerArn: lb.arn,
         port: 443,
         protocol: 'HTTPS',
         sslPolicy: 'ELBSecurityPolicy-2016-08',
