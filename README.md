@@ -4,9 +4,14 @@ Studion Platform common infra components.
 
 ## Table of Contents
 
-1. [Installation](#installation)
-2. [Usage](#usage)
-3. [API](#api)
+1. [Prerequisites](#prerequisites)
+2. [Installation](#installation)
+3. [Usage](#usage)
+4. [API](#api)
+
+## Prerequisites
+
+- Working [Pulumi](https://www.pulumi.com/docs/get-started/) project
 
 ## Installation
 
@@ -40,6 +45,12 @@ const project = new studion.Project('demo-project', {
 });
 
 export const projectName = project.name;
+```
+
+- Deploy pulumi stack
+
+```bash
+$ pulumi up
 ```
 
 ## API
