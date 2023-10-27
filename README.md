@@ -11,7 +11,7 @@ Studion Platform common infra components.
 
 ## Prerequisites
 
-- Working [Pulumi](https://www.pulumi.com/docs/get-started/) project
+- Working [Pulumi](https://www.pulumi.com/docs/clouds/aws/get-started/begin/#pulumi-aws-before-you-begin) project
 - AWS account with neccessary permissions for each studion component
 
 ## Installation
