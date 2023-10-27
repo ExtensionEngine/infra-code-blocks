@@ -12,6 +12,7 @@ Studion Platform common infra components.
 ## Prerequisites
 
 - Working [Pulumi](https://www.pulumi.com/docs/get-started/) project
+- AWS account with neccessary permissions for each studion component
 
 ## Installation
 
@@ -94,7 +95,7 @@ type ProjectArgs = {
 | Argument         |                                                                         Description                                                                          |
 | :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | services \*      |                                                                        Service list.                                                                         |
-| hostedZoneId     |                                           Route53 hosted zone ID responsible for managing records for the domain.                                            |
+| hostedZoneId     |                     Route53 hosted zone ID responsible for managing records for the domain. Required for 'STATIC_SITE' and 'WEB_SERVER'                      |
 | enableSSMConnect | Setup ec2 instance and SSM in order to connect to the database in the private subnet. Please refer to the [SSM Connect](#ssm-connect) section for more info. |
 
 ```ts
