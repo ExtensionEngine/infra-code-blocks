@@ -4,9 +4,15 @@ Studion Platform common infra components.
 
 ## Table of Contents
 
-1. [Installation](#installation)
-2. [Usage](#usage)
-3. [API](#api)
+1. [Prerequisites](#prerequisites)
+2. [Installation](#installation)
+3. [Usage](#usage)
+4. [API](#api)
+
+## Prerequisites
+
+- Working [Pulumi](https://www.pulumi.com/docs/clouds/aws/get-started/begin/#pulumi-aws-before-you-begin) project
+- AWS account with neccessary permissions for each studion component
 
 ## Installation
 
@@ -40,6 +46,12 @@ const project = new studion.Project('demo-project', {
 });
 
 export const projectName = project.name;
+```
+
+- Deploy pulumi stack
+
+```bash
+$ pulumi up
 ```
 
 ## API
@@ -83,7 +95,7 @@ type ProjectArgs = {
 | Argument         |                                                                         Description                                                                          |
 | :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | services \*      |                                                                        Service list.                                                                         |
-| hostedZoneId     |                                           Route53 hosted zone ID responsible for managing records for the domain.                                            |
+| hostedZoneId     |                     Route53 hosted zone ID responsible for managing records for the domain. Required for 'STATIC_SITE' and 'WEB_SERVER'                      |
 | enableSSMConnect | Setup ec2 instance and SSM in order to connect to the database in the private subnet. Please refer to the [SSM Connect](#ssm-connect) section for more info. |
 
 ```ts
