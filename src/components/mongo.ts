@@ -33,7 +33,7 @@ type RoleInlinePolicy = {
   policy?: pulumi.Input<string>;
 };
 
-export type MongoServerArgs = {
+export type MongoArgs = {
   /**
    * The ECR image used to start a container.
    */
@@ -110,7 +110,7 @@ const defaults = {
   taskRoleInlinePolicies: [],
 };
 
-export class MongoServer extends pulumi.ComponentResource {
+export class Mongo extends pulumi.ComponentResource {
   name: string;
   logGroup: aws.cloudwatch.LogGroup;
   taskDefinition: aws.ecs.TaskDefinition;
@@ -120,10 +120,10 @@ export class MongoServer extends pulumi.ComponentResource {
 
   constructor(
     name: string,
-    args: MongoServerArgs,
+    args: MongoArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:MongoServer', name, {}, opts);
+    super('studion:Mongo', name, {}, opts);
 
     this.name = name;
     this.logGroup = this.createLogGroup();
@@ -149,7 +149,7 @@ export class MongoServer extends pulumi.ComponentResource {
     return logGroup;
   }
 
-  private createSecurityGroup(args: MongoServerArgs) {
+  private createSecurityGroup(args: MongoArgs) {
     const argsWithDefaults = Object.assign({}, defaults, args);
     return new aws.ec2.SecurityGroup(
       `${this.name}-security-group`,
@@ -177,7 +177,7 @@ export class MongoServer extends pulumi.ComponentResource {
     );
   }
 
-  private createMountTarget(args: MongoServerArgs) {
+  private createMountTarget(args: MongoArgs) {
     const efs = new aws.efs.FileSystem(`${this.name}-efs`, {
       tags: {
         Name: `${this.name}-data`,
@@ -191,7 +191,7 @@ export class MongoServer extends pulumi.ComponentResource {
     });
   }
 
-  private createTaskDefinition(args: MongoServerArgs) {
+  private createTaskDefinition(args: MongoArgs) {
     const argsWithDefaults = Object.assign({}, defaults, args);
     const stack = pulumi.getStack();
 
@@ -355,7 +355,7 @@ export class MongoServer extends pulumi.ComponentResource {
     return taskDefinition;
   }
 
-  private createEcsService(args: MongoServerArgs) {
+  private createEcsService(args: MongoArgs) {
     const argsWithDefaults = Object.assign({}, defaults, args);
 
     const service = new aws.ecs.Service(

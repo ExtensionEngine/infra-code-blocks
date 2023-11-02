@@ -4,13 +4,13 @@ import * as awsx from '@pulumi/awsx';
 import * as upstash from '@upstash/pulumi';
 import { Database, DatabaseArgs } from './database';
 import { WebServer, WebServerArgs } from './web-server';
-import { MongoServer, MongoServerArgs } from './mongo-server';
+import { Mongo, MongoArgs } from './mongo';
 import { Redis, RedisArgs } from './redis';
 import { StaticSite, StaticSiteArgs } from './static-site';
 import { Ec2SSMConnect } from './ec2-ssm-connect';
 import { commonTags } from '../constants';
 
-export type Service = Database | Redis | StaticSite | WebServer | MongoServer;
+export type Service = Database | Redis | StaticSite | WebServer | Mongo;
 export type Services = Record<string, Service>;
 
 type ServiceArgs = {
@@ -41,14 +41,14 @@ export type WebServerService = {
     'cluster' | 'vpc' | 'hostedZoneId' | 'environment' | 'secrets'
   >;
 
-export type MongoServerService = {
+export type MongoService = {
   type: 'MONGO';
   environment?:
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
   secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
 } & ServiceArgs &
-  Omit<MongoServerArgs, 'cluster' | 'vpc' | 'environment' | 'secrets'>;
+  Omit<MongoArgs, 'cluster' | 'vpc' | 'environment' | 'secrets'>;
 
 export type ProjectArgs = {
   services: (
@@ -56,7 +56,7 @@ export type ProjectArgs = {
     | RedisService
     | StaticSiteService
     | WebServerService
-    | MongoServerService
+    | MongoService
   )[];
   hostedZoneId?: pulumi.Input<string>;
   enableSSMConnect?: pulumi.Input<boolean>;
@@ -124,17 +124,17 @@ export class Project extends pulumi.ComponentResource {
 
   private createServices(services: ProjectArgs['services']) {
     const hasRedisService = services.some(it => it.type === 'REDIS');
-    const hasWebServerService = services.some(
-      it => it.type === 'WEB_SERVER' || it.type === 'MONGO',
-    );
+    const shouldCreateCluster =
+      services.some(it => it.type === 'WEB_SERVER' || it.type === 'MONGO') &&
+      !this.cluster;
     if (hasRedisService) this.createRedisPrerequisites();
-    if (hasWebServerService) this.createWebServerPrerequisites();
+    if (shouldCreateCluster) this.createCluster();
     services.forEach(it => {
       if (it.type === 'DATABASE') this.createDatabaseService(it);
       if (it.type === 'REDIS') this.createRedisService(it);
       if (it.type === 'STATIC_SITE') this.createStaticSiteService(it);
       if (it.type === 'WEB_SERVER') this.createWebServerService(it);
-      if (it.type === 'MONGO') this.createMongoServerService(it);
+      if (it.type === 'MONGO') this.createMongoService(it);
     });
   }
 
@@ -147,7 +147,7 @@ export class Project extends pulumi.ComponentResource {
     });
   }
 
-  private createWebServerPrerequisites() {
+  private createCluster() {
     const stack = pulumi.getStack();
     this.cluster = new aws.ecs.Cluster(
       `${this.name}-cluster`,
@@ -224,7 +224,7 @@ export class Project extends pulumi.ComponentResource {
     this.services[options.serviceName] = service;
   }
 
-  private createMongoServerService(options: MongoServerService) {
+  private createMongoService(options: MongoService) {
     if (!this.cluster) return;
 
     const { serviceName, environment, secrets, ...ecsOptions } = options;
@@ -236,7 +236,7 @@ export class Project extends pulumi.ComponentResource {
     const parsedSecrets =
       typeof secrets === 'function' ? secrets(this.services) : secrets;
 
-    const service = new MongoServer(
+    const service = new Mongo(
       serviceName,
       {
         ...ecsOptions,
