@@ -4,12 +4,13 @@ import * as awsx from '@pulumi/awsx';
 import * as upstash from '@upstash/pulumi';
 import { Database, DatabaseArgs } from './database';
 import { WebServer, WebServerArgs } from './web-server';
+import { MongoServer, MongoServerArgs } from './mongo-server';
 import { Redis, RedisArgs } from './redis';
 import { StaticSite, StaticSiteArgs } from './static-site';
 import { Ec2SSMConnect } from './ec2-ssm-connect';
 import { commonTags } from '../constants';
 
-export type Service = Database | Redis | StaticSite | WebServer;
+export type Service = Database | Redis | StaticSite | WebServer | MongoServer;
 export type Services = Record<string, Service>;
 
 type ServiceArgs = {
@@ -40,12 +41,22 @@ export type WebServerService = {
     'cluster' | 'vpc' | 'hostedZoneId' | 'environment' | 'secrets'
   >;
 
+export type MongoServerService = {
+  type: 'MONGO_SERVER';
+  environment?:
+    | aws.ecs.KeyValuePair[]
+    | ((services: Services) => aws.ecs.KeyValuePair[]);
+  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
+} & ServiceArgs &
+  Omit<MongoServerArgs, 'cluster' | 'vpc' | 'environment' | 'secrets'>;
+
 export type ProjectArgs = {
   services: (
     | DatabaseService
     | RedisService
     | StaticSiteService
     | WebServerService
+    | MongoServerService
   )[];
   hostedZoneId?: pulumi.Input<string>;
   enableSSMConnect?: pulumi.Input<boolean>;
@@ -113,7 +124,9 @@ export class Project extends pulumi.ComponentResource {
 
   private createServices(services: ProjectArgs['services']) {
     const hasRedisService = services.some(it => it.type === 'REDIS');
-    const hasWebServerService = services.some(it => it.type === 'WEB_SERVER');
+    const hasWebServerService = services.some(
+      it => it.type === 'WEB_SERVER' || it.type === 'MONGO_SERVER',
+    );
     if (hasRedisService) this.createRedisPrerequisites();
     if (hasWebServerService) this.createWebServerPrerequisites();
     services.forEach(it => {
@@ -121,6 +134,7 @@ export class Project extends pulumi.ComponentResource {
       if (it.type === 'REDIS') this.createRedisService(it);
       if (it.type === 'STATIC_SITE') this.createStaticSiteService(it);
       if (it.type === 'WEB_SERVER') this.createWebServerService(it);
+      if (it.type === 'MONGO_SERVER') this.createMongoServerService(it);
     });
   }
 
@@ -202,6 +216,32 @@ export class Project extends pulumi.ComponentResource {
         cluster: this.cluster,
         vpc: this.vpc,
         hostedZoneId: this.hostedZoneId,
+        environment: parsedEnv,
+        secrets: parsedSecrets,
+      },
+      { parent: this },
+    );
+    this.services[options.serviceName] = service;
+  }
+
+  private createMongoServerService(options: MongoServerService) {
+    if (!this.cluster) return;
+
+    const { serviceName, environment, secrets, ...ecsOptions } = options;
+    const parsedEnv =
+      typeof environment === 'function'
+        ? environment(this.services)
+        : environment;
+
+    const parsedSecrets =
+      typeof secrets === 'function' ? secrets(this.services) : secrets;
+
+    const service = new MongoServer(
+      serviceName,
+      {
+        ...ecsOptions,
+        cluster: this.cluster,
+        vpc: this.vpc,
         environment: parsedEnv,
         secrets: parsedSecrets,
       },
