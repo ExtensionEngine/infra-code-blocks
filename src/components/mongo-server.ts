@@ -114,6 +114,8 @@ export class MongoServer extends pulumi.ComponentResource {
   name: string;
   logGroup: aws.cloudwatch.LogGroup;
   taskDefinition: aws.ecs.TaskDefinition;
+  serviceSecurityGroup: aws.ec2.SecurityGroup;
+  mountTarget: aws.efs.MountTarget;
   service: aws.ecs.Service;
 
   constructor(
@@ -126,6 +128,8 @@ export class MongoServer extends pulumi.ComponentResource {
     this.name = name;
     this.logGroup = this.createLogGroup();
 
+    this.serviceSecurityGroup = this.createSecurityGroup(args);
+    this.mountTarget = this.createMountTarget(args);
     this.taskDefinition = this.createTaskDefinition(args);
     this.service = this.createEcsService(args);
 
@@ -143,6 +147,48 @@ export class MongoServer extends pulumi.ComponentResource {
       { parent: this },
     );
     return logGroup;
+  }
+
+  private createSecurityGroup(args: MongoServerArgs) {
+    const argsWithDefaults = Object.assign({}, defaults, args);
+    return new aws.ec2.SecurityGroup(
+      `${this.name}-security-group`,
+      {
+        vpcId: argsWithDefaults.vpc.vpcId,
+        ingress: [
+          {
+            fromPort: 0,
+            toPort: 0,
+            protocol: '-1',
+            cidrBlocks: ['0.0.0.0/0'],
+          },
+        ],
+        egress: [
+          {
+            fromPort: 0,
+            toPort: 0,
+            protocol: '-1',
+            cidrBlocks: ['0.0.0.0/0'],
+          },
+        ],
+        tags: commonTags,
+      },
+      { parent: this },
+    );
+  }
+
+  private createMountTarget(args: MongoServerArgs) {
+    const efs = new aws.efs.FileSystem(`${this.name}-efs`, {
+      tags: {
+        Name: `${this.name}-data`,
+      },
+    });
+
+    return new aws.efs.MountTarget(`${this.name}-mount-target`, {
+      fileSystemId: efs.id,
+      subnetId: args.vpc.publicSubnetIds[0],
+      securityGroups: [this.serviceSecurityGroup.id],
+    });
   }
 
   private createTaskDefinition(args: MongoServerArgs) {
@@ -272,6 +318,12 @@ export class MongoServer extends pulumi.ComponentResource {
                       protocol: 'tcp',
                     },
                   ],
+                  mountPoints: [
+                    {
+                      containerPath: '/data/db',
+                      sourceVolume: `${this.name}-volume`,
+                    },
+                  ],
                   logConfiguration: {
                     logDriver: 'awslogs',
                     options: {
@@ -286,6 +338,15 @@ export class MongoServer extends pulumi.ComponentResource {
               ] as ContainerDefinition[]);
             },
           ),
+        volumes: [
+          {
+            name: `${this.name}-volume`,
+            efsVolumeConfiguration: {
+              fileSystemId: this.mountTarget.fileSystemId,
+              transitEncryption: 'ENABLED',
+            },
+          },
+        ],
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
       { parent: this },
@@ -296,31 +357,6 @@ export class MongoServer extends pulumi.ComponentResource {
 
   private createEcsService(args: MongoServerArgs) {
     const argsWithDefaults = Object.assign({}, defaults, args);
-
-    const serviceSecurityGroup = new aws.ec2.SecurityGroup(
-      `${this.name}-security-group`,
-      {
-        vpcId: argsWithDefaults.vpc.vpcId,
-        ingress: [
-          {
-            fromPort: 0,
-            toPort: 0,
-            protocol: '-1',
-            cidrBlocks: ['0.0.0.0/0'],
-          },
-        ],
-        egress: [
-          {
-            fromPort: 0,
-            toPort: 0,
-            protocol: '-1',
-            cidrBlocks: ['0.0.0.0/0'],
-          },
-        ],
-        tags: commonTags,
-      },
-      { parent: this },
-    );
 
     const service = new aws.ecs.Service(
       `${this.name}-service`,
@@ -334,7 +370,7 @@ export class MongoServer extends pulumi.ComponentResource {
         networkConfiguration: {
           assignPublicIp: true,
           subnets: argsWithDefaults.vpc.publicSubnetIds,
-          securityGroups: [serviceSecurityGroup.id],
+          securityGroups: [this.serviceSecurityGroup.id],
         },
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
