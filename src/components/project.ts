@@ -42,7 +42,7 @@ export type WebServerService = {
   >;
 
 export type MongoServerService = {
-  type: 'MONGO_SERVER';
+  type: 'MONGO';
   environment?:
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
@@ -125,7 +125,7 @@ export class Project extends pulumi.ComponentResource {
   private createServices(services: ProjectArgs['services']) {
     const hasRedisService = services.some(it => it.type === 'REDIS');
     const hasWebServerService = services.some(
-      it => it.type === 'WEB_SERVER' || it.type === 'MONGO_SERVER',
+      it => it.type === 'WEB_SERVER' || it.type === 'MONGO',
     );
     if (hasRedisService) this.createRedisPrerequisites();
     if (hasWebServerService) this.createWebServerPrerequisites();
@@ -134,7 +134,7 @@ export class Project extends pulumi.ComponentResource {
       if (it.type === 'REDIS') this.createRedisService(it);
       if (it.type === 'STATIC_SITE') this.createStaticSiteService(it);
       if (it.type === 'WEB_SERVER') this.createWebServerService(it);
-      if (it.type === 'MONGO_SERVER') this.createMongoServerService(it);
+      if (it.type === 'MONGO') this.createMongoServerService(it);
     });
   }
 
