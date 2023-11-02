@@ -128,7 +128,6 @@ export class MongoServer extends pulumi.ComponentResource {
 
     this.taskDefinition = this.createTaskDefinition(args);
     this.service = this.createEcsService(args);
-    this.enableAutoscaling(args);
 
     this.registerOutputs();
   }
@@ -307,7 +306,7 @@ export class MongoServer extends pulumi.ComponentResource {
             fromPort: 0,
             toPort: 0,
             protocol: '-1',
-            securityGroups: [this.lbSecurityGroup.id],
+            cidrBlocks: ['0.0.0.0/0'],
           },
         ],
         egress: [
@@ -345,56 +344,5 @@ export class MongoServer extends pulumi.ComponentResource {
       },
     );
     return service;
-  }
-
-  private enableAutoscaling(args: MongoServerArgs) {
-    const argsWithDefaults = Object.assign({}, defaults, args);
-
-    const autoscalingTarget = new aws.appautoscaling.Target(
-      `${this.name}-autoscale-target`,
-      {
-        minCapacity: argsWithDefaults.minCount,
-        maxCapacity: argsWithDefaults.maxCount,
-        resourceId: pulumi.interpolate`service/${argsWithDefaults.cluster.name}/${this.service.name}`,
-        serviceNamespace: 'ecs',
-        scalableDimension: 'ecs:service:DesiredCount',
-        tags: commonTags,
-      },
-      { parent: this },
-    );
-
-    const memoryAutoscalingPolicy = new aws.appautoscaling.Policy(
-      `${this.name}-memory-autoscale-policy`,
-      {
-        policyType: 'TargetTrackingScaling',
-        resourceId: autoscalingTarget.resourceId,
-        scalableDimension: autoscalingTarget.scalableDimension,
-        serviceNamespace: autoscalingTarget.serviceNamespace,
-        targetTrackingScalingPolicyConfiguration: {
-          predefinedMetricSpecification: {
-            predefinedMetricType: 'ECSServiceAverageMemoryUtilization',
-          },
-          targetValue: 80,
-        },
-      },
-      { parent: this },
-    );
-
-    const cpuAutoscalingPolicy = new aws.appautoscaling.Policy(
-      `${this.name}-cpu-autoscale-policy`,
-      {
-        policyType: 'TargetTrackingScaling',
-        resourceId: autoscalingTarget.resourceId,
-        scalableDimension: autoscalingTarget.scalableDimension,
-        serviceNamespace: autoscalingTarget.serviceNamespace,
-        targetTrackingScalingPolicyConfiguration: {
-          predefinedMetricSpecification: {
-            predefinedMetricType: 'ECSServiceAverageCPUUtilization',
-          },
-          targetValue: 60,
-        },
-      },
-      { parent: this },
-    );
   }
 }
