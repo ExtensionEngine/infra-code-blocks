@@ -163,10 +163,10 @@ export class Mongo extends pulumi.ComponentResource {
         vpcId: argsWithDefaults.vpc.vpcId,
         ingress: [
           {
-            fromPort: 0,
-            toPort: 0,
-            protocol: '-1',
-            cidrBlocks: ['0.0.0.0/0'],
+            fromPort: 2049,
+            toPort: 2049,
+            protocol: 'tcp',
+            cidrBlocks: [argsWithDefaults.vpc.vpc.cidrBlock],
           },
         ],
         egress: [
