@@ -86,10 +86,6 @@ export type MongoArgs = {
    * The secrets to pass to the container. Defaults to [].
    */
   secrets?: aws.ecs.Secret[];
-  /**
-   * Path for the health check request. Defaults to "/healtcheck".
-   */
-  healtCheckPath?: pulumi.Input<string>;
   taskExecutionRoleInlinePolicies?: pulumi.Input<
     pulumi.Input<RoleInlinePolicy>[]
   >;
@@ -163,9 +159,9 @@ export class Mongo extends pulumi.ComponentResource {
         vpcId: argsWithDefaults.vpc.vpcId,
         ingress: [
           {
-            fromPort: 2049,
-            toPort: 2049,
-            protocol: 'tcp',
+            fromPort: 0,
+            toPort: 0,
+            protocol: '-1',
             cidrBlocks: [argsWithDefaults.vpc.vpc.cidrBlock],
           },
         ],
