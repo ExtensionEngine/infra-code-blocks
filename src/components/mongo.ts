@@ -188,7 +188,7 @@ export class Mongo extends pulumi.ComponentResource {
 
     return new aws.efs.MountTarget(`${this.name}-mount-target`, {
       fileSystemId: efs.id,
-      subnetId: args.vpc.publicSubnetIds[0],
+      subnetId: args.vpc.privateSubnetIds[0],
       securityGroups: [this.serviceSecurityGroup.id],
     });
   }
@@ -371,7 +371,7 @@ export class Mongo extends pulumi.ComponentResource {
         enableExecuteCommand: true,
         networkConfiguration: {
           assignPublicIp: true,
-          subnets: argsWithDefaults.vpc.publicSubnetIds,
+          subnets: [argsWithDefaults.vpc.privateSubnetIds[0]],
           securityGroups: [this.serviceSecurityGroup.id],
         },
         tags: { ...commonTags, ...argsWithDefaults.tags },
