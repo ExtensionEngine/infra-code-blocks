@@ -112,6 +112,7 @@ export class Mongo extends pulumi.ComponentResource {
   taskDefinition: aws.ecs.TaskDefinition;
   serviceSecurityGroup: aws.ec2.SecurityGroup;
   mountTarget: aws.efs.MountTarget;
+  serviceDiscovery: aws.servicediscovery.Service;
   service: aws.ecs.Service;
 
   constructor(
@@ -127,6 +128,7 @@ export class Mongo extends pulumi.ComponentResource {
     this.serviceSecurityGroup = this.createSecurityGroup(args);
     this.mountTarget = this.createMountTarget(args);
     this.taskDefinition = this.createTaskDefinition(args);
+    this.serviceDiscovery = this.createServiceDiscovery(args);
     this.service = this.createEcsService(args);
 
     this.registerOutputs();
@@ -351,6 +353,31 @@ export class Mongo extends pulumi.ComponentResource {
     return taskDefinition;
   }
 
+  private createServiceDiscovery(args: MongoArgs) {
+    const privateDnsNamespace = new aws.servicediscovery.PrivateDnsNamespace(
+      `${this.name}-private-dns-namespace`,
+      {
+        vpc: args.vpc.vpcId,
+      },
+    );
+
+    return new aws.servicediscovery.Service(`${this.name}-service-discovery`, {
+      dnsConfig: {
+        namespaceId: privateDnsNamespace.id,
+        dnsRecords: [
+          {
+            ttl: 10,
+            type: 'A',
+          },
+        ],
+        routingPolicy: 'MULTIVALUE',
+      },
+      healthCheckCustomConfig: {
+        failureThreshold: 1,
+      },
+    });
+  }
+
   private createEcsService(args: MongoArgs) {
     const argsWithDefaults = Object.assign({}, defaults, args);
 
@@ -367,6 +394,9 @@ export class Mongo extends pulumi.ComponentResource {
           assignPublicIp: true,
           subnets: [argsWithDefaults.vpc.privateSubnetIds[0]],
           securityGroups: [this.serviceSecurityGroup.id],
+        },
+        serviceRegistries: {
+          registryArn: this.serviceDiscovery.arn,
         },
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
