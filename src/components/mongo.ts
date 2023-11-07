@@ -101,7 +101,6 @@ const defaults = {
   size: 'small',
   environment: [],
   secrets: [],
-  healtCheckPath: '/healtcheck',
   taskExecutionRoleInlinePolicies: [],
   taskRoleInlinePolicies: [],
 };
