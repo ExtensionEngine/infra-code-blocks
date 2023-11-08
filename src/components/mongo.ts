@@ -55,14 +55,6 @@ export type MongoArgs = {
    */
   desiredCount?: pulumi.Input<number>;
   /**
-   * Min capacity of the scalable target. Defaults to 1.
-   */
-  minCount?: pulumi.Input<number>;
-  /**
-   * Max capacity of the scalable target. Defaults to 10.
-   */
-  maxCount?: pulumi.Input<number>;
-  /**
    * CPU and memory size used for running the container. Defaults to "small".
    * Available predefined options are:
    * - small (0.25 vCPU, 0.5 GB memory)
@@ -96,8 +88,6 @@ export type MongoArgs = {
 
 const defaults = {
   desiredCount: 1,
-  minCount: 1,
-  maxCount: 10,
   size: 'small',
   environment: [],
   secrets: [],
