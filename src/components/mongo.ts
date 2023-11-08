@@ -390,7 +390,6 @@ export class Mongo extends pulumi.ComponentResource {
         taskDefinition: this.taskDefinition.arn,
         enableExecuteCommand: true,
         networkConfiguration: {
-          assignPublicIp: true,
           subnets: [argsWithDefaults.vpc.privateSubnetIds[0]],
           securityGroups: [this.serviceSecurityGroup.id],
         },
