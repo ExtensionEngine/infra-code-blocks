@@ -124,11 +124,11 @@ export class Project extends pulumi.ComponentResource {
 
   private createServices(services: ProjectArgs['services']) {
     const hasRedisService = services.some(it => it.type === 'REDIS');
-    const shouldCreateCluster =
+    const shouldCreateEcsCluster =
       services.some(it => it.type === 'WEB_SERVER' || it.type === 'MONGO') &&
       !this.cluster;
     if (hasRedisService) this.createRedisPrerequisites();
-    if (shouldCreateCluster) this.createCluster();
+    if (shouldCreateEcsCluster) this.createCluster();
     services.forEach(it => {
       if (it.type === 'DATABASE') this.createDatabaseService(it);
       if (it.type === 'REDIS') this.createRedisService(it);
