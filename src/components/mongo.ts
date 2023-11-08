@@ -51,10 +51,6 @@ export type MongoArgs = {
    */
   vpc: awsx.ec2.Vpc;
   /**
-   * Number of instances of the task definition to place and keep running. Defaults to 1.
-   */
-  desiredCount?: pulumi.Input<number>;
-  /**
    * CPU and memory size used for running the container. Defaults to "small".
    * Available predefined options are:
    * - small (0.25 vCPU, 0.5 GB memory)
@@ -87,7 +83,6 @@ export type MongoArgs = {
 };
 
 const defaults = {
-  desiredCount: 1,
   size: 'small',
   environment: [],
   secrets: [],
@@ -113,7 +108,6 @@ export class Mongo extends pulumi.ComponentResource {
 
     this.name = name;
     this.logGroup = this.createLogGroup();
-
     this.serviceSecurityGroup = this.createSecurityGroup(args);
     this.persistentStorage = this.createPersistentStorage(args);
     this.taskDefinition = this.createTaskDefinition(args);
@@ -295,7 +289,7 @@ export class Mongo extends pulumi.ComponentResource {
             ]) => {
               return JSON.stringify([
                 {
-                  readonlyRootFilesystem: false,
+                  readonlyRootFilesystem: true,
                   name: containerName,
                   image,
                   essential: true,
@@ -376,9 +370,8 @@ export class Mongo extends pulumi.ComponentResource {
         name: this.name,
         cluster: argsWithDefaults.cluster.id,
         launchType: 'FARGATE',
-        desiredCount: argsWithDefaults.desiredCount,
+        desiredCount: 1,
         taskDefinition: this.taskDefinition.arn,
-        enableExecuteCommand: true,
         networkConfiguration: {
           subnets: [argsWithDefaults.vpc.privateSubnetIds[0]],
           securityGroups: [this.serviceSecurityGroup.id],
