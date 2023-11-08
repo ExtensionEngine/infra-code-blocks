@@ -72,6 +72,13 @@ export class MissingHostedZoneId extends Error {
   }
 }
 
+export class MissingCluster extends Error {
+  constructor() {
+    super('Cluster does not exist');
+    this.name = this.constructor.name;
+  }
+}
+
 export class Project extends pulumi.ComponentResource {
   name: string;
   vpc: awsx.ec2.Vpc;
@@ -197,7 +204,7 @@ export class Project extends pulumi.ComponentResource {
   }
 
   private createWebServerService(options: WebServerService) {
-    if (!this.cluster) return;
+    if (!this.cluster) throw new MissingCluster();
     if (!this.hostedZoneId) throw new MissingHostedZoneId(options.type);
 
     const { serviceName, environment, secrets, ...ecsOptions } = options;
@@ -225,7 +232,7 @@ export class Project extends pulumi.ComponentResource {
   }
 
   private createMongoService(options: MongoService) {
-    if (!this.cluster) return;
+    if (!this.cluster) throw new MissingCluster();
 
     const { serviceName, environment, secrets, ...ecsOptions } = options;
     const parsedEnv =
