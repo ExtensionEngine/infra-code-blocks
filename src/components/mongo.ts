@@ -289,7 +289,7 @@ export class Mongo extends pulumi.ComponentResource {
             ]) => {
               return JSON.stringify([
                 {
-                  readonlyRootFilesystem: true,
+                  readonlyRootFilesystem: false,
                   name: containerName,
                   image,
                   essential: true,
