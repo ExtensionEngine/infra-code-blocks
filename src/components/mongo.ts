@@ -100,7 +100,7 @@ export class Mongo extends pulumi.ComponentResource {
   logGroup: aws.cloudwatch.LogGroup;
   taskDefinition: aws.ecs.TaskDefinition;
   serviceSecurityGroup: aws.ec2.SecurityGroup;
-  mountTarget: aws.efs.MountTarget;
+  persistentStorage: aws.efs.MountTarget;
   serviceDiscovery: aws.servicediscovery.Service;
   service: aws.ecs.Service;
 
@@ -115,7 +115,7 @@ export class Mongo extends pulumi.ComponentResource {
     this.logGroup = this.createLogGroup();
 
     this.serviceSecurityGroup = this.createSecurityGroup(args);
-    this.mountTarget = this.createMountTarget(args);
+    this.persistentStorage = this.createPersistentStorage(args);
     this.taskDefinition = this.createTaskDefinition(args);
     this.serviceDiscovery = this.createServiceDiscovery(args);
     this.service = this.createEcsService(args);
@@ -164,7 +164,7 @@ export class Mongo extends pulumi.ComponentResource {
     );
   }
 
-  private createMountTarget(args: MongoArgs) {
+  private createPersistentStorage(args: MongoArgs) {
     const efs = new aws.efs.FileSystem(`${this.name}-efs`, {
       tags: {
         Name: `${this.name}-data`,
@@ -329,7 +329,7 @@ export class Mongo extends pulumi.ComponentResource {
           {
             name: `${this.name}-volume`,
             efsVolumeConfiguration: {
-              fileSystemId: this.mountTarget.fileSystemId,
+              fileSystemId: this.persistentStorage.fileSystemId,
               transitEncryption: 'ENABLED',
             },
           },
