@@ -7,7 +7,7 @@ import { Ecs, EcsArgs, assumeRolePolicy, awsRegion, defaults } from './ecs';
 
 export class Mongo extends Ecs {
   taskDefinition: aws.ecs.TaskDefinition;
-  serviceSecurityGroup: aws.ec2.SecurityGroup;
+  securityGroup: aws.ec2.SecurityGroup;
   persistentStorage: aws.efs.MountTarget;
   serviceDiscovery: aws.servicediscovery.Service;
   service: aws.ecs.Service;
@@ -19,7 +19,7 @@ export class Mongo extends Ecs {
   ) {
     super('studion:Mongo', name, args, opts);
 
-    this.serviceSecurityGroup = this.createSecurityGroup(args);
+    this.securityGroup = this.createSecurityGroup(args);
     this.persistentStorage = this.createPersistentStorage(args);
     this.taskDefinition = this.createTaskDefinition(args);
     this.serviceDiscovery = this.createServiceDiscovery(args);
@@ -83,7 +83,7 @@ export class Mongo extends Ecs {
     return new aws.efs.MountTarget(`${this.name}-mount-target`, {
       fileSystemId: efs.id,
       subnetId: args.vpc.privateSubnetIds[0],
-      securityGroups: [this.serviceSecurityGroup.id],
+      securityGroups: [this.securityGroup.id],
     });
   }
 
@@ -291,7 +291,7 @@ export class Mongo extends Ecs {
         taskDefinition: this.taskDefinition.arn,
         networkConfiguration: {
           subnets: [argsWithDefaults.vpc.privateSubnetIds[0]],
-          securityGroups: [this.serviceSecurityGroup.id],
+          securityGroups: [this.securityGroup.id],
         },
         serviceRegistries: {
           registryArn: this.serviceDiscovery.arn,
