@@ -3,15 +3,7 @@ import * as aws from '@pulumi/aws';
 import { CustomSize } from '../types/size';
 import { PredefinedSize, commonTags } from '../constants';
 import { ContainerDefinition } from '@pulumi/aws/ecs';
-import { Ecs, EcsArgs, assumeRolePolicy, awsRegion } from './ecs';
-
-const defaults = {
-  size: 'small',
-  environment: [],
-  secrets: [],
-  taskExecutionRoleInlinePolicies: [],
-  taskRoleInlinePolicies: [],
-};
+import { Ecs, EcsArgs, assumeRolePolicy, awsRegion, defaults } from './ecs';
 
 export class Mongo extends Ecs {
   taskDefinition: aws.ecs.TaskDefinition;

@@ -4,7 +4,7 @@ import { CustomSize } from '../types/size';
 import { PredefinedSize, commonTags } from '../constants';
 import { ContainerDefinition } from '@pulumi/aws/ecs';
 import { AcmCertificate } from './acm-certificate';
-import { Ecs, EcsArgs, assumeRolePolicy, awsRegion } from './ecs';
+import { Ecs, EcsArgs, assumeRolePolicy, awsRegion, defaults } from './ecs';
 
 export type WebServerArgs = EcsArgs & {
   /**
@@ -32,18 +32,6 @@ export type WebServerArgs = EcsArgs & {
    * Path for the health check request. Defaults to "/healtcheck".
    */
   healtCheckPath?: pulumi.Input<string>;
-};
-
-const defaults = {
-  desiredCount: 1,
-  minCount: 1,
-  maxCount: 10,
-  size: 'small',
-  environment: [],
-  secrets: [],
-  healtCheckPath: '/healtcheck',
-  taskExecutionRoleInlinePolicies: [],
-  taskRoleInlinePolicies: [],
 };
 
 export class WebServer extends Ecs {

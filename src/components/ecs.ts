@@ -81,6 +81,18 @@ export type EcsArgs = {
   }>;
 };
 
+export const defaults = {
+  desiredCount: 1,
+  minCount: 1,
+  maxCount: 10,
+  size: 'small',
+  environment: [],
+  secrets: [],
+  healtCheckPath: '/healtcheck',
+  taskExecutionRoleInlinePolicies: [],
+  taskRoleInlinePolicies: [],
+};
+
 export class Ecs extends pulumi.ComponentResource {
   name: string;
   logGroup: aws.cloudwatch.LogGroup;
