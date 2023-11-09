@@ -89,6 +89,11 @@ export class Mongo extends pulumi.ComponentResource {
 
   private createPersistentStorage(args: EcsArgs) {
     const efs = new aws.efs.FileSystem(`${this.name}-efs`, {
+      lifecyclePolicies: [
+        {
+          transitionToPrimaryStorageClass: 'AFTER_1_ACCESS',
+        },
+      ],
       tags: {
         Name: `${this.name}-data`,
       },
