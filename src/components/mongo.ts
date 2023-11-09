@@ -138,8 +138,8 @@ export class Mongo extends pulumi.ComponentResource {
         vpcId: argsWithDefaults.vpc.vpcId,
         ingress: [
           {
-            fromPort: 27017,
-            toPort: 27017,
+            fromPort: argsWithDefaults.port,
+            toPort: argsWithDefaults.port,
             protocol: 'tcp',
             cidrBlocks: [argsWithDefaults.vpc.vpc.cidrBlock],
           },
@@ -347,10 +347,11 @@ export class Mongo extends pulumi.ComponentResource {
       `${this.name}-private-dns-namespace`,
       {
         vpc: args.vpc.vpcId,
+        name: this.name,
       },
     );
 
-    return new aws.servicediscovery.Service(`${this.name}-service-discovery`, {
+    return new aws.servicediscovery.Service(`mongo-service`, {
       dnsConfig: {
         namespaceId: privateDnsNamespace.id,
         dnsRecords: [
