@@ -9,7 +9,7 @@ import { Redis, RedisArgs } from './redis';
 import { StaticSite, StaticSiteArgs } from './static-site';
 import { Ec2SSMConnect } from './ec2-ssm-connect';
 import { commonTags } from '../constants';
-import { EcsArgs } from '../common/ecs';
+import { EcsArgs } from './ecs';
 
 export type Service = Database | Redis | StaticSite | WebServer | Mongo;
 export type Services = Record<string, Service>;

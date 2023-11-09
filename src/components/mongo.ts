@@ -3,7 +3,7 @@ import * as aws from '@pulumi/aws';
 import { CustomSize } from '../types/size';
 import { PredefinedSize, commonTags } from '../constants';
 import { ContainerDefinition } from '@pulumi/aws/ecs';
-import { EcsArgs, assumeRolePolicy, awsRegion } from '../common/ecs';
+import { EcsArgs, assumeRolePolicy, awsRegion } from './ecs';
 
 const defaults = {
   size: 'small',
