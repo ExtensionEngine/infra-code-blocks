@@ -4,7 +4,7 @@ import { CustomSize } from '../types/size';
 import { PredefinedSize, commonTags } from '../constants';
 import { ContainerDefinition } from '@pulumi/aws/ecs';
 import { AcmCertificate } from './acm-certificate';
-import { EcsArgs, assumeRolePolicy, awsRegion } from './ecs';
+import { Ecs, EcsArgs, assumeRolePolicy, awsRegion } from './ecs';
 
 export type WebServerArgs = EcsArgs & {
   /**
@@ -46,10 +46,8 @@ const defaults = {
   taskRoleInlinePolicies: [],
 };
 
-export class WebServer extends pulumi.ComponentResource {
-  name: string;
+export class WebServer extends Ecs {
   certificate: AcmCertificate;
-  logGroup: aws.cloudwatch.LogGroup;
   lbSecurityGroup: aws.ec2.SecurityGroup;
   lb: aws.lb.LoadBalancer;
   lbTargetGroup: aws.lb.TargetGroup;
@@ -63,12 +61,10 @@ export class WebServer extends pulumi.ComponentResource {
     args: WebServerArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:WebServer', name, {}, opts);
+    super('studion:WebServer', name, args, opts);
 
-    this.name = name;
     const { domain, hostedZoneId, vpc, port, healtCheckPath } = args;
     this.certificate = this.createTlsCertificate({ domain, hostedZoneId });
-    this.logGroup = this.createLogGroup();
     const {
       lb,
       lbTargetGroup,
@@ -102,19 +98,6 @@ export class WebServer extends pulumi.ComponentResource {
       { parent: this },
     );
     return certificate;
-  }
-
-  private createLogGroup() {
-    const logGroup = new aws.cloudwatch.LogGroup(
-      `${this.name}-log-group`,
-      {
-        retentionInDays: 14,
-        namePrefix: `/ecs/${this.name}-`,
-        tags: commonTags,
-      },
-      { parent: this },
-    );
-    return logGroup;
   }
 
   private createLoadBalancer({

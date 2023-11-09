@@ -3,7 +3,7 @@ import * as aws from '@pulumi/aws';
 import { CustomSize } from '../types/size';
 import { PredefinedSize, commonTags } from '../constants';
 import { ContainerDefinition } from '@pulumi/aws/ecs';
-import { EcsArgs, assumeRolePolicy, awsRegion } from './ecs';
+import { Ecs, EcsArgs, assumeRolePolicy, awsRegion } from './ecs';
 
 const defaults = {
   size: 'small',
@@ -13,9 +13,7 @@ const defaults = {
   taskRoleInlinePolicies: [],
 };
 
-export class Mongo extends pulumi.ComponentResource {
-  name: string;
-  logGroup: aws.cloudwatch.LogGroup;
+export class Mongo extends Ecs {
   taskDefinition: aws.ecs.TaskDefinition;
   serviceSecurityGroup: aws.ec2.SecurityGroup;
   persistentStorage: aws.efs.MountTarget;
@@ -27,10 +25,8 @@ export class Mongo extends pulumi.ComponentResource {
     args: EcsArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:Mongo', name, {}, opts);
+    super('studion:Mongo', name, args, opts);
 
-    this.name = name;
-    this.logGroup = this.createLogGroup();
     this.serviceSecurityGroup = this.createSecurityGroup(args);
     this.persistentStorage = this.createPersistentStorage(args);
     this.taskDefinition = this.createTaskDefinition(args);
@@ -38,19 +34,6 @@ export class Mongo extends pulumi.ComponentResource {
     this.service = this.createEcsService(args);
 
     this.registerOutputs();
-  }
-
-  private createLogGroup() {
-    const logGroup = new aws.cloudwatch.LogGroup(
-      `${this.name}-log-group`,
-      {
-        retentionInDays: 14,
-        namePrefix: `/ecs/${this.name}-`,
-        tags: commonTags,
-      },
-      { parent: this },
-    );
-    return logGroup;
   }
 
   private createSecurityGroup(args: EcsArgs) {

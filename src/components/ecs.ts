@@ -2,6 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 import { Size } from '../types/size';
+import { commonTags } from '../constants';
 
 const config = new pulumi.Config('aws');
 export const awsRegion = config.require('region');
@@ -79,3 +80,35 @@ export type EcsArgs = {
     [key: string]: pulumi.Input<string>;
   }>;
 };
+
+export class Ecs extends pulumi.ComponentResource {
+  name: string;
+  logGroup: aws.cloudwatch.LogGroup;
+
+  constructor(
+    type: string,
+    name: string,
+    args: EcsArgs,
+    opts: pulumi.ComponentResourceOptions = {},
+  ) {
+    super(type, name, {}, opts);
+
+    this.name = name;
+    this.logGroup = this.createLogGroup();
+
+    this.registerOutputs();
+  }
+
+  private createLogGroup() {
+    const logGroup = new aws.cloudwatch.LogGroup(
+      `${this.name}-log-group`,
+      {
+        retentionInDays: 14,
+        namePrefix: `/ecs/${this.name}-`,
+        tags: commonTags,
+      },
+      { parent: this },
+    );
+    return logGroup;
+  }
+}
