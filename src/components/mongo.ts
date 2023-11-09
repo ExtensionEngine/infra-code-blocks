@@ -1,86 +1,9 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
-import * as awsx from '@pulumi/awsx';
-import { CustomSize, Size } from '../types/size';
+import { CustomSize } from '../types/size';
 import { PredefinedSize, commonTags } from '../constants';
 import { ContainerDefinition } from '@pulumi/aws/ecs';
-
-const config = new pulumi.Config('aws');
-const awsRegion = config.require('region');
-
-const assumeRolePolicy: aws.iam.PolicyDocument = {
-  Version: '2012-10-17',
-  Statement: [
-    {
-      Action: 'sts:AssumeRole',
-      Principal: {
-        Service: 'ecs-tasks.amazonaws.com',
-      },
-      Effect: 'Allow',
-      Sid: '',
-    },
-  ],
-};
-
-type RoleInlinePolicy = {
-  /**
-   * Name of the role policy.
-   */
-  name?: pulumi.Input<string>;
-  /**
-   * Policy document as a JSON formatted string.
-   */
-  policy?: pulumi.Input<string>;
-};
-
-export type MongoArgs = {
-  /**
-   * The ECR image used to start a container.
-   */
-  image: pulumi.Input<string>;
-  /**
-   * Exposed service port.
-   */
-  port: pulumi.Input<number>;
-  /**
-   * The aws.ecs.Cluster resource.
-   */
-  cluster: aws.ecs.Cluster;
-  /**
-   * The awsx.ec2.Vpc resource.
-   */
-  vpc: awsx.ec2.Vpc;
-  /**
-   * CPU and memory size used for running the container. Defaults to "small".
-   * Available predefined options are:
-   * - small (0.25 vCPU, 0.5 GB memory)
-   * - medium (0.5 vCPU, 1 GB memory)
-   * - large (1 vCPU memory, 2 GB memory)
-   * - xlarge (2 vCPU, 4 GB memory)
-   */
-  size?: pulumi.Input<Size>;
-  /**
-   * The environment variables to pass to a container. Don't use this field for
-   * sensitive information such as passwords, API keys, etc. For that purpose,
-   * please use the `secrets` property.
-   * Defaults to [].
-   */
-  environment?: aws.ecs.KeyValuePair[];
-  /**
-   * The secrets to pass to the container. Defaults to [].
-   */
-  secrets?: aws.ecs.Secret[];
-  taskExecutionRoleInlinePolicies?: pulumi.Input<
-    pulumi.Input<RoleInlinePolicy>[]
-  >;
-  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
-  /**
-   * A map of tags to assign to the resource.
-   */
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
+import { EcsArgs, assumeRolePolicy, awsRegion } from '../common/ecs';
 
 const defaults = {
   size: 'small',
@@ -101,7 +24,7 @@ export class Mongo extends pulumi.ComponentResource {
 
   constructor(
     name: string,
-    args: MongoArgs,
+    args: EcsArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:Mongo', name, {}, opts);
@@ -130,7 +53,7 @@ export class Mongo extends pulumi.ComponentResource {
     return logGroup;
   }
 
-  private createSecurityGroup(args: MongoArgs) {
+  private createSecurityGroup(args: EcsArgs) {
     const argsWithDefaults = Object.assign({}, defaults, args);
     return new aws.ec2.SecurityGroup(
       `${this.name}-security-group`,
@@ -164,7 +87,7 @@ export class Mongo extends pulumi.ComponentResource {
     );
   }
 
-  private createPersistentStorage(args: MongoArgs) {
+  private createPersistentStorage(args: EcsArgs) {
     const efs = new aws.efs.FileSystem(`${this.name}-efs`, {
       tags: {
         Name: `${this.name}-data`,
@@ -178,7 +101,7 @@ export class Mongo extends pulumi.ComponentResource {
     });
   }
 
-  private createTaskDefinition(args: MongoArgs) {
+  private createTaskDefinition(args: EcsArgs) {
     const argsWithDefaults = Object.assign({}, defaults, args);
     const stack = pulumi.getStack();
 
@@ -342,7 +265,7 @@ export class Mongo extends pulumi.ComponentResource {
     return taskDefinition;
   }
 
-  private createServiceDiscovery(args: MongoArgs) {
+  private createServiceDiscovery(args: EcsArgs) {
     const privateDnsNamespace = new aws.servicediscovery.PrivateDnsNamespace(
       `${this.name}-private-dns-namespace`,
       {
@@ -368,7 +291,7 @@ export class Mongo extends pulumi.ComponentResource {
     });
   }
 
-  private createEcsService(args: MongoArgs) {
+  private createEcsService(args: EcsArgs) {
     const argsWithDefaults = Object.assign({}, defaults, args);
 
     const service = new aws.ecs.Service(

@@ -1,65 +1,21 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
-import * as awsx from '@pulumi/awsx';
-import { CustomSize, Size } from '../types/size';
+import { CustomSize } from '../types/size';
 import { PredefinedSize, commonTags } from '../constants';
 import { ContainerDefinition } from '@pulumi/aws/ecs';
 import { AcmCertificate } from './acm-certificate';
+import { EcsArgs, assumeRolePolicy, awsRegion } from '../common/ecs';
 
-const config = new pulumi.Config('aws');
-const awsRegion = config.require('region');
-
-const assumeRolePolicy: aws.iam.PolicyDocument = {
-  Version: '2012-10-17',
-  Statement: [
-    {
-      Action: 'sts:AssumeRole',
-      Principal: {
-        Service: 'ecs-tasks.amazonaws.com',
-      },
-      Effect: 'Allow',
-      Sid: '',
-    },
-  ],
-};
-
-export type RoleInlinePolicy = {
-  /**
-   * Name of the role policy.
-   */
-  name?: pulumi.Input<string>;
-  /**
-   * Policy document as a JSON formatted string.
-   */
-  policy?: pulumi.Input<string>;
-};
-
-export type WebServerArgs = {
-  /**
-   * The ECR image used to start a container.
-   */
-  image: pulumi.Input<string>;
-  /**
-   * Exposed service port.
-   */
-  port: pulumi.Input<number>;
+export type WebServerArgs = EcsArgs & {
   /**
    * The domain which will be used to access the service.
    * The domain or subdomain must belong to the provided hostedZone.
    */
   domain: pulumi.Input<string>;
   /**
-   * The aws.ecs.Cluster resource.
-   */
-  cluster: aws.ecs.Cluster;
-  /**
    * The ID of the hosted zone.
    */
   hostedZoneId: pulumi.Input<string>;
-  /**
-   * The awsx.ec2.Vpc resource.
-   */
-  vpc: awsx.ec2.Vpc;
   /**
    * Number of instances of the task definition to place and keep running. Defaults to 1.
    */
@@ -73,39 +29,9 @@ export type WebServerArgs = {
    */
   maxCount?: pulumi.Input<number>;
   /**
-   * CPU and memory size used for running the container. Defaults to "small".
-   * Available predefined options are:
-   * - small (0.25 vCPU, 0.5 GB memory)
-   * - medium (0.5 vCPU, 1 GB memory)
-   * - large (1 vCPU memory, 2 GB memory)
-   * - xlarge (2 vCPU, 4 GB memory)
-   */
-  size?: pulumi.Input<Size>;
-  /**
-   * The environment variables to pass to a container. Don't use this field for
-   * sensitive information such as passwords, API keys, etc. For that purpose,
-   * please use the `secrets` property.
-   * Defaults to [].
-   */
-  environment?: aws.ecs.KeyValuePair[];
-  /**
-   * The secrets to pass to the container. Defaults to [].
-   */
-  secrets?: aws.ecs.Secret[];
-  /**
    * Path for the health check request. Defaults to "/healtcheck".
    */
   healtCheckPath?: pulumi.Input<string>;
-  taskExecutionRoleInlinePolicies?: pulumi.Input<
-    pulumi.Input<RoleInlinePolicy>[]
-  >;
-  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
-  /**
-   * A map of tags to assign to the resource.
-   */
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
 };
 
 const defaults = {

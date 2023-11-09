@@ -4,11 +4,12 @@ import * as awsx from '@pulumi/awsx';
 import * as upstash from '@upstash/pulumi';
 import { Database, DatabaseArgs } from './database';
 import { WebServer, WebServerArgs } from './web-server';
-import { Mongo, MongoArgs } from './mongo';
+import { Mongo } from './mongo';
 import { Redis, RedisArgs } from './redis';
 import { StaticSite, StaticSiteArgs } from './static-site';
 import { Ec2SSMConnect } from './ec2-ssm-connect';
 import { commonTags } from '../constants';
+import { EcsArgs } from '../common/ecs';
 
 export type Service = Database | Redis | StaticSite | WebServer | Mongo;
 export type Services = Record<string, Service>;
@@ -48,7 +49,7 @@ export type MongoService = {
     | ((services: Services) => aws.ecs.KeyValuePair[]);
   secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
 } & ServiceArgs &
-  Omit<MongoArgs, 'cluster' | 'vpc' | 'environment' | 'secrets'>;
+  Omit<EcsArgs, 'cluster' | 'vpc' | 'environment' | 'secrets'>;
 
 export type ProjectArgs = {
   services: (
