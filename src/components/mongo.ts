@@ -98,7 +98,6 @@ export class Mongo extends pulumi.ComponentResource {
       lifecyclePolicies: [
         {
           transitionToPrimaryStorageClass: 'AFTER_1_ACCESS',
-          transitionToIa: 'AFTER_30_DAYS',
         },
       ],
       tags: {
