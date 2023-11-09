@@ -253,6 +253,7 @@ export class Mongo extends pulumi.ComponentResource {
                       'awslogs-stream-prefix': 'ecs',
                     },
                   },
+                  command: ['mongod', '--port', port.toString()],
                   environment,
                   secrets,
                 },
