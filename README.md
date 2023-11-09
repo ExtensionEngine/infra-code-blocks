@@ -86,6 +86,7 @@ type ProjectArgs = {
     | RedisService
     | StaticSiteService
     | WebServerService
+    | MongoService
   )[];
   hostedZoneId?: pulumi.Input<string>;
   enableSSMConnect?: pulumi.Input<boolean>;
@@ -110,6 +111,27 @@ type DatabaseService = {
   allocatedStorage?: pulumi.Input<number>;
   maxAllocatedStorage?: pulumi.Input<number>;
   instanceClass?: pulumi.Input<string>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
+};
+```
+
+```ts
+type MongoService = {
+  type: 'MONGO';
+  serviceName: string;
+  environment?:
+    | aws.ecs.KeyValuePair[]
+    | ((services: Services) => aws.ecs.KeyValuePair[]);
+  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
+  image: pulumi.Input<string>;
+  port: pulumi.Input<number>;
+  size?: pulumi.Input<Size>;
+  taskExecutionRoleInlinePolicies?: pulumi.Input<
+    pulumi.Input<RoleInlinePolicy>[]
+  >;
+  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
@@ -408,6 +430,49 @@ export type WebServerArgs = {
     [key: string]: pulumi.Input<string>;
   }>;
 };
+```
+
+### Monogo
+
+AWS ECS Fargate mongo service.
+
+Features:
+
+- has persistent storage
+- comes with service discovery namespace
+- creates CloudWatch log group
+- comes with predefined cpu and memory options: `small`, `medium`, `large`, `xlarge`
+
+<br>
+
+```ts
+new Mongo(name: string, args: EcsArgs, opts?: pulumi.ComponentResourceOptions );
+```
+
+| Argument |                  Description                   |
+| :------- | :--------------------------------------------: |
+| name \*  |        The unique name of the resource.        |
+| args \*  |     The arguments to resource properties.      |
+| opts     | Bag of options to control resource's behavior. |
+
+```ts
+ export type EcsArgs = {
+  type: 'MONGO';
+  serviceName: string;
+  environment?:
+    | aws.ecs.KeyValuePair[]
+    | ((services: Services) => aws.ecs.KeyValuePair[]);
+  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
+  image: pulumi.Input<string>;
+  port: pulumi.Input<number>;
+  size?: pulumi.Input<Size>;
+  taskExecutionRoleInlinePolicies?: pulumi.Input<
+    pulumi.Input<RoleInlinePolicy>[]
+  >;
+  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
 ```
 
 #### Exec into running ECS task
