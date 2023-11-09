@@ -88,10 +88,17 @@ export class Mongo extends pulumi.ComponentResource {
   }
 
   private createPersistentStorage(args: EcsArgs) {
+    const key = new aws.kms.Key(`${this.name}-kms-key`, {
+      deletionWindowInDays: 10,
+    });
+
     const efs = new aws.efs.FileSystem(`${this.name}-efs`, {
+      encrypted: true,
+      kmsKeyId: key.arn,
       lifecyclePolicies: [
         {
           transitionToPrimaryStorageClass: 'AFTER_1_ACCESS',
+          transitionToIa: 'AFTER_30_DAYS',
         },
       ],
       tags: {
