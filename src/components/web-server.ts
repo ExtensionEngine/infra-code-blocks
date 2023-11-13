@@ -34,7 +34,9 @@ export type WebServerArgs = EcsArgs & {
   healtCheckPath?: pulumi.Input<string>;
 };
 
-export class WebServer extends Ecs {
+export class WebServer extends pulumi.ComponentResource {
+  name: string;
+  logGroup: aws.cloudwatch.LogGroup;
   certificate: AcmCertificate;
   lbSecurityGroup: aws.ec2.SecurityGroup;
   lb: aws.lb.LoadBalancer;
@@ -50,6 +52,9 @@ export class WebServer extends Ecs {
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:WebServer', name, args, opts);
+
+    this.name = name;
+    this.logGroup = this.createLogGroup();
 
     const { domain, hostedZoneId, vpc, port, healtCheckPath } = args;
     this.certificate = this.createTlsCertificate({ domain, hostedZoneId });
@@ -71,6 +76,19 @@ export class WebServer extends Ecs {
     this.enableAutoscaling(args);
 
     this.registerOutputs();
+  }
+
+  private createLogGroup() {
+    const logGroup = new aws.cloudwatch.LogGroup(
+      `${this.name}-log-group`,
+      {
+        retentionInDays: 14,
+        namePrefix: `/ecs/${this.name}-`,
+        tags: commonTags,
+      },
+      { parent: this },
+    );
+    return logGroup;
   }
 
   private createTlsCertificate({
