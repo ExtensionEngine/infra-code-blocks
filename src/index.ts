@@ -5,4 +5,4 @@ export * from './components/database';
 export * from './components/redis';
 export * from './components/project';
 export * from './components/ec2-ssm-connect';
-export * from './components/ecs';
+export * from './components/ecs-service';

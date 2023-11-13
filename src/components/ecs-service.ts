@@ -1,27 +1,55 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
-import { CustomSize } from '../types/size';
+import * as awsx from '@pulumi/awsx';
+import { CustomSize, Size } from '../types/size';
 import { PredefinedSize, commonTags } from '../constants';
 import { ContainerDefinition } from '@pulumi/aws/ecs';
-import { AcmCertificate } from './acm-certificate';
-import {
-  EcsService,
-  EcsServiceArgs,
-  assumeRolePolicy,
-  awsRegion,
-  defaults,
-} from './ecs-service';
 
-export type WebServerArgs = EcsServiceArgs & {
+const config = new pulumi.Config('aws');
+export const awsRegion = config.require('region');
+
+export const assumeRolePolicy: aws.iam.PolicyDocument = {
+  Version: '2012-10-17',
+  Statement: [
+    {
+      Action: 'sts:AssumeRole',
+      Principal: {
+        Service: 'ecs-tasks.amazonaws.com',
+      },
+      Effect: 'Allow',
+      Sid: '',
+    },
+  ],
+};
+
+export type RoleInlinePolicy = {
   /**
-   * The domain which will be used to access the service.
-   * The domain or subdomain must belong to the provided hostedZone.
+   * Name of the role policy.
    */
-  domain: pulumi.Input<string>;
+  name?: pulumi.Input<string>;
   /**
-   * The ID of the hosted zone.
+   * Policy document as a JSON formatted string.
    */
-  hostedZoneId: pulumi.Input<string>;
+  policy?: pulumi.Input<string>;
+};
+
+export type EcsServiceArgs = {
+  /**
+   * The ECR image used to start a container.
+   */
+  image: pulumi.Input<string>;
+  /**
+   * Exposed service port.
+   */
+  port: pulumi.Input<number>;
+  /**
+   * The aws.ecs.Cluster resource.
+   */
+  cluster: aws.ecs.Cluster;
+  /**
+   * The awsx.ec2.Vpc resource.
+   */
+  vpc: awsx.ec2.Vpc;
   /**
    * Number of instances of the task definition to place and keep running. Defaults to 1.
    */
@@ -35,50 +63,80 @@ export type WebServerArgs = EcsServiceArgs & {
    */
   maxCount?: pulumi.Input<number>;
   /**
-   * Path for the health check request. Defaults to "/healtcheck".
+   * CPU and memory size used for running the container. Defaults to "small".
+   * Available predefined options are:
+   * - small (0.25 vCPU, 0.5 GB memory)
+   * - medium (0.5 vCPU, 1 GB memory)
+   * - large (1 vCPU memory, 2 GB memory)
+   * - xlarge (2 vCPU, 4 GB memory)
    */
-  healtCheckPath?: pulumi.Input<string>;
+  size?: pulumi.Input<Size>;
+  /**
+   * The environment variables to pass to a container. Don't use this field for
+   * sensitive information such as passwords, API keys, etc. For that purpose,
+   * please use the `secrets` property.
+   * Defaults to [].
+   */
+  environment?: aws.ecs.KeyValuePair[];
+  /**
+   * The secrets to pass to the container. Defaults to [].
+   */
+  secrets?: aws.ecs.Secret[];
+  enableServiceAutoDiscovery: pulumi.Input<boolean>;
+  persistentStorageVolumePath?: pulumi.Input<string>;
+  dockerCommand?: pulumi.Input<string[]>;
+  taskExecutionRoleInlinePolicies?: pulumi.Input<
+    pulumi.Input<RoleInlinePolicy>[]
+  >;
+  lbTargetGroupArn?: aws.lb.TargetGroup['arn'];
+  securityGroup?: aws.ec2.SecurityGroup;
+  assignPublicIp?: pulumi.Input<boolean>;
+  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
+  /**
+   * A map of tags to assign to the resource.
+   */
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
 };
 
-export class WebServer extends pulumi.ComponentResource {
+export const defaults = {
+  desiredCount: 1,
+  minCount: 1,
+  maxCount: 1,
+  size: 'small',
+  environment: [],
+  secrets: [],
+  enableServiceAutoDiscovery: false,
+  assignPublicIp: false,
+  taskExecutionRoleInlinePolicies: [],
+  taskRoleInlinePolicies: [],
+};
+
+export class EcsService extends pulumi.ComponentResource {
   name: string;
   logGroup: aws.cloudwatch.LogGroup;
-  certificate: AcmCertificate;
-  lbSecurityGroup: aws.ec2.SecurityGroup;
-  lb: aws.lb.LoadBalancer;
-  lbTargetGroup: aws.lb.TargetGroup;
-  lbHttpListener: aws.lb.Listener;
-  lbTlsListener: aws.lb.Listener;
   taskDefinition: aws.ecs.TaskDefinition;
+  serviceDiscoveryService?: aws.servicediscovery.Service;
   service: aws.ecs.Service;
 
   constructor(
     name: string,
-    args: WebServerArgs,
+    args: EcsServiceArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:WebServer', name, args, opts);
+    super('studion:ecs:Service', name, {}, opts);
+    const argsWithDefaults = Object.assign({}, defaults, args);
 
     this.name = name;
     this.logGroup = this.createLogGroup();
-
-    const { domain, hostedZoneId, vpc, port, healtCheckPath } = args;
-    this.certificate = this.createTlsCertificate({ domain, hostedZoneId });
-    const {
-      lb,
-      lbTargetGroup,
-      lbHttpListener,
-      lbTlsListener,
-      lbSecurityGroup,
-    } = this.createLoadBalancer({ vpc, port, healtCheckPath });
-    this.lb = lb;
-    this.lbTargetGroup = lbTargetGroup;
-    this.lbHttpListener = lbHttpListener;
-    this.lbTlsListener = lbTlsListener;
-    this.lbSecurityGroup = lbSecurityGroup;
     this.taskDefinition = this.createTaskDefinition(args);
-    this.service = this.createEcsService(args);
-    this.createDnsRecord({ domain, hostedZoneId });
+    if (argsWithDefaults.enableServiceAutoDiscovery) {
+      this.serviceDiscoveryService = this.createServiceDiscovery(
+        argsWithDefaults.vpc,
+      );
+    }
+    this.service = this.createEcsService(args, opts);
     this.enableAutoscaling(args);
 
     this.registerOutputs();
@@ -97,50 +155,37 @@ export class WebServer extends pulumi.ComponentResource {
     return logGroup;
   }
 
-  private createTlsCertificate({
-    domain,
-    hostedZoneId,
-  }: Pick<WebServerArgs, 'domain' | 'hostedZoneId'>) {
-    const certificate = new AcmCertificate(
-      `${domain}-acm-certificate`,
+  private createPersistentStorage(vpc: awsx.ec2.Vpc) {
+    const efs = new aws.efs.FileSystem(
+      `${this.name}-efs`,
       {
-        domain,
-        hostedZoneId,
+        encrypted: true,
+        lifecyclePolicies: [
+          {
+            transitionToPrimaryStorageClass: 'AFTER_1_ACCESS',
+            transitionToIa: 'AFTER_7_DAYS',
+          },
+        ],
+        performanceMode: 'generalPurpose',
+        throughputMode: 'bursting',
+        tags: {
+          ...commonTags,
+          Name: `${this.name}-data`,
+        },
       },
       { parent: this },
     );
-    return certificate;
-  }
 
-  private createLoadBalancer({
-    vpc,
-    port,
-    healtCheckPath,
-  }: Pick<WebServerArgs, 'vpc' | 'port' | 'healtCheckPath'>) {
-    const lbSecurityGroup = new aws.ec2.SecurityGroup(
-      `${this.name}-lb-security-group`,
+    const securityGroup = new aws.ec2.SecurityGroup(
+      `${this.name}-persistent-storage-security-group`,
       {
         vpcId: vpc.vpcId,
         ingress: [
           {
+            fromPort: 2049,
+            toPort: 2049,
             protocol: 'tcp',
-            fromPort: 80,
-            toPort: 80,
-            cidrBlocks: ['0.0.0.0/0'],
-          },
-          {
-            protocol: 'tcp',
-            fromPort: 443,
-            toPort: 443,
-            cidrBlocks: ['0.0.0.0/0'],
-          },
-        ],
-        egress: [
-          {
-            fromPort: 0,
-            toPort: 0,
-            protocol: '-1',
-            cidrBlocks: ['0.0.0.0/0'],
+            cidrBlocks: [vpc.vpc.cidrBlock],
           },
         ],
         tags: commonTags,
@@ -148,89 +193,20 @@ export class WebServer extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    const lb = new aws.lb.LoadBalancer(
-      `${this.name}-lb`,
+    const mountTarget = new aws.efs.MountTarget(
+      `${this.name}-mount-target`,
       {
-        namePrefix: 'lb-',
-        loadBalancerType: 'application',
-        subnets: vpc.publicSubnetIds,
-        securityGroups: [lbSecurityGroup.id],
-        internal: false,
-        ipAddressType: 'ipv4',
-        tags: { ...commonTags, Name: `${this.name}-lb` },
+        fileSystemId: efs.id,
+        subnetId: vpc.privateSubnetIds[0],
+        securityGroups: [securityGroup.id],
       },
       { parent: this },
     );
 
-    const lbTargetGroup = new aws.lb.TargetGroup(
-      `${this.name}-lb-tg`,
-      {
-        namePrefix: 'lb-tg-',
-        port,
-        protocol: 'HTTP',
-        targetType: 'ip',
-        vpcId: vpc.vpcId,
-        healthCheck: {
-          healthyThreshold: 3,
-          unhealthyThreshold: 2,
-          interval: 60,
-          timeout: 5,
-          path: healtCheckPath || defaults.healtCheckPath,
-        },
-        tags: { ...commonTags, Name: `${this.name}-lb-target-group` },
-      },
-      { parent: this, dependsOn: [this.lb] },
-    );
-
-    const lbHttpListener = new aws.lb.Listener(
-      `${this.name}-lb-listener-80`,
-      {
-        loadBalancerArn: lb.arn,
-        port: 80,
-        defaultActions: [
-          {
-            type: 'redirect',
-            redirect: {
-              port: '443',
-              protocol: 'HTTPS',
-              statusCode: 'HTTP_301',
-            },
-          },
-        ],
-        tags: commonTags,
-      },
-      { parent: this },
-    );
-
-    const lbTlsListener = new aws.lb.Listener(
-      `${this.name}-lb-listener-443`,
-      {
-        loadBalancerArn: lb.arn,
-        port: 443,
-        protocol: 'HTTPS',
-        sslPolicy: 'ELBSecurityPolicy-2016-08',
-        certificateArn: this.certificate.certificate.arn,
-        defaultActions: [
-          {
-            type: 'forward',
-            targetGroupArn: lbTargetGroup.arn,
-          },
-        ],
-        tags: commonTags,
-      },
-      { parent: this },
-    );
-
-    return {
-      lb,
-      lbTargetGroup,
-      lbHttpListener,
-      lbTlsListener,
-      lbSecurityGroup,
-    };
+    return efs;
   }
 
-  private createTaskDefinition(args: WebServerArgs) {
+  private createTaskDefinition(args: EcsServiceArgs) {
     const argsWithDefaults = Object.assign({}, defaults, args);
     const stack = pulumi.getStack();
 
@@ -332,6 +308,8 @@ export class WebServer extends pulumi.ComponentResource {
             argsWithDefaults.port,
             argsWithDefaults.environment,
             argsWithDefaults.secrets,
+            argsWithDefaults.persistentStorageVolumePath,
+            argsWithDefaults.dockerCommand,
             this.logGroup.name,
             awsRegion,
           ])
@@ -342,6 +320,8 @@ export class WebServer extends pulumi.ComponentResource {
               port,
               environment,
               secrets,
+              persistentStorageVolumePath,
+              command,
               logGroup,
               region,
             ]) => {
@@ -357,6 +337,14 @@ export class WebServer extends pulumi.ComponentResource {
                       protocol: 'tcp',
                     },
                   ],
+                  ...(persistentStorageVolumePath && {
+                    mountPoints: [
+                      {
+                        containerPath: persistentStorageVolumePath,
+                        sourceVolume: `${this.name}-volume`,
+                      },
+                    ],
+                  }),
                   logConfiguration: {
                     logDriver: 'awslogs',
                     options: {
@@ -365,12 +353,25 @@ export class WebServer extends pulumi.ComponentResource {
                       'awslogs-stream-prefix': 'ecs',
                     },
                   },
+                  command,
                   environment,
                   secrets,
                 },
               ] as ContainerDefinition[]);
             },
           ),
+        ...(argsWithDefaults.persistentStorageVolumePath && {
+          volumes: [
+            {
+              name: `${this.name}-volume`,
+              efsVolumeConfiguration: {
+                fileSystemId: this.createPersistentStorage(argsWithDefaults.vpc)
+                  .id,
+                transitEncryption: 'ENABLED',
+              },
+            },
+          ],
+        }),
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
       { parent: this },
@@ -379,33 +380,72 @@ export class WebServer extends pulumi.ComponentResource {
     return taskDefinition;
   }
 
-  private createEcsService(args: WebServerArgs) {
-    const argsWithDefaults = Object.assign({}, defaults, args);
-
-    const serviceSecurityGroup = new aws.ec2.SecurityGroup(
-      `${this.name}-security-group`,
+  private createServiceDiscovery(vpc: awsx.ec2.Vpc) {
+    const privateDnsNamespace = new aws.servicediscovery.PrivateDnsNamespace(
+      `${this.name}-private-dns-namespace`,
       {
-        vpcId: argsWithDefaults.vpc.vpcId,
-        ingress: [
-          {
-            fromPort: 0,
-            toPort: 0,
-            protocol: '-1',
-            securityGroups: [this.lbSecurityGroup.id],
-          },
-        ],
-        egress: [
-          {
-            fromPort: 0,
-            toPort: 0,
-            protocol: '-1',
-            cidrBlocks: ['0.0.0.0/0'],
-          },
-        ],
+        vpc: vpc.vpcId,
+        name: this.name,
         tags: commonTags,
       },
       { parent: this },
     );
+
+    return new aws.servicediscovery.Service(
+      `mongo-service`,
+      {
+        name: this.name,
+        dnsConfig: {
+          namespaceId: privateDnsNamespace.id,
+          dnsRecords: [
+            {
+              ttl: 10,
+              type: 'A',
+            },
+          ],
+          routingPolicy: 'MULTIVALUE',
+        },
+        healthCheckCustomConfig: {
+          failureThreshold: 1,
+        },
+        tags: commonTags,
+      },
+      { parent: this },
+    );
+  }
+
+  private createEcsService(
+    args: EcsServiceArgs,
+    opts: pulumi.ComponentResourceOptions,
+  ) {
+    const argsWithDefaults = Object.assign({}, defaults, args);
+
+    const securityGroup =
+      argsWithDefaults.securityGroup ||
+      new aws.ec2.SecurityGroup(
+        `${this.name}-service-security-group`,
+        {
+          vpcId: argsWithDefaults.vpc.vpcId,
+          ingress: [
+            {
+              fromPort: 0,
+              toPort: 0,
+              protocol: '-1',
+              securityGroups: [argsWithDefaults.vpc.vpc.cidrBlock],
+            },
+          ],
+          egress: [
+            {
+              fromPort: 0,
+              toPort: 0,
+              protocol: '-1',
+              cidrBlocks: ['0.0.0.0/0'],
+            },
+          ],
+          tags: commonTags,
+        },
+        { parent: this },
+      );
 
     const service = new aws.ecs.Service(
       `${this.name}-service`,
@@ -416,56 +456,39 @@ export class WebServer extends pulumi.ComponentResource {
         desiredCount: argsWithDefaults.desiredCount,
         taskDefinition: this.taskDefinition.arn,
         enableExecuteCommand: true,
-        loadBalancers: [
-          {
-            containerName: this.name,
-            containerPort: argsWithDefaults.port,
-            targetGroupArn: this.lbTargetGroup.arn,
-          },
-        ],
+        ...(argsWithDefaults.lbTargetGroupArn && {
+          loadBalancers: [
+            {
+              containerName: this.name,
+              containerPort: argsWithDefaults.port,
+              targetGroupArn: argsWithDefaults.lbTargetGroupArn,
+            },
+          ],
+        }),
         networkConfiguration: {
-          assignPublicIp: true,
-          subnets: argsWithDefaults.vpc.publicSubnetIds,
-          securityGroups: [serviceSecurityGroup.id],
+          assignPublicIp: argsWithDefaults.assignPublicIp,
+          subnets: argsWithDefaults.assignPublicIp
+            ? argsWithDefaults.vpc.publicSubnetIds
+            : argsWithDefaults.vpc.privateSubnetIds,
+          securityGroups: [securityGroup.id],
         },
+        ...(argsWithDefaults.enableServiceAutoDiscovery &&
+          this.serviceDiscoveryService && {
+            serviceRegistries: {
+              registryArn: this.serviceDiscoveryService.arn,
+            },
+          }),
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
       {
         parent: this,
-        dependsOn: [
-          this.lb,
-          this.lbTargetGroup,
-          this.lbHttpListener,
-          this.lbTlsListener,
-        ],
+        dependsOn: opts.dependsOn,
       },
     );
     return service;
   }
 
-  private createDnsRecord({
-    domain,
-    hostedZoneId,
-  }: Pick<WebServerArgs, 'domain' | 'hostedZoneId'>) {
-    const albAliasRecord = new aws.route53.Record(
-      `${this.name}-route53-record`,
-      {
-        type: 'A',
-        name: domain,
-        zoneId: hostedZoneId,
-        aliases: [
-          {
-            name: this.lb.dnsName,
-            zoneId: this.lb.zoneId,
-            evaluateTargetHealth: true,
-          },
-        ],
-      },
-      { parent: this },
-    );
-  }
-
-  private enableAutoscaling(args: WebServerArgs) {
+  private enableAutoscaling(args: EcsServiceArgs) {
     const argsWithDefaults = Object.assign({}, defaults, args);
 
     const autoscalingTarget = new aws.appautoscaling.Target(
@@ -492,7 +515,7 @@ export class WebServer extends pulumi.ComponentResource {
           predefinedMetricSpecification: {
             predefinedMetricType: 'ECSServiceAverageMemoryUtilization',
           },
-          targetValue: 80,
+          targetValue: 70,
         },
       },
       { parent: this },
@@ -509,7 +532,7 @@ export class WebServer extends pulumi.ComponentResource {
           predefinedMetricSpecification: {
             predefinedMetricType: 'ECSServiceAverageCPUUtilization',
           },
-          targetValue: 60,
+          targetValue: 70,
         },
       },
       { parent: this },

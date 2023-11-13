@@ -9,7 +9,7 @@ import { Redis, RedisArgs } from './redis';
 import { StaticSite, StaticSiteArgs } from './static-site';
 import { Ec2SSMConnect } from './ec2-ssm-connect';
 import { commonTags } from '../constants';
-import { EcsArgs } from './ecs';
+import { EcsServiceArgs } from './ecs-service';
 
 export type Service = Database | Redis | StaticSite | WebServer | Mongo;
 export type Services = Record<string, Service>;
@@ -49,7 +49,7 @@ export type MongoService = {
     | ((services: Services) => aws.ecs.KeyValuePair[]);
   secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
 } & ServiceArgs &
-  Omit<EcsArgs, 'cluster' | 'vpc' | 'environment' | 'secrets'>;
+  Omit<EcsServiceArgs, 'cluster' | 'vpc' | 'environment' | 'secrets'>;
 
 export type ProjectArgs = {
   services: (
