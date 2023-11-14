@@ -82,16 +82,37 @@ export type EcsServiceArgs = {
    * The secrets to pass to the container. Defaults to [].
    */
   secrets?: aws.ecs.Secret[];
+  /**
+   * Enable service auto discovery and assign DNS record to service.
+   * Defaults to false.
+   */
   enableServiceAutoDiscovery: pulumi.Input<boolean>;
+  /**
+   * Location of persistent storage volume.
+   */
   persistentStorageVolumePath?: pulumi.Input<string>;
+  /**
+   * Alternate docker CMD instruction.
+   */
   dockerCommand?: pulumi.Input<string[]>;
+  /**
+   * Enable auto scaling for service.
+   * Defaults to false
+   */
   enableAutoScaling?: pulumi.Input<boolean>;
+  lbTargetGroupArn?: aws.lb.TargetGroup['arn'];
+  /**
+   * Custom service security group
+   * In case no security group is provided, default security group will be used.
+   */
+  securityGroup?: aws.ec2.SecurityGroup;
+  /**
+   * Assign public IP address to service.
+   */
+  assignPublicIp?: pulumi.Input<boolean>;
   taskExecutionRoleInlinePolicies?: pulumi.Input<
     pulumi.Input<RoleInlinePolicy>[]
   >;
-  lbTargetGroupArn?: aws.lb.TargetGroup['arn'];
-  securityGroup?: aws.ec2.SecurityGroup;
-  assignPublicIp?: pulumi.Input<boolean>;
   taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
   /**
    * A map of tags to assign to the resource.

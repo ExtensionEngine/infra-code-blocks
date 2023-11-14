@@ -42,6 +42,10 @@ export type WebServerArgs = {
    */
   maxCount?: pulumi.Input<number>;
   /**
+   * Path for the health check request. Defaults to "/healtcheck".
+   */
+  healtCheckPath?: pulumi.Input<string>;
+  /**
    * The aws.ecs.Cluster resource.
    */
   cluster: aws.ecs.Cluster;
@@ -64,10 +68,6 @@ export type WebServerArgs = {
    * The ID of the hosted zone.
    */
   hostedZoneId: pulumi.Input<string>;
-  /**
-   * Path for the health check request. Defaults to "/healtcheck".
-   */
-  healtCheckPath?: pulumi.Input<string>;
 };
 
 export class WebServer extends pulumi.ComponentResource {
