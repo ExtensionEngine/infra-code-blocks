@@ -3,7 +3,7 @@ import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 import { commonTags } from '../constants';
 import { AcmCertificate } from './acm-certificate';
-import { EcsService, defaults } from './ecs-service';
+import { EcsService, RoleInlinePolicy, defaults } from './ecs-service';
 import { Size } from '../types/size';
 
 export type WebServerArgs = {
@@ -68,6 +68,16 @@ export type WebServerArgs = {
    * The ID of the hosted zone.
    */
   hostedZoneId: pulumi.Input<string>;
+  taskExecutionRoleInlinePolicies?: pulumi.Input<
+    pulumi.Input<RoleInlinePolicy>[]
+  >;
+  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
+  /**
+   * A map of tags to assign to the resource.
+   */
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
 };
 
 export class WebServer extends pulumi.ComponentResource {
@@ -101,6 +111,9 @@ export class WebServer extends pulumi.ComponentResource {
       desiredCount,
       minCount,
       maxCount,
+      taskExecutionRoleInlinePolicies,
+      taskRoleInlinePolicies,
+      tags,
     } = args;
 
     this.name = name;
@@ -161,6 +174,9 @@ export class WebServer extends pulumi.ComponentResource {
         assignPublicIp: true,
         vpc,
         securityGroup,
+        taskExecutionRoleInlinePolicies,
+        taskRoleInlinePolicies,
+        tags,
       },
       { ...opts, parent: this },
     );

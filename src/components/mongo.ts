@@ -1,7 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
-import { EcsService } from './ecs-service';
+import { EcsService, RoleInlinePolicy } from './ecs-service';
 import { Size } from '../types/size';
 import { commonTags } from '../constants';
 
@@ -42,6 +42,16 @@ export type MongoArgs = {
    * The secrets to pass to the container. Defaults to [].
    */
   secrets?: aws.ecs.Secret[];
+  taskExecutionRoleInlinePolicies?: pulumi.Input<
+    pulumi.Input<RoleInlinePolicy>[]
+  >;
+  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
+  /**
+   * A map of tags to assign to the resource.
+   */
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
 };
 
 export class Mongo extends pulumi.ComponentResource {
@@ -55,8 +65,18 @@ export class Mongo extends pulumi.ComponentResource {
   ) {
     super('studion:Mongo', name, args, opts);
 
-    const { port, size, cluster, vpc, environment, secrets, healthCheckPath } =
-      args;
+    const {
+      port,
+      size,
+      cluster,
+      vpc,
+      environment,
+      secrets,
+      healthCheckPath,
+      taskExecutionRoleInlinePolicies,
+      taskRoleInlinePolicies,
+      tags,
+    } = args;
 
     const securityGroup = new aws.ec2.SecurityGroup(
       `${name}-service-security-group`,
@@ -103,6 +123,9 @@ export class Mongo extends pulumi.ComponentResource {
         vpc,
         securityGroup,
         ...(healthCheckPath && { healthCheckPath }),
+        taskExecutionRoleInlinePolicies,
+        taskRoleInlinePolicies,
+        tags,
       },
       { ...opts, parent: this },
     );
