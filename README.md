@@ -129,7 +129,7 @@ export type RedisService = {
 export type StaticSiteService = {
   type: 'STATIC_SITE';
   serviceName: string;
-  domain: pulumi.Input<string>;
+  domain?: pulumi.Input<string>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
@@ -353,8 +353,8 @@ new StaticSite(name: string, args: StaticSiteArgs, opts?: pulumi.ComponentResour
 
 ```ts
 type StaticSiteArgs = {
-  domain: pulumi.Input<string>;
-  hostedZoneId: pulumi.Input<string>;
+  domain?: pulumi.Input<string>;
+  hostedZoneId?: pulumi.Input<string>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
