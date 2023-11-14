@@ -133,7 +133,7 @@ export const defaults = {
   assignPublicIp: false,
   taskExecutionRoleInlinePolicies: [],
   taskRoleInlinePolicies: [],
-  healtCheckPath: '/healtcheck',
+  healthCheckPath: '/healthcheck',
   enableAutoScaling: false,
 };
 
@@ -158,6 +158,7 @@ export class EcsService extends pulumi.ComponentResource {
     if (argsWithDefaults.enableServiceAutoDiscovery) {
       this.serviceDiscoveryService = this.createServiceDiscovery(
         argsWithDefaults.vpc,
+        argsWithDefaults.healthCheckPath,
       );
     }
     this.service = this.createEcsService(args, opts);
@@ -418,7 +419,7 @@ export class EcsService extends pulumi.ComponentResource {
     return taskDefinition;
   }
 
-  private createServiceDiscovery(vpc: awsx.ec2.Vpc) {
+  private createServiceDiscovery(vpc: awsx.ec2.Vpc, healthCheckPath: string) {
     const privateDnsNamespace = new aws.servicediscovery.PrivateDnsNamespace(
       `${this.name}-private-dns-namespace`,
       {
@@ -443,8 +444,10 @@ export class EcsService extends pulumi.ComponentResource {
           ],
           routingPolicy: 'MULTIVALUE',
         },
-        healthCheckCustomConfig: {
-          failureThreshold: 1,
+        healthCheckConfig: {
+          type: 'HTTP',
+          resourcePath: healthCheckPath || defaults.healthCheckPath,
+          failureThreshold: 2,
         },
         tags: commonTags,
       },

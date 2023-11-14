@@ -42,9 +42,9 @@ export type WebServerArgs = {
    */
   maxCount?: pulumi.Input<number>;
   /**
-   * Path for the health check request. Defaults to "/healtcheck".
+   * Path for the healthh check request. Defaults to "/healthcheck".
    */
-  healtCheckPath?: pulumi.Input<string>;
+  healthCheckPath?: pulumi.Input<string>;
   /**
    * The aws.ecs.Cluster resource.
    */
@@ -95,7 +95,7 @@ export class WebServer extends pulumi.ComponentResource {
       vpc,
       environment,
       secrets,
-      healtCheckPath,
+      healthCheckPath,
       domain,
       hostedZoneId,
       desiredCount,
@@ -111,7 +111,7 @@ export class WebServer extends pulumi.ComponentResource {
       lbHttpListener,
       lbTlsListener,
       lbSecurityGroup,
-    } = this.createLoadBalancer({ vpc, port, healtCheckPath });
+    } = this.createLoadBalancer({ vpc, port, healthCheckPath });
     this.lb = lb;
     this.lbTargetGroup = lbTargetGroup;
     this.lbHttpListener = lbHttpListener;
@@ -188,8 +188,8 @@ export class WebServer extends pulumi.ComponentResource {
   private createLoadBalancer({
     vpc,
     port,
-    healtCheckPath,
-  }: Pick<WebServerArgs, 'vpc' | 'port' | 'healtCheckPath'>) {
+    healthCheckPath,
+  }: Pick<WebServerArgs, 'vpc' | 'port' | 'healthCheckPath'>) {
     const lbSecurityGroup = new aws.ec2.SecurityGroup(
       `${this.name}-lb-security-group`,
       {
@@ -248,7 +248,7 @@ export class WebServer extends pulumi.ComponentResource {
           unhealthyThreshold: 2,
           interval: 60,
           timeout: 5,
-          path: healtCheckPath || defaults.healtCheckPath,
+          path: healthCheckPath || defaults.healthCheckPath,
         },
         tags: { ...commonTags, Name: `${this.name}-lb-target-group` },
       },

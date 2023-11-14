@@ -173,7 +173,7 @@ export type WebServerService = {
   minCount?: pulumi.Input<number>;
   maxCount?: pulumi.Input<number>;
   size?: pulumi.Input<Size>;
-  healtCheckPath?: pulumi.Input<string>;
+  healthCheckPath?: pulumi.Input<string>;
   taskExecutionRoleInlinePolicies?: pulumi.Input<
     pulumi.Input<RoleInlinePolicy>[]
   >;
@@ -421,7 +421,7 @@ export type WebServerArgs = {
   size?: pulumi.Input<Size>;
   environment?: aws.ecs.KeyValuePair[];
   secrets?: aws.ecs.Secret[];
-  healtCheckPath?: pulumi.Input<string>;
+  healthCheckPath?: pulumi.Input<string>;
   taskExecutionRoleInlinePolicies?: pulumi.Input<
     pulumi.Input<RoleInlinePolicy>[]
   >;
