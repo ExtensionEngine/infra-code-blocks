@@ -125,16 +125,9 @@ type MongoService = {
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
   secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
-  image: pulumi.Input<string>;
   port: pulumi.Input<number>;
   size?: pulumi.Input<Size>;
-  taskExecutionRoleInlinePolicies?: pulumi.Input<
-    pulumi.Input<RoleInlinePolicy>[]
-  >;
-  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
+  healthCheckPath?: pulumi.Input<string>;
 };
 ```
 
@@ -446,7 +439,7 @@ Features:
 <br>
 
 ```ts
-new Mongo(name: string, args: EcsArgs, opts?: pulumi.ComponentResourceOptions );
+new Mongo(name: string, args: MongoArgs, opts?: pulumi.ComponentResourceOptions );
 ```
 
 | Argument |                  Description                   |
@@ -456,23 +449,16 @@ new Mongo(name: string, args: EcsArgs, opts?: pulumi.ComponentResourceOptions );
 | opts     | Bag of options to control resource's behavior. |
 
 ```ts
- export type EcsArgs = {
-  type: 'MONGO';
-  serviceName: string;
+ export type MongoArgs = {
+  port: pulumi.Input<number>;
+  size?: pulumi.Input<Size>;
+  healthCheckPath?: pulumi.Input<string>;
+  cluster: aws.ecs.Cluster;
+  vpc: awsx.ec2.Vpc;
   environment?:
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
   secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
-  image: pulumi.Input<string>;
-  port: pulumi.Input<number>;
-  size?: pulumi.Input<Size>;
-  taskExecutionRoleInlinePolicies?: pulumi.Input<
-    pulumi.Input<RoleInlinePolicy>[]
-  >;
-  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
 ```
 
 #### Exec into running ECS task
