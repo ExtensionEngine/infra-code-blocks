@@ -20,6 +20,10 @@ export type MongoArgs = {
    */
   size?: pulumi.Input<Size>;
   /**
+   * Path for the healthh check request. Defaults to "/healthcheck".
+   */
+  healthCheckPath?: pulumi.Input<string>;
+  /**
    * The aws.ecs.Cluster resource.
    */
   cluster: aws.ecs.Cluster;
@@ -51,7 +55,8 @@ export class Mongo extends pulumi.ComponentResource {
   ) {
     super('studion:Mongo', name, args, opts);
 
-    const { port, size, cluster, vpc, environment, secrets } = args;
+    const { port, size, cluster, vpc, environment, secrets, healthCheckPath } =
+      args;
 
     const securityGroup = new aws.ec2.SecurityGroup(
       `${name}-service-security-group`,
@@ -97,6 +102,7 @@ export class Mongo extends pulumi.ComponentResource {
         assignPublicIp: false,
         vpc,
         securityGroup,
+        ...(healthCheckPath && { healthCheckPath }),
       },
       { ...opts, parent: this },
     );

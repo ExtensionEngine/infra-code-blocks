@@ -72,6 +72,10 @@ export type EcsServiceArgs = {
    */
   size?: pulumi.Input<Size>;
   /**
+   * Path for the healthh check request. Defaults to "/healthcheck".
+   */
+  healthCheckPath?: pulumi.Input<string>;
+  /**
    * The environment variables to pass to a container. Don't use this field for
    * sensitive information such as passwords, API keys, etc. For that purpose,
    * please use the `secrets` property.
