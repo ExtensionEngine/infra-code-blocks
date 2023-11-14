@@ -1,10 +1,22 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
-import { Ec2AMI, commonTags } from '../constants';
+import { commonTags } from '../constants';
 
 const config = new pulumi.Config('aws');
 const awsRegion = config.require('region');
+
+const AmazonLinux2023_ARM_EC2_AMI = aws.ec2.getAmiOutput({
+  filters: [
+    { name: 'architecture', values: ['arm64'] },
+    { name: 'root-device-type', values: ['ebs'] },
+    { name: 'virtualization-type', values: ['hvm'] },
+    { name: 'ena-support', values: ['true'] },
+  ],
+  owners: ['amazon'],
+  nameRegex: 'al2023-ami-2023.2.20231030.1-kernel-6.1-arm64',
+  mostRecent: true,
+});
 
 export type Ec2SSMConnectArgs = {
   vpc: awsx.ec2.Vpc;
@@ -96,7 +108,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     this.ec2 = new aws.ec2.Instance(
       `${name}-ec2`,
       {
-        ami: Ec2AMI.AmazonLinux2023.ARM,
+        ami: AmazonLinux2023_ARM_EC2_AMI.id,
         associatePublicIpAddress: false,
         instanceType: 't4g.nano',
         iamInstanceProfile: ssmProfile.name,

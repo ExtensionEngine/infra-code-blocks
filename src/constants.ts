@@ -22,12 +22,6 @@ export const PredefinedSize = {
   },
 } as const;
 
-export const Ec2AMI = {
-  AmazonLinux2023: {
-    ARM: 'ami-0b40baa8c6b882e6c',
-  },
-};
-
 export const commonTags = {
   Env: pulumi.getStack(),
   Project: pulumi.getProject(),
