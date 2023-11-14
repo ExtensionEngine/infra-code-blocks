@@ -5,7 +5,6 @@ import { PredefinedSize, commonTags } from '../constants';
 import { ContainerDefinition } from '@pulumi/aws/ecs';
 import { AcmCertificate } from './acm-certificate';
 import {
-  EcsService,
   EcsServiceArgs,
   assumeRolePolicy,
   awsRegion,

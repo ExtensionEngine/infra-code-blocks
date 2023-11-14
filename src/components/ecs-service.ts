@@ -85,6 +85,7 @@ export type EcsServiceArgs = {
   enableServiceAutoDiscovery: pulumi.Input<boolean>;
   persistentStorageVolumePath?: pulumi.Input<string>;
   dockerCommand?: pulumi.Input<string[]>;
+  enableAutoScaling?: pulumi.Input<boolean>;
   taskExecutionRoleInlinePolicies?: pulumi.Input<
     pulumi.Input<RoleInlinePolicy>[]
   >;
@@ -111,6 +112,8 @@ export const defaults = {
   assignPublicIp: false,
   taskExecutionRoleInlinePolicies: [],
   taskRoleInlinePolicies: [],
+  healtCheckPath: '/healtcheck',
+  enableAutoScaling: false,
 };
 
 export class EcsService extends pulumi.ComponentResource {
@@ -137,7 +140,9 @@ export class EcsService extends pulumi.ComponentResource {
       );
     }
     this.service = this.createEcsService(args, opts);
-    this.enableAutoscaling(args);
+    if (argsWithDefaults.enableAutoScaling) {
+      this.enableAutoscaling(args);
+    }
 
     this.registerOutputs();
   }
@@ -155,7 +160,7 @@ export class EcsService extends pulumi.ComponentResource {
     return logGroup;
   }
 
-  private createPersistentStorage(vpc: awsx.ec2.Vpc) {
+  private createPersistentStorage(vpc: awsx.ec2.Vpc, assignPublicIp: boolean) {
     const efs = new aws.efs.FileSystem(
       `${this.name}-efs`,
       {
@@ -163,6 +168,8 @@ export class EcsService extends pulumi.ComponentResource {
         lifecyclePolicies: [
           {
             transitionToPrimaryStorageClass: 'AFTER_1_ACCESS',
+          },
+          {
             transitionToIa: 'AFTER_7_DAYS',
           },
         ],
@@ -197,7 +204,9 @@ export class EcsService extends pulumi.ComponentResource {
       `${this.name}-mount-target`,
       {
         fileSystemId: efs.id,
-        subnetId: vpc.privateSubnetIds[0],
+        subnetId: assignPublicIp
+          ? vpc.publicSubnetIds[0]
+          : vpc.privateSubnetIds[0],
         securityGroups: [securityGroup.id],
       },
       { parent: this },
@@ -365,8 +374,10 @@ export class EcsService extends pulumi.ComponentResource {
             {
               name: `${this.name}-volume`,
               efsVolumeConfiguration: {
-                fileSystemId: this.createPersistentStorage(argsWithDefaults.vpc)
-                  .id,
+                fileSystemId: this.createPersistentStorage(
+                  argsWithDefaults.vpc,
+                  argsWithDefaults.assignPublicIp,
+                ).id,
                 transitEncryption: 'ENABLED',
               },
             },
@@ -468,8 +479,8 @@ export class EcsService extends pulumi.ComponentResource {
         networkConfiguration: {
           assignPublicIp: argsWithDefaults.assignPublicIp,
           subnets: argsWithDefaults.assignPublicIp
-            ? argsWithDefaults.vpc.publicSubnetIds
-            : argsWithDefaults.vpc.privateSubnetIds,
+            ? [argsWithDefaults.vpc.publicSubnetIds[0]]
+            : [argsWithDefaults.vpc.privateSubnetIds[0]],
           securityGroups: [securityGroup.id],
         },
         ...(argsWithDefaults.enableServiceAutoDiscovery &&
