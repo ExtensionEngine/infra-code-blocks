@@ -200,17 +200,23 @@ export class EcsService extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    const mountTarget = new aws.efs.MountTarget(
-      `${this.name}-mount-target`,
-      {
-        fileSystemId: efs.id,
-        subnetId: assignPublicIp
-          ? vpc.publicSubnetIds[0]
-          : vpc.privateSubnetIds[0],
-        securityGroups: [securityGroup.id],
-      },
-      { parent: this },
-    );
+    const subnetIds = assignPublicIp
+      ? vpc.publicSubnetIds
+      : vpc.privateSubnetIds;
+
+    subnetIds.apply(privateSubnets => {
+      privateSubnets.forEach(it => {
+        const mountTarget = new aws.efs.MountTarget(
+          `${this.name}-mount-target-${it}`,
+          {
+            fileSystemId: efs.id,
+            subnetId: it,
+            securityGroups: [securityGroup.id],
+          },
+          { parent: this },
+        );
+      });
+    });
 
     return efs;
   }
@@ -479,8 +485,8 @@ export class EcsService extends pulumi.ComponentResource {
         networkConfiguration: {
           assignPublicIp: argsWithDefaults.assignPublicIp,
           subnets: argsWithDefaults.assignPublicIp
-            ? [argsWithDefaults.vpc.publicSubnetIds[0]]
-            : [argsWithDefaults.vpc.privateSubnetIds[0]],
+            ? argsWithDefaults.vpc.publicSubnetIds
+            : argsWithDefaults.vpc.privateSubnetIds,
           securityGroups: [securityGroup.id],
         },
         ...(argsWithDefaults.enableServiceAutoDiscovery &&
