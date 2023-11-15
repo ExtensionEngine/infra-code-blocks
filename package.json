@@ -35,6 +35,7 @@
     "@pulumi/aws": "^5.0.0",
     "@pulumi/awsx": "^1.0.0",
     "@pulumi/pulumi": "^3.0.0",
+    "@pulumi/random": "^4.14.0",
     "@upstash/pulumi": "^0.2.0"
   },
   "devDependencies": {
