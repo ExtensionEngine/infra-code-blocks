@@ -9,7 +9,7 @@ export type MongoArgs = {
   /**
    * Exposed service port.
    */
-  port: pulumi.Input<number>;
+  port?: pulumi.Input<number>;
   /**
    * CPU and memory size used for running the container. Defaults to "small".
    * Available predefined options are:
@@ -73,14 +73,16 @@ export class Mongo extends pulumi.ComponentResource {
       tags,
     } = args;
 
+    const servicePort = port || 27017;
+
     const securityGroup = new aws.ec2.SecurityGroup(
       `${name}-service-security-group`,
       {
         vpcId: vpc.vpcId,
         ingress: [
           {
-            fromPort: port,
-            toPort: port,
+            fromPort: servicePort,
+            toPort: servicePort,
             protocol: 'tcp',
             cidrBlocks: [vpc.vpc.cidrBlock],
           },
@@ -104,7 +106,7 @@ export class Mongo extends pulumi.ComponentResource {
       {
         image:
           'mongo@sha256:238b1636bdd7820c752b91bec8a669f92568eb313ad89a1fc4a92903c1b40489',
-        port,
+        port: servicePort,
         cluster,
         desiredCount: 1,
         minCount: 1,
@@ -114,7 +116,7 @@ export class Mongo extends pulumi.ComponentResource {
         secrets,
         enableServiceAutoDiscovery: true,
         persistentStorageVolumePath: '/data/db',
-        dockerCommand: ['mongod', '--port', port.toString()],
+        dockerCommand: ['mongod', '--port', servicePort.toString()],
         assignPublicIp: false,
         vpc,
         securityGroup,
