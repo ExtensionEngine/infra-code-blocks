@@ -141,7 +141,7 @@ export const defaults = {
   enableAutoScaling: false,
 };
 
-export class EcsService extends pulumi.ComponentResource {
+export class Ecs extends pulumi.ComponentResource {
   name: string;
   logGroup: aws.cloudwatch.LogGroup;
   taskDefinition: aws.ecs.TaskDefinition;
@@ -470,7 +470,7 @@ export class EcsService extends pulumi.ComponentResource {
               fromPort: 0,
               toPort: 0,
               protocol: '-1',
-              securityGroups: [argsWithDefaults.vpc.vpc.cidrBlock],
+              cidrBlocks: [argsWithDefaults.vpc.vpc.cidrBlock],
             },
           ],
           egress: [

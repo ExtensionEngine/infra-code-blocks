@@ -1,7 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
-import { EcsService, RoleInlinePolicy } from './ecs-service';
+import { Ecs, RoleInlinePolicy } from './ecs-service';
 import { Size } from '../types/size';
 import { commonTags } from '../constants';
 
@@ -52,7 +52,7 @@ export type MongoArgs = {
 
 export class Mongo extends pulumi.ComponentResource {
   name: string;
-  service: EcsService;
+  service: Ecs;
 
   constructor(
     name: string,
@@ -99,7 +99,7 @@ export class Mongo extends pulumi.ComponentResource {
     );
 
     this.name = name;
-    this.service = new EcsService(
+    this.service = new Ecs(
       name,
       {
         image:

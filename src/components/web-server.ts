@@ -3,7 +3,7 @@ import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 import { commonTags } from '../constants';
 import { AcmCertificate } from './acm-certificate';
-import { EcsService, RoleInlinePolicy, defaults } from './ecs-service';
+import { Ecs, RoleInlinePolicy, defaults } from './ecs-service';
 import { Size } from '../types/size';
 
 export type WebServerArgs = {
@@ -82,7 +82,7 @@ export type WebServerArgs = {
 
 export class WebServer extends pulumi.ComponentResource {
   name: string;
-  service: EcsService;
+  service: Ecs;
   certificate: AcmCertificate;
   lbSecurityGroup: aws.ec2.SecurityGroup;
   lb: aws.lb.LoadBalancer;
@@ -156,7 +156,7 @@ export class WebServer extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    this.service = new EcsService(
+    this.service = new Ecs(
       name,
       {
         image,
