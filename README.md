@@ -157,13 +157,13 @@ export type StaticSiteService = {
 export type WebServerService = {
   type: 'WEB_SERVER';
   serviceName: string;
+  image: pulumi.Input<string>;
+  port: pulumi.Input<number>;
+  domain: pulumi.Input<string>;
   environment?:
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
   secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
-  image: pulumi.Input<string>;
-  port: pulumi.Input<number>;
-  domain: pulumi.Input<string>;
   desiredCount?: pulumi.Input<number>;
   minCount?: pulumi.Input<number>;
   maxCount?: pulumi.Input<number>;
@@ -452,10 +452,10 @@ new Mongo(name: string, args: MongoArgs, opts?: pulumi.ComponentResourceOptions 
 
 ```ts
  export type MongoArgs = {
-  port?: pulumi.Input<number>;
-  size?: pulumi.Input<Size>;
   cluster: aws.ecs.Cluster;
   vpc: awsx.ec2.Vpc;
+  port?: pulumi.Input<number>;
+  size?: pulumi.Input<Size>;
   environment?:
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
