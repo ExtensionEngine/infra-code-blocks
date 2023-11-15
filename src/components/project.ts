@@ -44,10 +44,8 @@ export type WebServerService = {
 
 export type MongoService = {
   type: 'MONGO';
-  environment?:
-    | aws.ecs.KeyValuePair[]
-    | ((services: Services) => aws.ecs.KeyValuePair[]);
-  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
+  environment?: aws.ecs.KeyValuePair[];
+  secrets?: aws.ecs.Secret[];
 } & ServiceArgs &
   Omit<MongoArgs, 'cluster' | 'vpc' | 'environment' | 'secrets'>;
 
