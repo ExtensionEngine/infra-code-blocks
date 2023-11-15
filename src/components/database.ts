@@ -166,7 +166,7 @@ export class Database extends pulumi.ComponentResource {
       {
         identifierPrefix: `${this.name}-`,
         engine: 'postgres',
-        engineVersion: '14.9',
+        engineVersion: '15.3',
         allocatedStorage: argsWithDefaults.allocatedStorage,
         maxAllocatedStorage: argsWithDefaults.maxAllocatedStorage,
         instanceClass: argsWithDefaults.instanceClass,
