@@ -61,6 +61,8 @@ $ pulumi up
 3. [Redis](#redis)
 4. [StaticSite](#static-site)
 5. [WebServer](#web-server)
+6. [Mongo](#mongo)
+7. [Ecs](#ecs)
 
 ### Project
 
@@ -87,6 +89,7 @@ type ProjectArgs = {
     | StaticSiteService
     | WebServerService
     | MongoService
+    | EcsService
   )[];
   hostedZoneId?: pulumi.Input<string>;
   enableSSMConnect?: pulumi.Input<boolean>;
@@ -111,22 +114,6 @@ type DatabaseService = {
   allocatedStorage?: pulumi.Input<number>;
   maxAllocatedStorage?: pulumi.Input<number>;
   instanceClass?: pulumi.Input<string>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
-```
-
-```ts
-type MongoService = {
-  type: 'MONGO';
-  serviceName: string;
-  environment?:
-    | aws.ecs.KeyValuePair[]
-    | ((services: Services) => aws.ecs.KeyValuePair[]);
-  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
-  port?: pulumi.Input<number>;
-  size?: pulumi.Input<Size>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
@@ -160,6 +147,53 @@ export type WebServerService = {
   image: pulumi.Input<string>;
   port: pulumi.Input<number>;
   domain: pulumi.Input<string>;
+  environment?:
+    | aws.ecs.KeyValuePair[]
+    | ((services: Services) => aws.ecs.KeyValuePair[]);
+  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
+  desiredCount?: pulumi.Input<number>;
+  minCount?: pulumi.Input<number>;
+  maxCount?: pulumi.Input<number>;
+  size?: pulumi.Input<Size>;
+  healthCheckPath?: pulumi.Input<string>;
+  taskExecutionRoleInlinePolicies?: pulumi.Input<
+    pulumi.Input<RoleInlinePolicy>[]
+  >;
+  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
+};
+```
+
+```ts
+type MongoService = {
+  type: 'MONGO';
+  serviceName: string;
+  environment?: aws.ecs.KeyValuePair[];
+  secrets?: aws.ecs.Secret[];
+  port?: pulumi.Input<number>;
+  size?: pulumi.Input<Size>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
+};
+```
+
+```ts
+type EcsService = {
+  type: 'ECS';
+  serviceName: string;
+  image: pulumi.Input<string>;
+  port: pulumi.Input<number>;
+  domain: pulumi.Input<string>;
+  enableServiceAutoDiscovery: pulumi.Input<boolean>;
+  enableAutoScaling?: pulumi.Input<boolean>;
+  lbTargetGroupArn?: aws.lb.TargetGroup['arn'];
+  persistentStorageVolumePath?: pulumi.Input<string>;
+  securityGroup?: aws.ec2.SecurityGroup;
+  assignPublicIp?: pulumi.Input<boolean>;
+  dockerCommand?: pulumi.Input<string[]>;
   environment?:
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
@@ -384,7 +418,7 @@ AWS ECS Fargate web server.
 
 Features:
 
-- Memory and CPU autoscaling enabled
+- memory and CPU autoscaling enabled
 - creates TLS certificate for the specified domain
 - redirects HTTP traffic to HTTPS
 - creates CloudWatch log group
@@ -427,7 +461,7 @@ export type WebServerArgs = {
 };
 ```
 
-### Monogo
+### Mongo
 
 AWS ECS Fargate mongo service.
 
@@ -456,13 +490,67 @@ new Mongo(name: string, args: MongoArgs, opts?: pulumi.ComponentResourceOptions 
   vpc: awsx.ec2.Vpc;
   port?: pulumi.Input<number>;
   size?: pulumi.Input<Size>;
-  environment?:
-    | aws.ecs.KeyValuePair[]
-    | ((services: Services) => aws.ecs.KeyValuePair[]);
-  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
+  environment?: aws.ecs.KeyValuePair[];
+  secrets?: aws.ecs.Secret[];
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
+```
+
+### Ecs
+
+AWS ECS Fargate service.
+
+Features:
+
+- memory and CPU autoscaling
+- service auto discovery
+- persistent storage
+- supports load balancing
+- reates CloudWatch log group
+- public IP address
+- comes with predefined cpu and memory options: `small`, `medium`, `large`, `xlarge`
+
+<br>
+
+```ts
+new Ecs(name: string, args: EcsServiceArgs, opts?: pulumi.ComponentResourceOptions );
+```
+
+| Argument |                  Description                   |
+| :------- | :--------------------------------------------: |
+| name \*  |        The unique name of the resource.        |
+| args \*  |     The arguments to resource properties.      |
+| opts     | Bag of options to control resource's behavior. |
+
+```ts
+export type EcsServiceArgs = {
+  image: pulumi.Input<string>;
+  port: pulumi.Input<number>;
+  cluster: aws.ecs.Cluster;
+  vpc: awsx.ec2.Vpc;
+  desiredCount?: pulumi.Input<number>;
+  minCount?: pulumi.Input<number>;
+  maxCount?: pulumi.Input<number>;
+  size?: pulumi.Input<Size>;
+  healthCheckPath?: pulumi.Input<string>;
+  environment?: aws.ecs.KeyValuePair[];
+  secrets?: aws.ecs.Secret[];
+  enableServiceAutoDiscovery: pulumi.Input<boolean>;
+  persistentStorageVolumePath?: pulumi.Input<string>;
+  dockerCommand?: pulumi.Input<string[]>;
+  enableAutoScaling?: pulumi.Input<boolean>;
+  lbTargetGroupArn?: aws.lb.TargetGroup['arn'];
+  securityGroup?: aws.ec2.SecurityGroup;
+  assignPublicIp?: pulumi.Input<boolean>;
+  taskExecutionRoleInlinePolicies?: pulumi.Input<
+    pulumi.Input<RoleInlinePolicy>[]
+  >;
+  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
+};
 ```
 
 #### Exec into running ECS task
