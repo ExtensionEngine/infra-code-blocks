@@ -1,83 +1,28 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
-import * as awsx from '@pulumi/awsx';
 import { commonTags } from '../constants';
 import { AcmCertificate } from './acm-certificate';
-import { Ecs, RoleInlinePolicy, defaults } from './ecs-service';
-import { Size } from '../types/size';
+import { Ecs, EcsServiceArgs, defaults } from './ecs-service';
 
-export type WebServerArgs = {
-  /**
-   * The ECR image used to start a container.
-   */
-  image: pulumi.Input<string>;
-  /*
-   * Exposed service port.
-   */
-  port: pulumi.Input<number>;
+export type WebServerArgs = Omit<
+  EcsServiceArgs,
+  | 'enableServiceAutoDiscovery'
+  | 'persistentStorageVolumePath'
+  | 'dockerCommand'
+  | 'enableAutoScaling'
+  | 'lbTargetGroupArn'
+  | 'securityGroup'
+  | 'assignPublicIp'
+> & {
   /**
    * The domain which will be used to access the service.
    * The domain or subdomain must belong to the provided hostedZone.
    */
   domain: pulumi.Input<string>;
   /**
-   * CPU and memory size used for running the container. Defaults to "small".
-   * Available predefined options are:
-   * - small (0.25 vCPU, 0.5 GB memory)
-   * - medium (0.5 vCPU, 1 GB memory)
-   * - large (1 vCPU memory, 2 GB memory)
-   * - xlarge (2 vCPU, 4 GB memory)
-   */
-  size?: pulumi.Input<Size>;
-  /**
-   * Number of instances of the task definition to place and keep running. Defaults to 1.
-   */
-  desiredCount?: pulumi.Input<number>;
-  /**
-   * Min capacity of the scalable target. Defaults to 1.
-   */
-  minCount?: pulumi.Input<number>;
-  /**
-   * Max capacity of the scalable target. Defaults to 10.
-   */
-  maxCount?: pulumi.Input<number>;
-  /**
-   * Path for the healthh check request. Defaults to "/healthcheck".
-   */
-  healthCheckPath?: pulumi.Input<string>;
-  /**
-   * The aws.ecs.Cluster resource.
-   */
-  cluster: aws.ecs.Cluster;
-  /**
-   * The awsx.ec2.Vpc resource.
-   */
-  vpc: awsx.ec2.Vpc;
-  /**
-   * The environment variables to pass to a container. Don't use this field for
-   * sensitive information such as passwords, API keys, etc. For that purpose,
-   * please use the `secrets` property.
-   * Defaults to [].
-   */
-  environment?: aws.ecs.KeyValuePair[];
-  /**
-   * The secrets to pass to the container. Defaults to [].
-   */
-  secrets?: aws.ecs.Secret[];
-  /**
    * The ID of the hosted zone.
    */
   hostedZoneId: pulumi.Input<string>;
-  taskExecutionRoleInlinePolicies?: pulumi.Input<
-    pulumi.Input<RoleInlinePolicy>[]
-  >;
-  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
-  /**
-   * A map of tags to assign to the resource.
-   */
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
 };
 
 export class WebServer extends pulumi.ComponentResource {
