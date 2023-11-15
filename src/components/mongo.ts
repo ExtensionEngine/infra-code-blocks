@@ -91,7 +91,7 @@ export class Mongo extends pulumi.ComponentResource {
       name,
       {
         image:
-          'mongo@sha256:238b1636bdd7820c752b91bec8a669f92568eb313ad89a1fc4a92903c1b40489',
+          'mongo:jammy@sha256:238b1636bdd7820c752b91bec8a669f92568eb313ad89a1fc4a92903c1b40489',
         port: servicePort,
         cluster,
         desiredCount: 1,
