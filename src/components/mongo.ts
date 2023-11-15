@@ -20,10 +20,6 @@ export type MongoArgs = {
    */
   size?: pulumi.Input<Size>;
   /**
-   * Path for the healthh check request. Defaults to "/healthcheck".
-   */
-  healthCheckPath?: pulumi.Input<string>;
-  /**
    * The aws.ecs.Cluster resource.
    */
   cluster: aws.ecs.Cluster;
@@ -72,7 +68,6 @@ export class Mongo extends pulumi.ComponentResource {
       vpc,
       environment,
       secrets,
-      healthCheckPath,
       taskExecutionRoleInlinePolicies,
       taskRoleInlinePolicies,
       tags,
@@ -107,7 +102,8 @@ export class Mongo extends pulumi.ComponentResource {
     this.service = new EcsService(
       name,
       {
-        image: 'mongo:latest',
+        image:
+          'mongo@sha256:238b1636bdd7820c752b91bec8a669f92568eb313ad89a1fc4a92903c1b40489',
         port,
         cluster,
         desiredCount: 1,
@@ -122,10 +118,11 @@ export class Mongo extends pulumi.ComponentResource {
         assignPublicIp: false,
         vpc,
         securityGroup,
-        ...(healthCheckPath && { healthCheckPath }),
-        taskExecutionRoleInlinePolicies,
-        taskRoleInlinePolicies,
-        tags,
+        ...(taskExecutionRoleInlinePolicies && {
+          taskExecutionRoleInlinePolicies,
+        }),
+        ...(taskRoleInlinePolicies && { taskRoleInlinePolicies }),
+        ...(tags && { tags }),
       },
       { ...opts, parent: this },
     );

@@ -162,7 +162,6 @@ export class EcsService extends pulumi.ComponentResource {
     if (argsWithDefaults.enableServiceAutoDiscovery) {
       this.serviceDiscoveryService = this.createServiceDiscovery(
         argsWithDefaults.vpc,
-        argsWithDefaults.healthCheckPath,
       );
     }
     this.service = this.createEcsService(args, opts);
@@ -423,7 +422,7 @@ export class EcsService extends pulumi.ComponentResource {
     return taskDefinition;
   }
 
-  private createServiceDiscovery(vpc: awsx.ec2.Vpc, healthCheckPath: string) {
+  private createServiceDiscovery(vpc: awsx.ec2.Vpc) {
     const privateDnsNamespace = new aws.servicediscovery.PrivateDnsNamespace(
       `${this.name}-private-dns-namespace`,
       {
@@ -447,11 +446,6 @@ export class EcsService extends pulumi.ComponentResource {
             },
           ],
           routingPolicy: 'MULTIVALUE',
-        },
-        healthCheckConfig: {
-          type: 'HTTP',
-          resourcePath: healthCheckPath || defaults.healthCheckPath,
-          failureThreshold: 2,
         },
         tags: commonTags,
       },

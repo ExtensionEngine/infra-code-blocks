@@ -127,7 +127,6 @@ type MongoService = {
   secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
   port: pulumi.Input<number>;
   size?: pulumi.Input<Size>;
-  healthCheckPath?: pulumi.Input<string>;
   taskExecutionRoleInlinePolicies?: pulumi.Input<
     pulumi.Input<RoleInlinePolicy>[]
   >;
@@ -459,7 +458,6 @@ new Mongo(name: string, args: MongoArgs, opts?: pulumi.ComponentResourceOptions 
  export type MongoArgs = {
   port: pulumi.Input<number>;
   size?: pulumi.Input<Size>;
-  healthCheckPath?: pulumi.Input<string>;
   cluster: aws.ecs.Cluster;
   vpc: awsx.ec2.Vpc;
   environment?:

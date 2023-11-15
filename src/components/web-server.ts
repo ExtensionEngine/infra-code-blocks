@@ -174,9 +174,11 @@ export class WebServer extends pulumi.ComponentResource {
         assignPublicIp: true,
         vpc,
         securityGroup,
-        taskExecutionRoleInlinePolicies,
-        taskRoleInlinePolicies,
-        tags,
+        ...(taskExecutionRoleInlinePolicies && {
+          taskExecutionRoleInlinePolicies,
+        }),
+        ...(taskRoleInlinePolicies && { taskRoleInlinePolicies }),
+        ...(tags && { tags }),
       },
       { ...opts, parent: this },
     );
