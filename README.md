@@ -127,10 +127,6 @@ type MongoService = {
   secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
   port?: pulumi.Input<number>;
   size?: pulumi.Input<Size>;
-  taskExecutionRoleInlinePolicies?: pulumi.Input<
-    pulumi.Input<RoleInlinePolicy>[]
-  >;
-  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
@@ -464,10 +460,6 @@ new Mongo(name: string, args: MongoArgs, opts?: pulumi.ComponentResourceOptions 
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
   secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
-    taskExecutionRoleInlinePolicies?: pulumi.Input<
-    pulumi.Input<RoleInlinePolicy>[]
-  >;
-  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;

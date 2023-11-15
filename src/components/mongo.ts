@@ -38,10 +38,6 @@ export type MongoArgs = {
    * The secrets to pass to the container. Defaults to [].
    */
   secrets?: aws.ecs.Secret[];
-  taskExecutionRoleInlinePolicies?: pulumi.Input<
-    pulumi.Input<RoleInlinePolicy>[]
-  >;
-  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
   /**
    * A map of tags to assign to the resource.
    */
@@ -61,17 +57,7 @@ export class Mongo extends pulumi.ComponentResource {
   ) {
     super('studion:Mongo', name, args, opts);
 
-    const {
-      port,
-      size,
-      cluster,
-      vpc,
-      environment,
-      secrets,
-      taskExecutionRoleInlinePolicies,
-      taskRoleInlinePolicies,
-      tags,
-    } = args;
+    const { port, size, cluster, vpc, environment, secrets, tags } = args;
 
     const servicePort = port || 27017;
 
@@ -120,10 +106,6 @@ export class Mongo extends pulumi.ComponentResource {
         assignPublicIp: false,
         vpc,
         securityGroup,
-        ...(taskExecutionRoleInlinePolicies && {
-          taskExecutionRoleInlinePolicies,
-        }),
-        ...(taskRoleInlinePolicies && { taskRoleInlinePolicies }),
         ...(tags && { tags }),
       },
       { ...opts, parent: this },
