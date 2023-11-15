@@ -250,13 +250,6 @@ export class Project extends pulumi.ComponentResource {
     if (!this.cluster) throw new MissingCluster();
 
     const { serviceName, environment, secrets, ...ecsOptions } = options;
-    const parsedEnv =
-      typeof environment === 'function'
-        ? environment(this.services)
-        : environment;
-
-    const parsedSecrets =
-      typeof secrets === 'function' ? secrets(this.services) : secrets;
 
     const service = new Mongo(
       serviceName,
@@ -264,8 +257,8 @@ export class Project extends pulumi.ComponentResource {
         ...ecsOptions,
         cluster: this.cluster,
         vpc: this.vpc,
-        environment: parsedEnv,
-        secrets: parsedSecrets,
+        environment: environment,
+        secrets: secrets,
       },
       { parent: this },
     );

@@ -57,56 +57,23 @@ export class Mongo extends pulumi.ComponentResource {
   ) {
     super('studion:Mongo', name, args, opts);
 
-    const { port, size, cluster, vpc, environment, secrets, tags } = args;
-
-    const servicePort = port || 27017;
-
-    const securityGroup = new aws.ec2.SecurityGroup(
-      `${name}-service-security-group`,
-      {
-        vpcId: vpc.vpcId,
-        ingress: [
-          {
-            fromPort: servicePort,
-            toPort: servicePort,
-            protocol: 'tcp',
-            cidrBlocks: [vpc.vpc.cidrBlock],
-          },
-        ],
-        egress: [
-          {
-            fromPort: 0,
-            toPort: 0,
-            protocol: '-1',
-            cidrBlocks: ['0.0.0.0/0'],
-          },
-        ],
-        tags: commonTags,
-      },
-      { parent: this },
-    );
+    const port = args.port || 27017;
 
     this.name = name;
     this.service = new Ecs(
       name,
       {
+        ...args,
+        port,
         image:
           'mongo:jammy@sha256:238b1636bdd7820c752b91bec8a669f92568eb313ad89a1fc4a92903c1b40489',
-        port: servicePort,
-        cluster,
         desiredCount: 1,
         minCount: 1,
         maxCount: 1,
-        ...(size && { size }),
-        environment,
-        secrets,
         enableServiceAutoDiscovery: true,
         persistentStorageVolumePath: '/data/db',
-        dockerCommand: ['mongod', '--port', servicePort.toString()],
+        dockerCommand: ['mongod', '--port', port.toString()],
         assignPublicIp: false,
-        vpc,
-        securityGroup,
-        ...(tags && { tags }),
       },
       { ...opts, parent: this },
     );
