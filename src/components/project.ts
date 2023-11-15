@@ -170,7 +170,6 @@ export class Project extends pulumi.ComponentResource {
 
   private createStaticSiteService(options: StaticSiteService) {
     const { serviceName, ...staticSiteOptions } = options;
-    if (!this.hostedZoneId) throw new MissingHostedZoneId(options.type);
     const service = new StaticSite(
       serviceName,
       {

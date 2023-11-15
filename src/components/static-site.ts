@@ -8,11 +8,11 @@ export type StaticSiteArgs = {
    * The domain which will be used to access the static site.
    * The domain or subdomain must belong to the provided hostedZone.
    */
-  domain: pulumi.Input<string>;
+  domain?: pulumi.Input<string>;
   /**
    * The ID of the hosted zone.
    */
-  hostedZoneId: pulumi.Input<string>;
+  hostedZoneId?: pulumi.Input<string>;
   /**
    * A map of tags to assign to the resource.
    */
@@ -23,7 +23,7 @@ export type StaticSiteArgs = {
 
 export class StaticSite extends pulumi.ComponentResource {
   name: string;
-  certificate: AcmCertificate;
+  certificate?: AcmCertificate;
   bucket: aws.s3.Bucket;
   cloudfront: aws.cloudfront.Distribution;
 
@@ -36,10 +36,20 @@ export class StaticSite extends pulumi.ComponentResource {
 
     this.name = name;
     const { domain, hostedZoneId, tags } = args;
-    this.certificate = this.createTlsCertificate({ domain, hostedZoneId });
+    const hasCustomDomain = domain && hostedZoneId;
+    if (domain && !hostedZoneId) {
+      throw new Error(
+        'StaticSite:hostedZoneId must be provided when the domain is specified',
+      );
+    }
+    if (hasCustomDomain) {
+      this.certificate = this.createTlsCertificate({ domain, hostedZoneId });
+    }
     this.bucket = this.createPublicBucket({ tags });
     this.cloudfront = this.createCloudfrontDistribution({ domain, tags });
-    this.createDnsRecord({ domain, hostedZoneId });
+    if (hasCustomDomain) {
+      this.createDnsRecord({ domain, hostedZoneId });
+    }
 
     this.registerOutputs();
   }
@@ -47,7 +57,7 @@ export class StaticSite extends pulumi.ComponentResource {
   private createTlsCertificate({
     domain,
     hostedZoneId,
-  }: Pick<StaticSiteArgs, 'domain' | 'hostedZoneId'>) {
+  }: Pick<Required<StaticSiteArgs>, 'domain' | 'hostedZoneId'>) {
     const certificate = new AcmCertificate(
       `${domain}-acm-certificate`,
       {
@@ -120,14 +130,20 @@ export class StaticSite extends pulumi.ComponentResource {
       {
         enabled: true,
         defaultRootObject: 'index.html',
-        aliases: [domain],
+        ...(domain && { aliases: [domain] }),
         isIpv6Enabled: true,
         waitForDeployment: true,
         httpVersion: 'http2and3',
         viewerCertificate: {
-          acmCertificateArn: this.certificate.certificate.arn,
-          sslSupportMethod: 'sni-only',
-          minimumProtocolVersion: 'TLSv1.2_2021',
+          ...(this.certificate
+            ? {
+                acmCertificateArn: this.certificate.certificate.arn,
+                sslSupportMethod: 'sni-only',
+                minimumProtocolVersion: 'TLSv1.2_2021',
+              }
+            : {
+                cloudfrontDefaultCertificate: true,
+              }),
         },
         origins: [
           {
@@ -171,7 +187,7 @@ export class StaticSite extends pulumi.ComponentResource {
   private createDnsRecord({
     domain,
     hostedZoneId,
-  }: Pick<StaticSiteArgs, 'domain' | 'hostedZoneId'>) {
+  }: Pick<Required<StaticSiteArgs>, 'domain' | 'hostedZoneId'>) {
     const cdnAliasRecord = new aws.route53.Record(
       `${this.name}-cdn-route53-record`,
       {
