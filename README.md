@@ -661,5 +661,4 @@ const project = new studion.Project('demo-project', {
 ## 🚧 TODO
 
 - [ ] Add worker service for executing tasks
-- [ ] Add MongoDB service
 - [ ] Enable RDS password rotation
