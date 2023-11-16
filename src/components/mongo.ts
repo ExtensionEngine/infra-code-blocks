@@ -73,7 +73,7 @@ export class Mongo extends pulumi.ComponentResource {
     const usernameSecret = new aws.secretsmanager.Secret(
       `${this.name}-username-secret`,
       {
-        namePrefix: `${stack}/${project}/DatabaseUsername-`,
+        namePrefix: `${stack}/${project}/MongoUsername-`,
         tags: commonTags,
       },
       { parent: this },
@@ -91,7 +91,7 @@ export class Mongo extends pulumi.ComponentResource {
     const passwordSecret = new aws.secretsmanager.Secret(
       `${this.name}-password-secret`,
       {
-        namePrefix: `${stack}/${project}/DatabasePassword-`,
+        namePrefix: `${stack}/${project}/MongoPassword-`,
         tags: commonTags,
       },
       { parent: this },
