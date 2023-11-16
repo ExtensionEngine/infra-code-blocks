@@ -55,14 +55,6 @@ export type EcsServiceArgs = {
    */
   desiredCount?: pulumi.Input<number>;
   /**
-   * Min capacity of the scalable target. Defaults to 1.
-   */
-  minCount?: pulumi.Input<number>;
-  /**
-   * Max capacity of the scalable target. Defaults to 10.
-   */
-  maxCount?: pulumi.Input<number>;
-  /**
    * CPU and memory size used for running the container. Defaults to "small".
    * Available predefined options are:
    * - small (0.25 vCPU, 0.5 GB memory)
@@ -71,10 +63,7 @@ export type EcsServiceArgs = {
    * - xlarge (2 vCPU, 4 GB memory)
    */
   size?: pulumi.Input<Size>;
-  /**
-   * Path for the healthh check request. Defaults to "/healthcheck".
-   */
-  healthCheckPath?: pulumi.Input<string>;
+
   /**
    * The environment variables to pass to a container. Don't use this field for
    * sensitive information such as passwords, API keys, etc. For that purpose,
@@ -100,10 +89,22 @@ export type EcsServiceArgs = {
    */
   dockerCommand?: pulumi.Input<string[]>;
   /**
-   * Enable auto scaling for service.
-   * Defaults to false
+   * Autoscaling options for ecs service.
    */
-  enableAutoScaling?: pulumi.Input<boolean>;
+  autoscaling?: pulumi.Input<{
+    /**
+     * Is autoscaling enabled or disabled. Defaults to false.
+     */
+    enabled: pulumi.Input<boolean>;
+    /**
+     * Min capacity of the scalable target. Defaults to 1.
+     */
+    minCount?: pulumi.Input<number>;
+    /**
+     * Max capacity of the scalable target. Defaults to 1.
+     */
+    maxCount?: pulumi.Input<number>;
+  }>;
   lbTargetGroupArn?: aws.lb.TargetGroup['arn'];
   /**
    * Custom service security group
@@ -126,10 +127,8 @@ export type EcsServiceArgs = {
   }>;
 };
 
-export const defaults = {
+const defaults = {
   desiredCount: 1,
-  minCount: 1,
-  maxCount: 1,
   size: 'small',
   environment: [],
   secrets: [],
@@ -137,8 +136,11 @@ export const defaults = {
   assignPublicIp: false,
   taskExecutionRoleInlinePolicies: [],
   taskRoleInlinePolicies: [],
-  healthCheckPath: '/healthcheck',
-  enableAutoScaling: false,
+  autoscaling: {
+    enabled: false,
+    minCount: 1,
+    maxCount: 1,
+  },
 };
 
 export class EcsService extends pulumi.ComponentResource {
@@ -165,7 +167,7 @@ export class EcsService extends pulumi.ComponentResource {
       );
     }
     this.service = this.createEcsService(args, opts);
-    if (argsWithDefaults.enableAutoScaling) {
+    if (argsWithDefaults.autoscaling.enabled) {
       this.enableAutoscaling(args);
     }
 
@@ -533,8 +535,8 @@ export class EcsService extends pulumi.ComponentResource {
     const autoscalingTarget = new aws.appautoscaling.Target(
       `${this.name}-autoscale-target`,
       {
-        minCapacity: argsWithDefaults.minCount,
-        maxCapacity: argsWithDefaults.maxCount,
+        minCapacity: argsWithDefaults.autoscaling.minCount,
+        maxCapacity: argsWithDefaults.autoscaling.maxCount,
         resourceId: pulumi.interpolate`service/${argsWithDefaults.cluster.name}/${this.service.name}`,
         serviceNamespace: 'ecs',
         scalableDimension: 'ecs:service:DesiredCount',

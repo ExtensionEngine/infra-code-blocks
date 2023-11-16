@@ -8,10 +8,6 @@ export type MongoArgs = Pick<
   'size' | 'cluster' | 'vpc' | 'tags'
 > & {
   /**
-   * Exposed service port.
-   */
-  port?: pulumi.Input<number>;
-  /**
    * Username for the master DB user.
    */
   username: pulumi.Input<string>;
@@ -20,12 +16,16 @@ export type MongoArgs = Pick<
    * The value will be stored as a secret in AWS Secret Manager.
    */
   password: pulumi.Input<string>;
+  /**
+   * Exposed service port. Defaults to 27017.
+   */
+  port?: pulumi.Input<number>;
 };
 
 export class Mongo extends pulumi.ComponentResource {
   name: string;
   service: EcsService;
-  databaseSecrets: aws.ecs.Secret[];
+  passwordSecret: aws.secretsmanager.Secret;
 
   constructor(
     name: string,
@@ -39,7 +39,7 @@ export class Mongo extends pulumi.ComponentResource {
     const { username, password, ...ecsArgs } = args;
 
     this.name = name;
-    this.databaseSecrets = this.createDatabaseSecrets({ username, password });
+    this.passwordSecret = this.createPasswordSecret(password);
 
     this.service = new EcsService(
       name,
@@ -47,15 +47,25 @@ export class Mongo extends pulumi.ComponentResource {
         ...ecsArgs,
         port,
         image:
-          'mongo:jammy@sha256:238b1636bdd7820c752b91bec8a669f92568eb313ad89a1fc4a92903c1b40489',
+          'mongo:7.0.3@sha256:238b1636bdd7820c752b91bec8a669f92568eb313ad89a1fc4a92903c1b40489',
         desiredCount: 1,
-        minCount: 1,
-        maxCount: 1,
+        autoscaling: { enabled: false },
         enableServiceAutoDiscovery: true,
         persistentStorageVolumePath: '/data/db',
         dockerCommand: ['mongod', '--port', port.toString()],
         assignPublicIp: false,
-        secrets: this.databaseSecrets,
+        environment: [
+          {
+            name: 'MONGO_INITDB_ROOT_USERNAME',
+            value: username,
+          },
+        ],
+        secrets: [
+          {
+            name: 'MONGO_INITDB_ROOT_PASSWORD',
+            valueFrom: this.passwordSecret.arn,
+          },
+        ],
       },
       { ...opts, parent: this },
     );
@@ -63,30 +73,9 @@ export class Mongo extends pulumi.ComponentResource {
     this.registerOutputs();
   }
 
-  private createDatabaseSecrets({
-    username,
-    password,
-  }: Pick<MongoArgs, 'username' | 'password'>): aws.ecs.Secret[] {
+  private createPasswordSecret(password: MongoArgs['password']) {
     const project = pulumi.getProject();
     const stack = pulumi.getStack();
-
-    const usernameSecret = new aws.secretsmanager.Secret(
-      `${this.name}-username-secret`,
-      {
-        namePrefix: `${stack}/${project}/MongoUsername-`,
-        tags: commonTags,
-      },
-      { parent: this },
-    );
-
-    const usernameSecretValue = new aws.secretsmanager.SecretVersion(
-      `${this.name}-username-secret-value`,
-      {
-        secretId: usernameSecret.id,
-        secretString: username,
-      },
-      { parent: this, dependsOn: [usernameSecret] },
-    );
 
     const passwordSecret = new aws.secretsmanager.Secret(
       `${this.name}-password-secret`,
@@ -106,15 +95,6 @@ export class Mongo extends pulumi.ComponentResource {
       { parent: this, dependsOn: [passwordSecret] },
     );
 
-    return [
-      {
-        name: 'MONGO_INITDB_ROOT_USERNAME',
-        valueFrom: usernameSecretValue.arn,
-      },
-      {
-        name: 'MONGO_INITDB_ROOT_PASSWORD',
-        valueFrom: passwordSecretValue.arn,
-      },
-    ];
+    return passwordSecret;
   }
 }

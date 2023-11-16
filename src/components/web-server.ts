@@ -2,17 +2,22 @@ import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import { commonTags } from '../constants';
 import { AcmCertificate } from './acm-certificate';
-import { EcsService, EcsServiceArgs, defaults } from './ecs-service';
+import { EcsService, EcsServiceArgs } from './ecs-service';
 
-export type WebServerArgs = Omit<
+export type WebServerArgs = Pick<
   EcsServiceArgs,
-  | 'enableServiceAutoDiscovery'
-  | 'persistentStorageVolumePath'
-  | 'dockerCommand'
-  | 'enableAutoScaling'
-  | 'lbTargetGroupArn'
-  | 'securityGroup'
-  | 'assignPublicIp'
+  | 'image'
+  | 'port'
+  | 'cluster'
+  | 'vpc'
+  | 'desiredCount'
+  | 'autoscaling'
+  | 'size'
+  | 'environment'
+  | 'secrets'
+  | 'taskExecutionRoleInlinePolicies'
+  | 'taskRoleInlinePolicies'
+  | 'tags'
 > & {
   /**
    * The domain which will be used to access the service.
@@ -23,6 +28,14 @@ export type WebServerArgs = Omit<
    * The ID of the hosted zone.
    */
   hostedZoneId: pulumi.Input<string>;
+  /**
+   * Path for the health check request. Defaults to "/healthcheck".
+   */
+  healthCheckPath?: pulumi.Input<string>;
+};
+
+const defaults = {
+  healthCheckPath: '/healthcheck',
 };
 
 export class WebServer extends pulumi.ComponentResource {
@@ -30,6 +43,7 @@ export class WebServer extends pulumi.ComponentResource {
   service: EcsService;
   certificate: AcmCertificate;
   lbSecurityGroup: aws.ec2.SecurityGroup;
+  serviceSecurityGroup: aws.ec2.SecurityGroup;
   lb: aws.lb.LoadBalancer;
   lbTargetGroup: aws.lb.TargetGroup;
   lbHttpListener: aws.lb.Listener;
@@ -42,24 +56,7 @@ export class WebServer extends pulumi.ComponentResource {
   ) {
     super('studion:WebServer', name, args, opts);
 
-    const {
-      image,
-      port,
-      size,
-      cluster,
-      vpc,
-      environment,
-      secrets,
-      healthCheckPath,
-      domain,
-      hostedZoneId,
-      desiredCount,
-      minCount,
-      maxCount,
-      taskExecutionRoleInlinePolicies,
-      taskRoleInlinePolicies,
-      tags,
-    } = args;
+    const { vpc, port, healthCheckPath, domain, hostedZoneId } = args;
 
     this.name = name;
     this.certificate = this.createTlsCertificate({ domain, hostedZoneId });
@@ -75,58 +72,8 @@ export class WebServer extends pulumi.ComponentResource {
     this.lbHttpListener = lbHttpListener;
     this.lbTlsListener = lbTlsListener;
     this.lbSecurityGroup = lbSecurityGroup;
-
-    const securityGroup = new aws.ec2.SecurityGroup(
-      `${name}-security-group`,
-      {
-        vpcId: vpc.vpcId,
-        ingress: [
-          {
-            fromPort: 0,
-            toPort: 0,
-            protocol: '-1',
-            securityGroups: [this.lbSecurityGroup.id],
-          },
-        ],
-        egress: [
-          {
-            fromPort: 0,
-            toPort: 0,
-            protocol: '-1',
-            cidrBlocks: ['0.0.0.0/0'],
-          },
-        ],
-        tags: commonTags,
-      },
-      { parent: this },
-    );
-
-    this.service = new EcsService(
-      name,
-      {
-        image,
-        port,
-        cluster,
-        ...(desiredCount && { desiredCount }),
-        ...(minCount && { minCount }),
-        ...(maxCount && { maxCount }),
-        ...(size && { size }),
-        environment,
-        secrets,
-        enableServiceAutoDiscovery: false,
-        enableAutoScaling: true,
-        lbTargetGroupArn: lbTargetGroup.arn,
-        assignPublicIp: true,
-        vpc,
-        securityGroup,
-        ...(taskExecutionRoleInlinePolicies && {
-          taskExecutionRoleInlinePolicies,
-        }),
-        ...(taskRoleInlinePolicies && { taskRoleInlinePolicies }),
-        ...(tags && { tags }),
-      },
-      { ...opts, parent: this },
-    );
+    this.serviceSecurityGroup = this.createSecurityGroup({ vpc });
+    this.service = this.createEcsService(args);
 
     this.createDnsRecord({ domain, hostedZoneId });
 
@@ -264,6 +211,57 @@ export class WebServer extends pulumi.ComponentResource {
       lbTlsListener,
       lbSecurityGroup,
     };
+  }
+
+  private createSecurityGroup({ vpc }: Pick<WebServerArgs, 'vpc'>) {
+    const securityGroup = new aws.ec2.SecurityGroup(
+      `${this.name}-security-group`,
+      {
+        vpcId: vpc.vpcId,
+        ingress: [
+          {
+            fromPort: 0,
+            toPort: 0,
+            protocol: '-1',
+            securityGroups: [this.lbSecurityGroup.id],
+          },
+        ],
+        egress: [
+          {
+            fromPort: 0,
+            toPort: 0,
+            protocol: '-1',
+            cidrBlocks: ['0.0.0.0/0'],
+          },
+        ],
+        tags: commonTags,
+      },
+      { parent: this },
+    );
+    return securityGroup;
+  }
+
+  private createEcsService(args: WebServerArgs) {
+    const service = new EcsService(
+      this.name,
+      {
+        ...args,
+        enableServiceAutoDiscovery: false,
+        lbTargetGroupArn: this.lbTargetGroup.arn,
+        assignPublicIp: true,
+        securityGroup: this.serviceSecurityGroup,
+      },
+      {
+        parent: this,
+        dependsOn: [
+          this.lb,
+          this.lbTargetGroup,
+          this.lbHttpListener,
+          this.lbTlsListener,
+        ],
+      },
+    );
+    return service;
   }
 
   private createDnsRecord({

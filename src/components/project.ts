@@ -253,12 +253,12 @@ export class Project extends pulumi.ComponentResource {
   private createMongoService(options: MongoServiceOptions) {
     if (!this.cluster) throw new MissingEcsCluster();
 
-    const { serviceName, ...ecsOptions } = options;
+    const { serviceName, ...mongoOptions } = options;
 
     const service = new Mongo(
       serviceName,
       {
-        ...ecsOptions,
+        ...mongoOptions,
         cluster: this.cluster,
         vpc: this.vpc,
       },

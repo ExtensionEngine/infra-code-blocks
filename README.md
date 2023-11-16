@@ -152,8 +152,11 @@ export type WebServerService = {
     | ((services: Services) => aws.ecs.KeyValuePair[]);
   secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
   desiredCount?: pulumi.Input<number>;
-  minCount?: pulumi.Input<number>;
-  maxCount?: pulumi.Input<number>;
+  autoscaling?: pulumi.Input<{
+    enabled: pulumi.Input<boolean>;
+    minCount?: pulumi.Input<number>;
+    maxCount?: pulumi.Input<number>;
+  }>;
   size?: pulumi.Input<Size>;
   healthCheckPath?: pulumi.Input<string>;
   taskExecutionRoleInlinePolicies?: pulumi.Input<
@@ -186,9 +189,7 @@ type EcsService = {
   serviceName: string;
   image: pulumi.Input<string>;
   port: pulumi.Input<number>;
-  domain: pulumi.Input<string>;
   enableServiceAutoDiscovery: pulumi.Input<boolean>;
-  enableAutoScaling?: pulumi.Input<boolean>;
   lbTargetGroupArn?: aws.lb.TargetGroup['arn'];
   persistentStorageVolumePath?: pulumi.Input<string>;
   securityGroup?: aws.ec2.SecurityGroup;
@@ -199,8 +200,11 @@ type EcsService = {
     | ((services: Services) => aws.ecs.KeyValuePair[]);
   secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
   desiredCount?: pulumi.Input<number>;
-  minCount?: pulumi.Input<number>;
-  maxCount?: pulumi.Input<number>;
+  autoscaling?: pulumi.Input<{
+    enabled: pulumi.Input<boolean>;
+    minCount?: pulumi.Input<number>;
+    maxCount?: pulumi.Input<number>;
+  }>;
   size?: pulumi.Input<Size>;
   healthCheckPath?: pulumi.Input<string>;
   taskExecutionRoleInlinePolicies?: pulumi.Input<
@@ -445,8 +449,11 @@ export type WebServerArgs = {
   hostedZoneId: pulumi.Input<string>;
   vpc: awsx.ec2.Vpc;
   desiredCount?: pulumi.Input<number>;
-  minCount?: pulumi.Input<number>;
-  maxCount?: pulumi.Input<number>;
+  autoscaling?: pulumi.Input<{
+    enabled: pulumi.Input<boolean>;
+    minCount?: pulumi.Input<number>;
+    maxCount?: pulumi.Input<number>;
+  }>;
   size?: pulumi.Input<Size>;
   environment?: aws.ecs.KeyValuePair[];
   secrets?: aws.ecs.Secret[];
@@ -507,9 +514,7 @@ Features:
 - memory and CPU autoscaling
 - service auto discovery
 - persistent storage
-- supports load balancing
-- reates CloudWatch log group
-- public IP address
+- CloudWatch logs
 - comes with predefined cpu and memory options: `small`, `medium`, `large`, `xlarge`
 
 <br>
@@ -531,16 +536,17 @@ export type EcsServiceArgs = {
   cluster: aws.ecs.Cluster;
   vpc: awsx.ec2.Vpc;
   desiredCount?: pulumi.Input<number>;
-  minCount?: pulumi.Input<number>;
-  maxCount?: pulumi.Input<number>;
+  autoscaling?: pulumi.Input<{
+    enabled: pulumi.Input<boolean>;
+    minCount?: pulumi.Input<number>;
+    maxCount?: pulumi.Input<number>;
+  }>;
   size?: pulumi.Input<Size>;
-  healthCheckPath?: pulumi.Input<string>;
   environment?: aws.ecs.KeyValuePair[];
   secrets?: aws.ecs.Secret[];
   enableServiceAutoDiscovery: pulumi.Input<boolean>;
   persistentStorageVolumePath?: pulumi.Input<string>;
   dockerCommand?: pulumi.Input<string[]>;
-  enableAutoScaling?: pulumi.Input<boolean>;
   lbTargetGroupArn?: aws.lb.TargetGroup['arn'];
   securityGroup?: aws.ec2.SecurityGroup;
   assignPublicIp?: pulumi.Input<boolean>;
