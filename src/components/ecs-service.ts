@@ -141,7 +141,7 @@ export const defaults = {
   enableAutoScaling: false,
 };
 
-export class Ecs extends pulumi.ComponentResource {
+export class EcsService extends pulumi.ComponentResource {
   name: string;
   logGroup: aws.cloudwatch.LogGroup;
   taskDefinition: aws.ecs.TaskDefinition;

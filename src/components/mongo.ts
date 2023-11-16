@@ -1,5 +1,5 @@
 import * as pulumi from '@pulumi/pulumi';
-import { Ecs, EcsServiceArgs } from './ecs-service';
+import { EcsService, EcsServiceArgs } from './ecs-service';
 
 export type MongoArgs = Pick<
   EcsServiceArgs,
@@ -13,7 +13,7 @@ export type MongoArgs = Pick<
 
 export class Mongo extends pulumi.ComponentResource {
   name: string;
-  service: Ecs;
+  service: EcsService;
 
   constructor(
     name: string,
@@ -25,7 +25,7 @@ export class Mongo extends pulumi.ComponentResource {
     const port = args.port || 27017;
 
     this.name = name;
-    this.service = new Ecs(
+    this.service = new EcsService(
       name,
       {
         ...args,

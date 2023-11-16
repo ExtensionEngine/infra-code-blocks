@@ -2,7 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import { commonTags } from '../constants';
 import { AcmCertificate } from './acm-certificate';
-import { Ecs, EcsServiceArgs, defaults } from './ecs-service';
+import { EcsService, EcsServiceArgs, defaults } from './ecs-service';
 
 export type WebServerArgs = Omit<
   EcsServiceArgs,
@@ -27,7 +27,7 @@ export type WebServerArgs = Omit<
 
 export class WebServer extends pulumi.ComponentResource {
   name: string;
-  service: Ecs;
+  service: EcsService;
   certificate: AcmCertificate;
   lbSecurityGroup: aws.ec2.SecurityGroup;
   lb: aws.lb.LoadBalancer;
@@ -101,7 +101,7 @@ export class WebServer extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    this.service = new Ecs(
+    this.service = new EcsService(
       name,
       {
         image,

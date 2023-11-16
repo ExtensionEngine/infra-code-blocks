@@ -62,7 +62,7 @@ $ pulumi up
 4. [StaticSite](#static-site)
 5. [WebServer](#web-server)
 6. [Mongo](#mongo)
-7. [Ecs](#ecs)
+7. [EcsService](#ecs-service)
 
 ### Project
 
@@ -467,8 +467,8 @@ AWS ECS Fargate mongo service.
 
 Features:
 
-- has persistent storage
-- comes with service discovery namespace
+- persistent storage
+- service auto-discovery
 - creates CloudWatch log group
 - comes with predefined cpu and memory options: `small`, `medium`, `large`, `xlarge`
 
@@ -485,7 +485,7 @@ new Mongo(name: string, args: MongoArgs, opts?: pulumi.ComponentResourceOptions 
 | opts     | Bag of options to control resource's behavior. |
 
 ```ts
- export type MongoArgs = {
+export type MongoArgs = {
   cluster: aws.ecs.Cluster;
   vpc: awsx.ec2.Vpc;
   port?: pulumi.Input<number>;
@@ -495,9 +495,10 @@ new Mongo(name: string, args: MongoArgs, opts?: pulumi.ComponentResourceOptions 
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
+};
 ```
 
-### Ecs
+### Ecs Service
 
 AWS ECS Fargate service.
 
@@ -514,7 +515,7 @@ Features:
 <br>
 
 ```ts
-new Ecs(name: string, args: EcsServiceArgs, opts?: pulumi.ComponentResourceOptions );
+new EcsService(name: string, args: EcsServiceArgs, opts?: pulumi.ComponentResourceOptions );
 ```
 
 | Argument |                  Description                   |

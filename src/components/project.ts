@@ -5,13 +5,19 @@ import * as upstash from '@upstash/pulumi';
 import { Database, DatabaseArgs } from './database';
 import { WebServer, WebServerArgs } from './web-server';
 import { Mongo, MongoArgs } from './mongo';
-import { Redis, RedisArgs } from './redis';
+import { Redis, RedisArgs, RedisOptions } from './redis';
 import { StaticSite, StaticSiteArgs } from './static-site';
 import { Ec2SSMConnect } from './ec2-ssm-connect';
 import { commonTags } from '../constants';
-import { Ecs, EcsServiceArgs } from './ecs-service';
+import { EcsService, EcsServiceArgs } from './ecs-service';
 
-export type Service = Database | Redis | StaticSite | WebServer | Mongo | Ecs;
+export type Service =
+  | Database
+  | Redis
+  | StaticSite
+  | WebServer
+  | Mongo
+  | EcsService;
 export type Services = Record<string, Service>;
 
 type ServiceArgs = {
@@ -21,16 +27,16 @@ type ServiceArgs = {
   serviceName: string;
 };
 
-export type DatabaseService = { type: 'DATABASE' } & ServiceArgs &
+export type DatabaseServiceOptions = { type: 'DATABASE' } & ServiceArgs &
   Omit<DatabaseArgs, 'vpc'>;
 
-export type RedisService = { type: 'REDIS' } & ServiceArgs &
+export type RedisServiceOptions = { type: 'REDIS' } & ServiceArgs &
   Pick<RedisArgs, 'dbName' | 'region'>;
 
-export type StaticSiteService = { type: 'STATIC_SITE' } & ServiceArgs &
+export type StaticSiteServiceOptions = { type: 'STATIC_SITE' } & ServiceArgs &
   Omit<StaticSiteArgs, 'hostedZoneId'>;
 
-export type WebServerService = {
+export type WebServerServiceOptions = {
   type: 'WEB_SERVER';
   environment?:
     | aws.ecs.KeyValuePair[]
@@ -42,14 +48,14 @@ export type WebServerService = {
     'cluster' | 'vpc' | 'hostedZoneId' | 'environment' | 'secrets'
   >;
 
-export type MongoService = {
+export type MongoServiceOptions = {
   type: 'MONGO';
   environment?: aws.ecs.KeyValuePair[];
   secrets?: aws.ecs.Secret[];
 } & ServiceArgs &
   Omit<MongoArgs, 'cluster' | 'vpc' | 'environment' | 'secrets'>;
 
-export type EcsService = {
+export type EcsServiceOptions = {
   type: 'ECS';
   environment?:
     | aws.ecs.KeyValuePair[]
@@ -63,12 +69,12 @@ export type EcsService = {
 
 export type ProjectArgs = {
   services: (
-    | DatabaseService
-    | RedisService
-    | StaticSiteService
-    | WebServerService
-    | MongoService
-    | EcsService
+    | DatabaseServiceOptions
+    | RedisServiceOptions
+    | StaticSiteServiceOptions
+    | WebServerServiceOptions
+    | MongoServiceOptions
+    | EcsServiceOptions
   )[];
   hostedZoneId?: pulumi.Input<string>;
   enableSSMConnect?: pulumi.Input<boolean>;
@@ -84,9 +90,9 @@ export class MissingHostedZoneId extends Error {
   }
 }
 
-export class MissingCluster extends Error {
+export class MissingEcsCluster extends Error {
   constructor() {
-    super('Cluster does not exist');
+    super('Ecs Cluster does not exist');
     this.name = this.constructor.name;
   }
 }
@@ -149,7 +155,7 @@ export class Project extends pulumi.ComponentResource {
           it.type === 'WEB_SERVER' || it.type === 'MONGO' || it.type === 'ECS',
       ) && !this.cluster;
     if (hasRedisService) this.createRedisPrerequisites();
-    if (shouldCreateEcsCluster) this.createCluster();
+    if (shouldCreateEcsCluster) this.createEcsCluster();
     services.forEach(it => {
       if (it.type === 'DATABASE') this.createDatabaseService(it);
       if (it.type === 'REDIS') this.createRedisService(it);
@@ -169,7 +175,7 @@ export class Project extends pulumi.ComponentResource {
     });
   }
 
-  private createCluster() {
+  private createEcsCluster() {
     const stack = pulumi.getStack();
     this.cluster = new aws.ecs.Cluster(
       `${this.name}-cluster`,
@@ -181,7 +187,7 @@ export class Project extends pulumi.ComponentResource {
     );
   }
 
-  private createDatabaseService(options: DatabaseService) {
+  private createDatabaseService(options: DatabaseServiceOptions) {
     const { serviceName, type, ...databaseOptions } = options;
     const service = new Database(
       serviceName,
@@ -194,7 +200,7 @@ export class Project extends pulumi.ComponentResource {
     this.services[serviceName] = service;
   }
 
-  private createRedisService(options: RedisService) {
+  private createRedisService(options: RedisServiceOptions) {
     if (!this.upstashProvider) return;
     const { serviceName, ...redisOptions } = options;
     const service = new Redis(serviceName, redisOptions, {
@@ -204,7 +210,7 @@ export class Project extends pulumi.ComponentResource {
     this.services[options.serviceName] = service;
   }
 
-  private createStaticSiteService(options: StaticSiteService) {
+  private createStaticSiteService(options: StaticSiteServiceOptions) {
     const { serviceName, ...staticSiteOptions } = options;
     if (!this.hostedZoneId) throw new MissingHostedZoneId(options.type);
     const service = new StaticSite(
@@ -218,8 +224,8 @@ export class Project extends pulumi.ComponentResource {
     this.services[serviceName] = service;
   }
 
-  private createWebServerService(options: WebServerService) {
-    if (!this.cluster) throw new MissingCluster();
+  private createWebServerService(options: WebServerServiceOptions) {
+    if (!this.cluster) throw new MissingEcsCluster();
     if (!this.hostedZoneId) throw new MissingHostedZoneId(options.type);
 
     const { serviceName, environment, secrets, ...ecsOptions } = options;
@@ -246,8 +252,8 @@ export class Project extends pulumi.ComponentResource {
     this.services[options.serviceName] = service;
   }
 
-  private createMongoService(options: MongoService) {
-    if (!this.cluster) throw new MissingCluster();
+  private createMongoService(options: MongoServiceOptions) {
+    if (!this.cluster) throw new MissingEcsCluster();
 
     const { serviceName, environment, secrets, ...ecsOptions } = options;
 
@@ -265,8 +271,8 @@ export class Project extends pulumi.ComponentResource {
     this.services[options.serviceName] = service;
   }
 
-  private createEcsService(options: EcsService) {
-    if (!this.cluster) throw new MissingCluster();
+  private createEcsService(options: EcsServiceOptions) {
+    if (!this.cluster) throw new MissingEcsCluster();
 
     const { serviceName, environment, secrets, ...ecsOptions } = options;
     const parsedEnv =
@@ -277,7 +283,7 @@ export class Project extends pulumi.ComponentResource {
     const parsedSecrets =
       typeof secrets === 'function' ? secrets(this.services) : secrets;
 
-    const service = new Ecs(
+    const service = new EcsService(
       serviceName,
       {
         ...ecsOptions,
