@@ -170,8 +170,8 @@ export type WebServerService = {
 type MongoService = {
   type: 'MONGO';
   serviceName: string;
-  environment?: aws.ecs.KeyValuePair[];
-  secrets?: aws.ecs.Secret[];
+  username: pulumi.Input<string>;
+  password: pulumi.Input<string>;
   port?: pulumi.Input<number>;
   size?: pulumi.Input<Size>;
   tags?: pulumi.Input<{
@@ -488,10 +488,10 @@ new Mongo(name: string, args: MongoArgs, opts?: pulumi.ComponentResourceOptions 
 export type MongoArgs = {
   cluster: aws.ecs.Cluster;
   vpc: awsx.ec2.Vpc;
+  username: pulumi.Input<string>;
+  password: pulumi.Input<string>;
   port?: pulumi.Input<number>;
   size?: pulumi.Input<Size>;
-  environment?: aws.ecs.KeyValuePair[];
-  secrets?: aws.ecs.Secret[];
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;

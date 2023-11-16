@@ -5,7 +5,7 @@ import * as upstash from '@upstash/pulumi';
 import { Database, DatabaseArgs } from './database';
 import { WebServer, WebServerArgs } from './web-server';
 import { Mongo, MongoArgs } from './mongo';
-import { Redis, RedisArgs, RedisOptions } from './redis';
+import { Redis, RedisArgs } from './redis';
 import { StaticSite, StaticSiteArgs } from './static-site';
 import { Ec2SSMConnect } from './ec2-ssm-connect';
 import { commonTags } from '../constants';
@@ -50,8 +50,6 @@ export type WebServerServiceOptions = {
 
 export type MongoServiceOptions = {
   type: 'MONGO';
-  environment?: aws.ecs.KeyValuePair[];
-  secrets?: aws.ecs.Secret[];
 } & ServiceArgs &
   Omit<MongoArgs, 'cluster' | 'vpc' | 'environment' | 'secrets'>;
 
@@ -255,7 +253,7 @@ export class Project extends pulumi.ComponentResource {
   private createMongoService(options: MongoServiceOptions) {
     if (!this.cluster) throw new MissingEcsCluster();
 
-    const { serviceName, environment, secrets, ...ecsOptions } = options;
+    const { serviceName, ...ecsOptions } = options;
 
     const service = new Mongo(
       serviceName,
@@ -263,8 +261,6 @@ export class Project extends pulumi.ComponentResource {
         ...ecsOptions,
         cluster: this.cluster,
         vpc: this.vpc,
-        environment: environment,
-        secrets: secrets,
       },
       { parent: this },
     );
