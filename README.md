@@ -61,6 +61,8 @@ $ pulumi up
 3. [Redis](#redis)
 4. [StaticSite](#static-site)
 5. [WebServer](#web-server)
+6. [Mongo](#mongo)
+7. [EcsService](#ecs-service)
 
 ### Project
 
@@ -86,6 +88,8 @@ type ProjectArgs = {
     | RedisService
     | StaticSiteService
     | WebServerService
+    | MongoService
+    | EcsService
   )[];
   hostedZoneId?: pulumi.Input<string>;
   enableSSMConnect?: pulumi.Input<boolean>;
@@ -140,18 +144,69 @@ export type StaticSiteService = {
 export type WebServerService = {
   type: 'WEB_SERVER';
   serviceName: string;
+  image: pulumi.Input<string>;
+  port: pulumi.Input<number>;
+  domain: pulumi.Input<string>;
   environment?:
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
   secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
+  desiredCount?: pulumi.Input<number>;
+  autoscaling?: pulumi.Input<{
+    enabled: pulumi.Input<boolean>;
+    minCount?: pulumi.Input<number>;
+    maxCount?: pulumi.Input<number>;
+  }>;
+  size?: pulumi.Input<Size>;
+  healthCheckPath?: pulumi.Input<string>;
+  taskExecutionRoleInlinePolicies?: pulumi.Input<
+    pulumi.Input<RoleInlinePolicy>[]
+  >;
+  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
+};
+```
+
+```ts
+type MongoService = {
+  type: 'MONGO';
+  serviceName: string;
+  username: pulumi.Input<string>;
+  password: pulumi.Input<string>;
+  port?: pulumi.Input<number>;
+  size?: pulumi.Input<Size>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
+};
+```
+
+```ts
+type EcsService = {
+  type: 'ECS';
+  serviceName: string;
   image: pulumi.Input<string>;
   port: pulumi.Input<number>;
-  domain: pulumi.Input<string>;
+  enableServiceAutoDiscovery: pulumi.Input<boolean>;
+  lbTargetGroupArn?: aws.lb.TargetGroup['arn'];
+  persistentStorageVolumePath?: pulumi.Input<string>;
+  securityGroup?: aws.ec2.SecurityGroup;
+  assignPublicIp?: pulumi.Input<boolean>;
+  dockerCommand?: pulumi.Input<string[]>;
+  environment?:
+    | aws.ecs.KeyValuePair[]
+    | ((services: Services) => aws.ecs.KeyValuePair[]);
+  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
   desiredCount?: pulumi.Input<number>;
-  minCount?: pulumi.Input<number>;
-  maxCount?: pulumi.Input<number>;
+  autoscaling?: pulumi.Input<{
+    enabled: pulumi.Input<boolean>;
+    minCount?: pulumi.Input<number>;
+    maxCount?: pulumi.Input<number>;
+  }>;
   size?: pulumi.Input<Size>;
-  healtCheckPath?: pulumi.Input<string>;
+  healthCheckPath?: pulumi.Input<string>;
   taskExecutionRoleInlinePolicies?: pulumi.Input<
     pulumi.Input<RoleInlinePolicy>[]
   >;
@@ -368,7 +423,7 @@ AWS ECS Fargate web server.
 
 Features:
 
-- Memory and CPU autoscaling enabled
+- memory and CPU autoscaling enabled
 - creates TLS certificate for the specified domain
 - redirects HTTP traffic to HTTPS
 - creates CloudWatch log group
@@ -395,12 +450,107 @@ export type WebServerArgs = {
   hostedZoneId: pulumi.Input<string>;
   vpc: awsx.ec2.Vpc;
   desiredCount?: pulumi.Input<number>;
-  minCount?: pulumi.Input<number>;
-  maxCount?: pulumi.Input<number>;
+  autoscaling?: pulumi.Input<{
+    enabled: pulumi.Input<boolean>;
+    minCount?: pulumi.Input<number>;
+    maxCount?: pulumi.Input<number>;
+  }>;
   size?: pulumi.Input<Size>;
   environment?: aws.ecs.KeyValuePair[];
   secrets?: aws.ecs.Secret[];
-  healtCheckPath?: pulumi.Input<string>;
+  healthCheckPath?: pulumi.Input<string>;
+  taskExecutionRoleInlinePolicies?: pulumi.Input<
+    pulumi.Input<RoleInlinePolicy>[]
+  >;
+  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
+};
+```
+
+### Mongo
+
+AWS ECS Fargate mongo service.
+
+Features:
+
+- persistent storage
+- service auto-discovery
+- creates CloudWatch log group
+- comes with predefined cpu and memory options: `small`, `medium`, `large`, `xlarge`
+
+<br>
+
+```ts
+new Mongo(name: string, args: MongoArgs, opts?: pulumi.ComponentResourceOptions );
+```
+
+| Argument |                  Description                   |
+| :------- | :--------------------------------------------: |
+| name \*  |        The unique name of the resource.        |
+| args \*  |     The arguments to resource properties.      |
+| opts     | Bag of options to control resource's behavior. |
+
+```ts
+export type MongoArgs = {
+  cluster: aws.ecs.Cluster;
+  vpc: awsx.ec2.Vpc;
+  username: pulumi.Input<string>;
+  password: pulumi.Input<string>;
+  port?: pulumi.Input<number>;
+  size?: pulumi.Input<Size>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
+};
+```
+
+### Ecs Service
+
+AWS ECS Fargate service.
+
+Features:
+
+- memory and CPU autoscaling
+- service auto discovery
+- persistent storage
+- CloudWatch logs
+- comes with predefined cpu and memory options: `small`, `medium`, `large`, `xlarge`
+
+<br>
+
+```ts
+new EcsService(name: string, args: EcsServiceArgs, opts?: pulumi.ComponentResourceOptions );
+```
+
+| Argument |                  Description                   |
+| :------- | :--------------------------------------------: |
+| name \*  |        The unique name of the resource.        |
+| args \*  |     The arguments to resource properties.      |
+| opts     | Bag of options to control resource's behavior. |
+
+```ts
+export type EcsServiceArgs = {
+  image: pulumi.Input<string>;
+  port: pulumi.Input<number>;
+  cluster: aws.ecs.Cluster;
+  vpc: awsx.ec2.Vpc;
+  desiredCount?: pulumi.Input<number>;
+  autoscaling?: pulumi.Input<{
+    enabled: pulumi.Input<boolean>;
+    minCount?: pulumi.Input<number>;
+    maxCount?: pulumi.Input<number>;
+  }>;
+  size?: pulumi.Input<Size>;
+  environment?: aws.ecs.KeyValuePair[];
+  secrets?: aws.ecs.Secret[];
+  enableServiceAutoDiscovery: pulumi.Input<boolean>;
+  persistentStorageVolumePath?: pulumi.Input<string>;
+  dockerCommand?: pulumi.Input<string[]>;
+  lbTargetGroupArn?: aws.lb.TargetGroup['arn'];
+  securityGroup?: aws.ec2.SecurityGroup;
+  assignPublicIp?: pulumi.Input<boolean>;
   taskExecutionRoleInlinePolicies?: pulumi.Input<
     pulumi.Input<RoleInlinePolicy>[]
   >;
@@ -512,5 +662,4 @@ const project = new studion.Project('demo-project', {
 ## 🚧 TODO
 
 - [ ] Add worker service for executing tasks
-- [ ] Add MongoDB service
 - [ ] Enable RDS password rotation
