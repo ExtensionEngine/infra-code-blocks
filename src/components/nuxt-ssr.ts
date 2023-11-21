@@ -116,10 +116,12 @@ export class NuxtSSR extends pulumi.ComponentResource {
     const headerNameSegment1 = new random.RandomString(
       `${this.name}-cf-header-name-segment1`,
       headerNameOpts,
+      { parent: this },
     );
     const headerNameSegment2 = new random.RandomString(
       `${this.name}-cf-header-name-segment2`,
       headerNameOpts,
+      { parent: this },
     );
     const headerValue = new random.RandomString(
       `${this.name}-cf-header-value`,
@@ -130,6 +132,7 @@ export class NuxtSSR extends pulumi.ComponentResource {
         lower: true,
         upper: true,
       },
+      { parent: this },
     );
     const headerName = pulumi
       .all([headerNameSegment1.result, headerNameSegment2.result])
@@ -247,6 +250,7 @@ export class NuxtSSR extends pulumi.ComponentResource {
           },
         ],
       },
+      { parent: this },
     );
 
     return {
@@ -328,6 +332,7 @@ export class NuxtSSR extends pulumi.ComponentResource {
           },
         },
       },
+      { parent: this },
     );
 
     const originRequestPolicyId = aws.cloudfront
