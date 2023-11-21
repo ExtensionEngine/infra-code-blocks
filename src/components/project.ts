@@ -36,7 +36,7 @@ export type RedisServiceOptions = { type: 'REDIS' } & ServiceArgs &
   Pick<RedisArgs, 'dbName' | 'region'>;
 
 export type StaticSiteServiceOptions = { type: 'STATIC_SITE' } & ServiceArgs &
-  Omit<StaticSiteArgs, 'hostedZoneId'>;
+  StaticSiteArgs;
 
 export type WebServerServiceOptions = {
   type: 'WEB_SERVER';
@@ -51,7 +51,6 @@ export type WebServerServiceOptions = {
     | 'vpcId'
     | 'vpcCidrBlock'
     | 'publicSubnetIds'
-    | 'hostedZoneId'
     | 'environment'
     | 'secrets'
   >;
@@ -69,7 +68,6 @@ export type NuxtSSRServiceOptions = {
     | 'vpcId'
     | 'vpcCidrBlock'
     | 'publicSubnetIds'
-    | 'hostedZoneId'
     | 'environment'
     | 'secrets'
   >;
@@ -94,10 +92,7 @@ export type EcsServiceOptions = {
     | ((services: Services) => aws.ecs.KeyValuePair[]);
   secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
 } & ServiceArgs &
-  Omit<
-    EcsServiceArgs,
-    'cluster' | 'vpc' | 'hostedZoneId' | 'environment' | 'secrets'
-  >;
+  Omit<EcsServiceArgs, 'cluster' | 'vpc' | 'environment' | 'secrets'>;
 
 export type ProjectArgs = {
   services: (
@@ -109,19 +104,8 @@ export type ProjectArgs = {
     | MongoServiceOptions
     | EcsServiceOptions
   )[];
-  hostedZoneId?: pulumi.Input<string>;
   enableSSMConnect?: pulumi.Input<boolean>;
 };
-
-export class MissingHostedZoneId extends Error {
-  constructor(serviceType: string) {
-    super(
-      `Project::hostedZoneId argument must be provided 
-      in order to create ${serviceType} service`,
-    );
-    this.name = this.constructor.name;
-  }
-}
 
 export class MissingEcsCluster extends Error {
   constructor() {
@@ -134,7 +118,6 @@ export class Project extends pulumi.ComponentResource {
   name: string;
   vpc: awsx.ec2.Vpc;
   cluster?: aws.ecs.Cluster;
-  hostedZoneId?: pulumi.Input<string>;
   upstashProvider?: upstash.Provider;
   ec2SSMConnect?: Ec2SSMConnect;
   services: Services = {};
@@ -145,12 +128,10 @@ export class Project extends pulumi.ComponentResource {
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:Project', name, {}, opts);
-    const { services, hostedZoneId } = args;
     this.name = name;
-    this.hostedZoneId = hostedZoneId;
 
     this.vpc = this.createVpc();
-    this.createServices(services);
+    this.createServices(args.services);
 
     if (args.enableSSMConnect) {
       this.ec2SSMConnect = new Ec2SSMConnect(`${name}-ssm-connect`, {
@@ -250,20 +231,14 @@ export class Project extends pulumi.ComponentResource {
 
   private createStaticSiteService(options: StaticSiteServiceOptions) {
     const { serviceName, ...staticSiteOptions } = options;
-    const service = new StaticSite(
-      serviceName,
-      {
-        ...staticSiteOptions,
-        hostedZoneId: this.hostedZoneId,
-      },
-      { parent: this },
-    );
+    const service = new StaticSite(serviceName, staticSiteOptions, {
+      parent: this,
+    });
     this.services[serviceName] = service;
   }
 
   private createWebServerService(options: WebServerServiceOptions) {
     if (!this.cluster) throw new MissingEcsCluster();
-    if (!this.hostedZoneId) throw new MissingHostedZoneId(options.type);
 
     const { serviceName, environment, secrets, ...ecsOptions } = options;
     const parsedEnv =
@@ -282,7 +257,6 @@ export class Project extends pulumi.ComponentResource {
         vpcId: this.vpc.vpcId,
         vpcCidrBlock: this.vpc.vpc.cidrBlock,
         publicSubnetIds: this.vpc.publicSubnetIds,
-        hostedZoneId: this.hostedZoneId,
         environment: parsedEnv,
         secrets: parsedSecrets,
       },
@@ -311,7 +285,6 @@ export class Project extends pulumi.ComponentResource {
         vpcId: this.vpc.vpcId,
         vpcCidrBlock: this.vpc.vpc.cidrBlock,
         publicSubnetIds: this.vpc.publicSubnetIds,
-        hostedZoneId: this.hostedZoneId,
         environment: parsedEnv,
         secrets: parsedSecrets,
       },
