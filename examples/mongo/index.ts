@@ -48,7 +48,7 @@ const project = new Project('mongo-project', {
       },
     },
   ],
-  hostedZoneId: 'Z034266420CJCR4IBU4AG',
+  hostedZoneId: process.env.HOSTED_ZONE_ID,
 });
 
 function createWebServerImage() {
