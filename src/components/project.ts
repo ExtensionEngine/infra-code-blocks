@@ -10,12 +10,14 @@ import { StaticSite, StaticSiteArgs } from './static-site';
 import { Ec2SSMConnect } from './ec2-ssm-connect';
 import { commonTags } from '../constants';
 import { EcsService, EcsServiceArgs } from './ecs-service';
+import { NuxtSSR, NuxtSSRArgs } from './nuxt-ssr';
 
 export type Service =
   | Database
   | Redis
   | StaticSite
   | WebServer
+  | NuxtSSR
   | Mongo
   | EcsService;
 export type Services = Record<string, Service>;
@@ -48,6 +50,18 @@ export type WebServerServiceOptions = {
     'cluster' | 'vpc' | 'hostedZoneId' | 'environment' | 'secrets'
   >;
 
+export type NuxtSSRServiceOptions = {
+  type: 'NUXT_SSR';
+  environment?:
+    | aws.ecs.KeyValuePair[]
+    | ((services: Services) => aws.ecs.KeyValuePair[]);
+  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
+} & ServiceArgs &
+  Omit<
+    NuxtSSRArgs,
+    'cluster' | 'vpc' | 'hostedZoneId' | 'environment' | 'secrets'
+  >;
+
 export type MongoServiceOptions = {
   type: 'MONGO';
 } & ServiceArgs &
@@ -71,6 +85,7 @@ export type ProjectArgs = {
     | RedisServiceOptions
     | StaticSiteServiceOptions
     | WebServerServiceOptions
+    | NuxtSSRServiceOptions
     | MongoServiceOptions
     | EcsServiceOptions
   )[];
@@ -159,6 +174,7 @@ export class Project extends pulumi.ComponentResource {
       if (it.type === 'REDIS') this.createRedisService(it);
       if (it.type === 'STATIC_SITE') this.createStaticSiteService(it);
       if (it.type === 'WEB_SERVER') this.createWebServerService(it);
+      if (it.type === 'NUXT_SSR') this.createNuxtSSRService(it);
       if (it.type === 'MONGO') this.createMongoService(it);
       if (it.type === 'ECS') this.createEcsService(it);
     });
@@ -235,6 +251,33 @@ export class Project extends pulumi.ComponentResource {
       typeof secrets === 'function' ? secrets(this.services) : secrets;
 
     const service = new WebServer(
+      serviceName,
+      {
+        ...ecsOptions,
+        cluster: this.cluster,
+        vpc: this.vpc,
+        hostedZoneId: this.hostedZoneId,
+        environment: parsedEnv,
+        secrets: parsedSecrets,
+      },
+      { parent: this },
+    );
+    this.services[options.serviceName] = service;
+  }
+
+  private createNuxtSSRService(options: NuxtSSRServiceOptions) {
+    if (!this.cluster) throw new MissingEcsCluster();
+
+    const { serviceName, environment, secrets, ...ecsOptions } = options;
+    const parsedEnv =
+      typeof environment === 'function'
+        ? environment(this.services)
+        : environment;
+
+    const parsedSecrets =
+      typeof secrets === 'function' ? secrets(this.services) : secrets;
+
+    const service = new NuxtSSR(
       serviceName,
       {
         ...ecsOptions,
