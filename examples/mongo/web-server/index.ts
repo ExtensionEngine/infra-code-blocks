@@ -10,8 +10,8 @@ app.use('/', async (req: any, res: any) => {
     clientUrl: process.env.MONGO_URL,
     type: 'mongo',
     dbName: 'admin',
-    user: 'admin',
-    password: 'admin',
+    user: process.env.MONGO_USERNAME,
+    password: process.env.MONGO_PASSWORD,
     discovery: {
       warnWhenNoEntities: false,
     },

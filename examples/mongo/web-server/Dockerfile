@@ -4,16 +4,15 @@ ENTRYPOINT ["dumb-init", "--"]
 
 FROM node:20.9-bookworm@sha256:3c48678afb1ae5ca5931bd154d8c1a92a4783555331b535bbd7e0822f9ca8603 AS install
 WORKDIR /usr/src/app
-ENV NODE_ENV production
 COPY package*.json .
-RUN npm ci --only=production
+RUN npm ci
 
 FROM base AS configure
 WORKDIR /usr/src/app
 COPY --chown=node:node --from=install /usr/src/app/node_modules ./node_modules
-COPY --chown=node:node ./index.js .
+COPY --chown=node:node ./index.ts .
+COPY --chown=node:node ./package.json .
 
 FROM configure AS run
-ENV NODE_ENV production
 USER node
-CMD [ "node", "index.js" ]
+CMD [ "npm", "run", "dev" ]

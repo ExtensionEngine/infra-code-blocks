@@ -2,6 +2,8 @@ import { Project } from '@studion/infra-code-blocks';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 
+require('dotenv').config();
+
 const imageRepository = new aws.ecr.Repository('web-server-ecs-repo', {
   name: 'web-server-repo',
   forceDelete: true,
@@ -14,15 +16,18 @@ const appImg = new awsx.ecr.Image('web-server-img', {
 });
 
 const mongoServiceName = 'mongo-example';
+const mongoPort = 27017;
+const mongoUsername = process.env.MONGO_USERNAME || '';
+const mongoPassword = process.env.MONGO_PASSWORD || '';
 
 const project = new Project('mongo-project', {
   services: [
     {
       type: 'MONGO',
       serviceName: mongoServiceName,
-      port: 27017,
-      username: 'admin',
-      password: 'admin',
+      port: mongoPort,
+      username: mongoUsername,
+      password: mongoPassword,
       size: 'small',
     },
     {
@@ -37,7 +42,15 @@ const project = new Project('mongo-project', {
         return [
           {
             name: 'MONGO_URL',
-            value: `${mongoServiceName}.${mongoServiceName}`,
+            value: `mongodb://${mongoServiceName}.${mongoServiceName}:${mongoPort}`,
+          },
+          {
+            name: 'MONGO_USERNAME',
+            value: mongoUsername,
+          },
+          {
+            name: 'MONGO_PASSWORD',
+            value: mongoPassword,
           },
         ];
       },
