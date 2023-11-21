@@ -1,6 +1,5 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
-import * as awsx from '@pulumi/awsx';
 import { CustomSize, Size } from '../types/size';
 import { PredefinedSize, commonTags } from '../constants';
 import { ContainerDefinition } from '@pulumi/aws/ecs';
@@ -46,10 +45,16 @@ export type EcsServiceArgs = {
    * The aws.ecs.Cluster resource.
    */
   cluster: aws.ecs.Cluster;
+  vpcId: pulumi.Input<string>;
   /**
-   * The awsx.ec2.Vpc resource.
+   * If the `assignPublicIp` parameter is set to `true`, the publicSubnetIds
+   * must be provided; otherwise, provide the privateSubnetIds.
    */
-  vpc: awsx.ec2.Vpc;
+  subnetIds: pulumi.Input<pulumi.Input<string>[]>;
+  /**
+   * The IPv4 CIDR block for the VPC.
+   */
+  vpcCidrBlock: pulumi.Input<string>;
   /**
    * Number of instances of the task definition to place and keep running. Defaults to 1.
    */
@@ -163,7 +168,7 @@ export class EcsService extends pulumi.ComponentResource {
     this.taskDefinition = this.createTaskDefinition(args);
     if (argsWithDefaults.enableServiceAutoDiscovery) {
       this.serviceDiscoveryService = this.createServiceDiscovery(
-        argsWithDefaults.vpc,
+        argsWithDefaults.vpcId,
       );
     }
     this.service = this.createEcsService(args, opts);
@@ -187,7 +192,11 @@ export class EcsService extends pulumi.ComponentResource {
     return logGroup;
   }
 
-  private createPersistentStorage(vpc: awsx.ec2.Vpc, assignPublicIp: boolean) {
+  private createPersistentStorage({
+    vpcId,
+    vpcCidrBlock,
+    subnetIds,
+  }: Pick<EcsServiceArgs, 'vpcId' | 'vpcCidrBlock' | 'subnetIds'>) {
     const efs = new aws.efs.FileSystem(
       `${this.name}-efs`,
       {
@@ -213,13 +222,13 @@ export class EcsService extends pulumi.ComponentResource {
     const securityGroup = new aws.ec2.SecurityGroup(
       `${this.name}-persistent-storage-security-group`,
       {
-        vpcId: vpc.vpcId,
+        vpcId: vpcId,
         ingress: [
           {
             fromPort: 2049,
             toPort: 2049,
             protocol: 'tcp',
-            cidrBlocks: [vpc.vpc.cidrBlock],
+            cidrBlocks: [vpcCidrBlock],
           },
         ],
         tags: commonTags,
@@ -227,12 +236,8 @@ export class EcsService extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    const subnetIds = assignPublicIp
-      ? vpc.publicSubnetIds
-      : vpc.privateSubnetIds;
-
-    subnetIds.apply(privateSubnets => {
-      privateSubnets.forEach(it => {
+    pulumi.all([subnetIds]).apply(([ids]) => {
+      ids.forEach(it => {
         const mountTarget = new aws.efs.MountTarget(
           `${this.name}-mount-target-${it}`,
           {
@@ -407,10 +412,7 @@ export class EcsService extends pulumi.ComponentResource {
             {
               name: `${this.name}-volume`,
               efsVolumeConfiguration: {
-                fileSystemId: this.createPersistentStorage(
-                  argsWithDefaults.vpc,
-                  argsWithDefaults.assignPublicIp,
-                ).id,
+                fileSystemId: this.createPersistentStorage(argsWithDefaults).id,
                 transitEncryption: 'ENABLED',
               },
             },
@@ -424,11 +426,11 @@ export class EcsService extends pulumi.ComponentResource {
     return taskDefinition;
   }
 
-  private createServiceDiscovery(vpc: awsx.ec2.Vpc) {
+  private createServiceDiscovery(vpcId: EcsServiceArgs['vpcId']) {
     const privateDnsNamespace = new aws.servicediscovery.PrivateDnsNamespace(
       `${this.name}-private-dns-namespace`,
       {
-        vpc: vpc.vpcId,
+        vpc: vpcId,
         name: this.name,
         tags: commonTags,
       },
@@ -466,13 +468,13 @@ export class EcsService extends pulumi.ComponentResource {
       new aws.ec2.SecurityGroup(
         `${this.name}-service-security-group`,
         {
-          vpcId: argsWithDefaults.vpc.vpcId,
+          vpcId: argsWithDefaults.vpcId,
           ingress: [
             {
               fromPort: 0,
               toPort: 0,
               protocol: '-1',
-              cidrBlocks: [argsWithDefaults.vpc.vpc.cidrBlock],
+              cidrBlocks: [argsWithDefaults.vpcCidrBlock],
             },
           ],
           egress: [
@@ -508,9 +510,7 @@ export class EcsService extends pulumi.ComponentResource {
         }),
         networkConfiguration: {
           assignPublicIp: argsWithDefaults.assignPublicIp,
-          subnets: argsWithDefaults.assignPublicIp
-            ? argsWithDefaults.vpc.publicSubnetIds
-            : argsWithDefaults.vpc.privateSubnetIds,
+          subnets: argsWithDefaults.subnetIds,
           securityGroups: [securityGroup.id],
         },
         ...(argsWithDefaults.enableServiceAutoDiscovery &&

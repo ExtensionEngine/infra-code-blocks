@@ -5,7 +5,7 @@ import { EcsService, EcsServiceArgs } from './ecs-service';
 
 export type MongoArgs = Pick<
   EcsServiceArgs,
-  'size' | 'cluster' | 'vpc' | 'tags'
+  'size' | 'cluster' | 'vpcId' | 'vpcCidrBlock' | 'tags'
 > & {
   /**
    * Username for the master DB user.
@@ -16,6 +16,7 @@ export type MongoArgs = Pick<
    * The value will be stored as a secret in AWS Secret Manager.
    */
   password: pulumi.Input<string>;
+  privateSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
   /**
    * Exposed service port. Defaults to 27017.
    */
@@ -36,7 +37,7 @@ export class Mongo extends pulumi.ComponentResource {
 
     const port = args.port || 27017;
 
-    const { username, password, ...ecsArgs } = args;
+    const { username, password, privateSubnetIds, ...ecsServiceArgs } = args;
 
     this.name = name;
     this.passwordSecret = this.createPasswordSecret(password);
@@ -44,7 +45,7 @@ export class Mongo extends pulumi.ComponentResource {
     this.service = new EcsService(
       name,
       {
-        ...ecsArgs,
+        ...ecsServiceArgs,
         port,
         image:
           'mongo:7.0.3@sha256:238b1636bdd7820c752b91bec8a669f92568eb313ad89a1fc4a92903c1b40489',
@@ -54,6 +55,7 @@ export class Mongo extends pulumi.ComponentResource {
         persistentStorageVolumePath: '/data/db',
         dockerCommand: ['mongod', '--port', port.toString()],
         assignPublicIp: false,
+        subnetIds: privateSubnetIds,
         environment: [
           {
             name: 'MONGO_INITDB_ROOT_USERNAME',

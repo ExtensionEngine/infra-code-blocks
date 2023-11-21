@@ -30,7 +30,7 @@ type ServiceArgs = {
 };
 
 export type DatabaseServiceOptions = { type: 'DATABASE' } & ServiceArgs &
-  Omit<DatabaseArgs, 'vpc'>;
+  Omit<DatabaseArgs, 'vpcId' | 'vpcCidrBlock' | 'isolatedSubnetIds'>;
 
 export type RedisServiceOptions = { type: 'REDIS' } & ServiceArgs &
   Pick<RedisArgs, 'dbName' | 'region'>;
@@ -47,7 +47,13 @@ export type WebServerServiceOptions = {
 } & ServiceArgs &
   Omit<
     WebServerArgs,
-    'cluster' | 'vpc' | 'hostedZoneId' | 'environment' | 'secrets'
+    | 'cluster'
+    | 'vpcId'
+    | 'vpcCidrBlock'
+    | 'publicSubnetIds'
+    | 'hostedZoneId'
+    | 'environment'
+    | 'secrets'
   >;
 
 export type NuxtSSRServiceOptions = {
@@ -59,13 +65,27 @@ export type NuxtSSRServiceOptions = {
 } & ServiceArgs &
   Omit<
     NuxtSSRArgs,
-    'cluster' | 'vpc' | 'hostedZoneId' | 'environment' | 'secrets'
+    | 'cluster'
+    | 'vpcId'
+    | 'vpcCidrBlock'
+    | 'publicSubnetIds'
+    | 'hostedZoneId'
+    | 'environment'
+    | 'secrets'
   >;
 
 export type MongoServiceOptions = {
   type: 'MONGO';
 } & ServiceArgs &
-  Omit<MongoArgs, 'cluster' | 'vpc' | 'environment' | 'secrets'>;
+  Omit<
+    MongoArgs,
+    | 'cluster'
+    | 'vpcId'
+    | 'vpcCidrBlock'
+    | 'privateSubnetIds'
+    | 'environment'
+    | 'secrets'
+  >;
 
 export type EcsServiceOptions = {
   type: 'ECS';
@@ -134,7 +154,9 @@ export class Project extends pulumi.ComponentResource {
 
     if (args.enableSSMConnect) {
       this.ec2SSMConnect = new Ec2SSMConnect(`${name}-ssm-connect`, {
-        vpc: this.vpc,
+        vpcId: this.vpc.vpcId,
+        privateSubnetId: this.vpc.privateSubnetIds.apply(ids => ids[0]),
+        vpcCidrBlock: this.vpc.vpc.cidrBlock,
       });
     }
 
@@ -207,7 +229,9 @@ export class Project extends pulumi.ComponentResource {
       serviceName,
       {
         ...databaseOptions,
-        vpc: this.vpc,
+        vpcId: this.vpc.vpcId,
+        isolatedSubnetIds: this.vpc.isolatedSubnetIds,
+        vpcCidrBlock: this.vpc.vpc.cidrBlock,
       },
       { parent: this },
     );
@@ -255,7 +279,9 @@ export class Project extends pulumi.ComponentResource {
       {
         ...ecsOptions,
         cluster: this.cluster,
-        vpc: this.vpc,
+        vpcId: this.vpc.vpcId,
+        vpcCidrBlock: this.vpc.vpc.cidrBlock,
+        publicSubnetIds: this.vpc.publicSubnetIds,
         hostedZoneId: this.hostedZoneId,
         environment: parsedEnv,
         secrets: parsedSecrets,
@@ -282,7 +308,9 @@ export class Project extends pulumi.ComponentResource {
       {
         ...ecsOptions,
         cluster: this.cluster,
-        vpc: this.vpc,
+        vpcId: this.vpc.vpcId,
+        vpcCidrBlock: this.vpc.vpc.cidrBlock,
+        publicSubnetIds: this.vpc.publicSubnetIds,
         hostedZoneId: this.hostedZoneId,
         environment: parsedEnv,
         secrets: parsedSecrets,
@@ -302,7 +330,9 @@ export class Project extends pulumi.ComponentResource {
       {
         ...mongoOptions,
         cluster: this.cluster,
-        vpc: this.vpc,
+        vpcId: this.vpc.vpcId,
+        vpcCidrBlock: this.vpc.vpc.cidrBlock,
+        privateSubnetIds: this.vpc.privateSubnetIds,
       },
       { parent: this },
     );
@@ -326,7 +356,11 @@ export class Project extends pulumi.ComponentResource {
       {
         ...ecsOptions,
         cluster: this.cluster,
-        vpc: this.vpc,
+        vpcId: this.vpc.vpcId,
+        vpcCidrBlock: this.vpc.vpc.cidrBlock,
+        subnetIds: ecsOptions.assignPublicIp
+          ? this.vpc.publicSubnetIds
+          : this.vpc.privateSubnetIds,
         environment: parsedEnv,
         secrets: parsedSecrets,
       },

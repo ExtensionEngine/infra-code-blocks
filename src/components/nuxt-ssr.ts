@@ -10,7 +10,8 @@ export type NuxtSSRArgs = Pick<
   | 'image'
   | 'port'
   | 'cluster'
-  | 'vpc'
+  | 'vpcId'
+  | 'vpcCidrBlock'
   | 'desiredCount'
   | 'autoscaling'
   | 'size'
@@ -18,6 +19,7 @@ export type NuxtSSRArgs = Pick<
   | 'secrets'
   | 'tags'
 > & {
+  publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
   /**
    * The domain which will be used to access the service.
    * The domain or subdomain must belong to the provided hostedZone.
@@ -56,7 +58,7 @@ export class NuxtSSR extends pulumi.ComponentResource {
   ) {
     super('studion:NuxtSSR', name, args, opts);
 
-    const { vpc, port, healthCheckPath, domain, hostedZoneId, tags } = args;
+    const { vpcId, domain, hostedZoneId, tags } = args;
     const hasCustomDomain = domain && hostedZoneId;
     if (domain && !hostedZoneId) {
       throw new Error(
@@ -72,12 +74,12 @@ export class NuxtSSR extends pulumi.ComponentResource {
 
     this.customCFHeader = this.createCustomCFHeader();
     const { lb, lbTargetGroup, lbHttpListener, lbSecurityGroup } =
-      this.createLoadBalancer({ vpc, port, healthCheckPath });
+      this.createLoadBalancer(args);
     this.lb = lb;
     this.lbTargetGroup = lbTargetGroup;
     this.lbHttpListener = lbHttpListener;
     this.lbSecurityGroup = lbSecurityGroup;
-    this.serviceSecurityGroup = this.createSecurityGroup({ vpc });
+    this.serviceSecurityGroup = this.createSecurityGroup(vpcId);
     this.service = this.createEcsService(args);
     this.cloudfront = this.createCloudfrontDistribution({ domain, tags });
 
@@ -138,14 +140,18 @@ export class NuxtSSR extends pulumi.ComponentResource {
   }
 
   private createLoadBalancer({
-    vpc,
+    vpcId,
+    publicSubnetIds,
     port,
     healthCheckPath,
-  }: Pick<NuxtSSRArgs, 'vpc' | 'port' | 'healthCheckPath'>) {
+  }: Pick<
+    NuxtSSRArgs,
+    'vpcId' | 'publicSubnetIds' | 'port' | 'healthCheckPath'
+  >) {
     const lbSecurityGroup = new aws.ec2.SecurityGroup(
       `${this.name}-lb-security-group`,
       {
-        vpcId: vpc.vpcId,
+        vpcId,
         ingress: [
           {
             protocol: 'tcp',
@@ -172,7 +178,7 @@ export class NuxtSSR extends pulumi.ComponentResource {
       {
         namePrefix: 'lb-',
         loadBalancerType: 'application',
-        subnets: vpc.publicSubnetIds,
+        subnets: publicSubnetIds,
         securityGroups: [lbSecurityGroup.id],
         internal: false,
         ipAddressType: 'ipv4',
@@ -188,7 +194,7 @@ export class NuxtSSR extends pulumi.ComponentResource {
         port,
         protocol: 'HTTP',
         targetType: 'ip',
-        vpcId: vpc.vpcId,
+        vpcId,
         healthCheck: {
           healthyThreshold: 3,
           unhealthyThreshold: 2,
@@ -251,11 +257,11 @@ export class NuxtSSR extends pulumi.ComponentResource {
     };
   }
 
-  private createSecurityGroup({ vpc }: Pick<NuxtSSRArgs, 'vpc'>) {
+  private createSecurityGroup(vpcId: NuxtSSRArgs['vpcId']) {
     const securityGroup = new aws.ec2.SecurityGroup(
       `${this.name}-security-group`,
       {
-        vpcId: vpc.vpcId,
+        vpcId,
         ingress: [
           {
             fromPort: 0,
@@ -287,6 +293,7 @@ export class NuxtSSR extends pulumi.ComponentResource {
         enableServiceAutoDiscovery: false,
         lbTargetGroupArn: this.lbTargetGroup.arn,
         assignPublicIp: true,
+        subnetIds: args.publicSubnetIds,
         securityGroup: this.serviceSecurityGroup,
       },
       {
