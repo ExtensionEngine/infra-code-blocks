@@ -32,8 +32,7 @@ type ServiceArgs = {
 export type DatabaseServiceOptions = { type: 'DATABASE' } & ServiceArgs &
   Omit<DatabaseArgs, 'vpcId' | 'vpcCidrBlock' | 'isolatedSubnetIds'>;
 
-export type RedisServiceOptions = { type: 'REDIS' } & ServiceArgs &
-  Pick<RedisArgs, 'dbName' | 'region'>;
+export type RedisServiceOptions = { type: 'REDIS' } & ServiceArgs & RedisArgs;
 
 export type StaticSiteServiceOptions = { type: 'STATIC_SITE' } & ServiceArgs &
   StaticSiteArgs;
@@ -86,13 +85,21 @@ export type MongoServiceOptions = {
   >;
 
 export type EcsServiceOptions = {
-  type: 'ECS';
+  type: 'ECS_SERVICE';
   environment?:
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
   secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
 } & ServiceArgs &
-  Omit<EcsServiceArgs, 'cluster' | 'vpc' | 'environment' | 'secrets'>;
+  Omit<
+    EcsServiceArgs,
+    | 'cluster'
+    | 'vpcId'
+    | 'vpcCidrBlock'
+    | 'subnetIds'
+    | 'environment'
+    | 'secrets'
+  >;
 
 export type ProjectArgs = {
   services: (
@@ -168,7 +175,10 @@ export class Project extends pulumi.ComponentResource {
     const shouldCreateEcsCluster =
       services.some(
         it =>
-          it.type === 'WEB_SERVER' || it.type === 'MONGO' || it.type === 'ECS',
+          it.type === 'WEB_SERVER' ||
+          it.type === 'NUXT_SSR' ||
+          it.type === 'MONGO' ||
+          it.type === 'ECS_SERVICE',
       ) && !this.cluster;
     if (hasRedisService) this.createRedisPrerequisites();
     if (shouldCreateEcsCluster) this.createEcsCluster();
@@ -179,7 +189,7 @@ export class Project extends pulumi.ComponentResource {
       if (it.type === 'WEB_SERVER') this.createWebServerService(it);
       if (it.type === 'NUXT_SSR') this.createNuxtSSRService(it);
       if (it.type === 'MONGO') this.createMongoService(it);
-      if (it.type === 'ECS') this.createEcsService(it);
+      if (it.type === 'ECS_SERVICE') this.createEcsService(it);
     });
   }
 

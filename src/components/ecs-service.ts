@@ -47,14 +47,14 @@ export type EcsServiceArgs = {
   cluster: aws.ecs.Cluster;
   vpcId: pulumi.Input<string>;
   /**
+   * The IPv4 CIDR block for the VPC.
+   */
+  vpcCidrBlock: pulumi.Input<string>;
+  /**
    * If the `assignPublicIp` parameter is set to `true`, the publicSubnetIds
    * must be provided; otherwise, provide the privateSubnetIds.
    */
   subnetIds: pulumi.Input<pulumi.Input<string>[]>;
-  /**
-   * The IPv4 CIDR block for the VPC.
-   */
-  vpcCidrBlock: pulumi.Input<string>;
   /**
    * Number of instances of the task definition to place and keep running. Defaults to 1.
    */

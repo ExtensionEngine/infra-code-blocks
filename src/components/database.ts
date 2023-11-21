@@ -24,23 +24,26 @@ export type DatabaseArgs = {
    */
   password?: pulumi.Input<string>;
   /**
-   * Specifies whether any database modifications are applied immediately, or during the next maintenance window. Default is false.
+   * Specifies whether any database modifications are applied immediately,
+   * or during the next maintenance window. Default is false.
    */
   applyImmediately?: pulumi.Input<boolean>;
   /**
-   * Determines whether a final DB snapshot is created before the DB instance is deleted.
+   * Determines whether a final DB snapshot is created before the DB
+   * instance is deleted. Defaults to false.
    */
   skipFinalSnapshot?: pulumi.Input<boolean>;
   /**
-   * The allocated storage in gibibytes.
+   * The allocated storage in gibibytes. Defaults to 20GB.
    */
   allocatedStorage?: pulumi.Input<number>;
   /**
-   * The upper limit to which Amazon RDS can automatically scale the storage of the DB instance.
+   * The upper limit to which Amazon RDS can automatically scale
+   * the storage of the DB instance. Defaults to 100GB.
    */
   maxAllocatedStorage?: pulumi.Input<number>;
   /**
-   * The instance type of the RDS instance.
+   * The instance type of the RDS instance. Defaults to 'db.t4g.micro'.
    */
   instanceClass?: pulumi.Input<string>;
   /**
