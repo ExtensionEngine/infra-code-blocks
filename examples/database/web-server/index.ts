@@ -1,17 +1,18 @@
 import * as express from 'express';
-import { MikroORM, type MongoDriver } from '@mikro-orm/mongodb';
+import { MikroORM, PostgreSqlDriver } from '@mikro-orm/postgresql';
 
 require('dotenv').config();
 
 const app = express.default();
 
 app.use('/', async (req: any, res: any) => {
-  await MikroORM.init<MongoDriver>({
-    clientUrl: process.env.MONGO_URL,
-    type: 'mongo',
-    dbName: 'admin',
-    user: process.env.MONGO_USERNAME,
-    password: process.env.MONGO_PASSWORD,
+  await MikroORM.init<PostgreSqlDriver>({
+    clientUrl: process.env.DB_URL,
+    dbName: process.env.DB_NAME,
+    user: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    port: 5432,
+    type: 'postgresql',
     discovery: {
       warnWhenNoEntities: false,
     },
@@ -21,7 +22,8 @@ app.use('/', async (req: any, res: any) => {
       res.send(`Database connected: ${isConnected}`);
     })
     .catch(err => {
-      res.send(`Error connecting to database: ${err.codeName}`);
+      console.log(err);
+      res.send(`Error connecting to database: ${err}`);
     });
 });
 

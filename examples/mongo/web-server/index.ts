@@ -21,7 +21,7 @@ app.use('/', async (req: any, res: any) => {
       res.send(`Database connected: ${isConnected}`);
     })
     .catch(err => {
-      res.send(`Error connecting to database: ${err.codeName}`);
+      res.send(`Error connecting to database: ${err}`);
     });
 });
 

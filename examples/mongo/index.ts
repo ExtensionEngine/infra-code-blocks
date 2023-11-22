@@ -53,7 +53,7 @@ const project = new Project('mongo-project', {
 
 function createWebServerImage() {
   const imageRepository = new aws.ecr.Repository('web-server-ecs-repo', {
-    name: 'web-server-repo',
+    name: 'web-server-mongo-repo',
     forceDelete: true,
   });
 

@@ -10,7 +10,7 @@ const dbPassword = process.env.DB_PASSWORD || '';
 
 const webServerImage = createWebServerImage();
 
-const project = new Project('mongo-project', {
+const project = new Project('database-project', {
   services: [
     {
       type: 'DATABASE',
@@ -20,8 +20,6 @@ const project = new Project('mongo-project', {
       password: dbPassword,
       applyImmediately: false,
       skipFinalSnapshot: true,
-      allocatedStorage: 1,
-      maxAllocatedStorage: 1,
     },
     {
       type: 'WEB_SERVER',
@@ -35,9 +33,24 @@ const project = new Project('mongo-project', {
       environment: (services: Services) => {
         const db = services['database-example'] as Database;
 
-        db.instance.address.apply(x => console.log('ddadasdasd', x));
-
-        return [];
+        return [
+          {
+            name: 'DB_URL',
+            value: db.instance.address,
+          },
+          {
+            name: 'DB_NAME',
+            value: dbName,
+          },
+          {
+            name: 'DB_USERNAME',
+            value: dbUsername,
+          },
+          {
+            name: 'DB_PASSWORD',
+            value: dbPassword,
+          },
+        ];
       },
     },
   ],
@@ -46,7 +59,7 @@ const project = new Project('mongo-project', {
 
 function createWebServerImage() {
   const imageRepository = new aws.ecr.Repository('web-server-ecs-repo', {
-    name: 'web-server-repo',
+    name: 'web-server-database-repo',
     forceDelete: true,
   });
 
