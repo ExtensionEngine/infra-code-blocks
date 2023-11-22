@@ -7,23 +7,20 @@ const app = express.default();
 
 app.use('/', async (req: any, res: any) => {
   await MikroORM.init<PostgreSqlDriver>({
-    clientUrl: process.env.DB_URL,
+    clientUrl: `${process.env.DB_URL}:5432`,
     dbName: process.env.DB_NAME,
     user: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
-    port: 5432,
     type: 'postgresql',
     discovery: {
       warnWhenNoEntities: false,
     },
   })
     .then(async orm => {
-      const isConnected = await orm.isConnected();
-      res.send(`Database connected: ${isConnected}`);
+      res.send(`Database connected`);
     })
     .catch(err => {
-      console.log(err);
-      res.send(`Error connecting to database: ${err}`);
+      res.send(`Error connecting to database`);
     });
 });
 

@@ -17,11 +17,10 @@ app.use('/', async (req: any, res: any) => {
     },
   })
     .then(async orm => {
-      const isConnected = await orm.isConnected();
-      res.send(`Database connected: ${isConnected}`);
+      res.send(`Database connected`);
     })
     .catch(err => {
-      res.send(`Error connecting to database: ${err}`);
+      res.send(`Error connecting to database`);
     });
 });
 
