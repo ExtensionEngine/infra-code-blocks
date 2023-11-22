@@ -6,7 +6,7 @@ require('dotenv').config();
 const app = express.default();
 
 app.use('/', async (req: any, res: any) => {
-  await MikroORM.init<MongoDriver>({
+  const orm = await MikroORM.init<MongoDriver>({
     clientUrl: process.env.MONGO_URL,
     type: 'mongo',
     dbName: 'admin',
@@ -15,13 +15,10 @@ app.use('/', async (req: any, res: any) => {
     discovery: {
       warnWhenNoEntities: false,
     },
-  })
-    .then(async orm => {
-      res.send(`Database connected`);
-    })
-    .catch(err => {
-      res.send(`Error connecting to database`);
-    });
+  });
+
+  const isConnected = await orm.isConnected();
+  res.send(`Connected to database: ${isConnected}`);
 });
 
 app.listen(3000, () => {

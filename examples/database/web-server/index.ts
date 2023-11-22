@@ -5,9 +5,10 @@ require('dotenv').config();
 
 const app = express.default();
 
-app.use('/', async (req: any, res: any) => {
-  await MikroORM.init<PostgreSqlDriver>({
-    clientUrl: `${process.env.DB_URL}:5432`,
+app.use('/', async (req: any, res: express.Response) => {
+  const orm = await MikroORM.init<PostgreSqlDriver>({
+    host: process.env.DB_URL,
+    port: 5432,
     dbName: process.env.DB_NAME,
     user: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
@@ -15,13 +16,10 @@ app.use('/', async (req: any, res: any) => {
     discovery: {
       warnWhenNoEntities: false,
     },
-  })
-    .then(async orm => {
-      res.send(`Database connected`);
-    })
-    .catch(err => {
-      res.send(`Error connecting to database`);
-    });
+  });
+
+  const isConnected = await orm.isConnected();
+  res.send(`Connected to database: ${isConnected}`);
 });
 
 app.listen(3000, () => {
