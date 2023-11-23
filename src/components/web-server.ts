@@ -43,13 +43,13 @@ const defaults = {
 export class WebServer extends pulumi.ComponentResource {
   name: string;
   service: EcsService;
-  certificate?: AcmCertificate;
   lbSecurityGroup: aws.ec2.SecurityGroup;
   serviceSecurityGroup: aws.ec2.SecurityGroup;
   lb: aws.lb.LoadBalancer;
   lbTargetGroup: aws.lb.TargetGroup;
   lbHttpListener: aws.lb.Listener;
-  lbTlsListener: aws.lb.Listener;
+  certificate?: AcmCertificate;
+  lbTlsListener?: aws.lb.Listener;
 
   constructor(
     name: string,
@@ -60,8 +60,15 @@ export class WebServer extends pulumi.ComponentResource {
 
     const { vpcId, domain, hostedZoneId } = args;
 
+    const hasCustomDomain = domain && hostedZoneId;
+    if (domain && !hostedZoneId) {
+      throw new Error(
+        'NuxtSSR:hostedZoneId must be provided when the domain is specified',
+      );
+    }
+
     this.name = name;
-    if (domain && hostedZoneId) {
+    if (hasCustomDomain) {
       this.certificate = this.createTlsCertificate({ domain, hostedZoneId });
     }
     const {
@@ -79,7 +86,7 @@ export class WebServer extends pulumi.ComponentResource {
     this.serviceSecurityGroup = this.createSecurityGroup(vpcId);
     this.service = this.createEcsService(args);
 
-    if (domain && hostedZoneId) {
+    if (hasCustomDomain) {
       this.createDnsRecord({ domain, hostedZoneId });
     }
 
@@ -89,9 +96,7 @@ export class WebServer extends pulumi.ComponentResource {
   private createTlsCertificate({
     domain,
     hostedZoneId,
-  }: Pick<WebServerArgs, 'domain' | 'hostedZoneId'>) {
-    if (!domain || !hostedZoneId) return undefined;
-
+  }: Pick<Required<WebServerArgs>, 'domain' | 'hostedZoneId'>) {
     const certificate = new AcmCertificate(
       `${domain}-acm-certificate`,
       {
@@ -197,24 +202,26 @@ export class WebServer extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    const lbTlsListener = new aws.lb.Listener(
-      `${this.name}-lb-listener-443`,
-      {
-        loadBalancerArn: lb.arn,
-        port: 443,
-        protocol: 'HTTPS',
-        sslPolicy: 'ELBSecurityPolicy-2016-08',
-        certificateArn: this.certificate?.certificate.arn,
-        defaultActions: [
+    const lbTlsListener = this.certificate
+      ? new aws.lb.Listener(
+          `${this.name}-lb-listener-443`,
           {
-            type: 'forward',
-            targetGroupArn: lbTargetGroup.arn,
+            loadBalancerArn: lb.arn,
+            port: 443,
+            protocol: 'HTTPS',
+            sslPolicy: 'ELBSecurityPolicy-2016-08',
+            certificateArn: this.certificate.certificate.arn,
+            defaultActions: [
+              {
+                type: 'forward',
+                targetGroupArn: lbTargetGroup.arn,
+              },
+            ],
+            tags: commonTags,
           },
-        ],
-        tags: commonTags,
-      },
-      { parent: this },
-    );
+          { parent: this },
+        )
+      : undefined;
 
     return {
       lb,
@@ -254,6 +261,9 @@ export class WebServer extends pulumi.ComponentResource {
   }
 
   private createEcsService(args: WebServerArgs) {
+    const ecsDependencies = [this.lb, this.lbTargetGroup, this.lbHttpListener];
+    if (this.lbTlsListener) ecsDependencies.push(this.lbTlsListener);
+
     const service = new EcsService(
       this.name,
       {
@@ -266,12 +276,7 @@ export class WebServer extends pulumi.ComponentResource {
       },
       {
         parent: this,
-        dependsOn: [
-          this.lb,
-          this.lbTargetGroup,
-          this.lbHttpListener,
-          this.lbTlsListener,
-        ],
+        dependsOn: ecsDependencies,
       },
     );
     return service;
@@ -280,9 +285,7 @@ export class WebServer extends pulumi.ComponentResource {
   private createDnsRecord({
     domain,
     hostedZoneId,
-  }: Pick<WebServerArgs, 'domain' | 'hostedZoneId'>) {
-    if (!domain || !hostedZoneId) return;
-
+  }: Pick<Required<WebServerArgs>, 'domain' | 'hostedZoneId'>) {
     const albAliasRecord = new aws.route53.Record(
       `${this.name}-route53-record`,
       {
