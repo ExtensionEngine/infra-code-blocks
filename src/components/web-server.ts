@@ -25,11 +25,11 @@ export type WebServerArgs = Pick<
    * The domain which will be used to access the service.
    * The domain or subdomain must belong to the provided hostedZone.
    */
-  domain: pulumi.Input<string>;
+  domain?: pulumi.Input<string>;
   /**
    * The ID of the hosted zone.
    */
-  hostedZoneId: pulumi.Input<string>;
+  hostedZoneId?: pulumi.Input<string>;
   /**
    * Path for the health check request. Defaults to "/healthcheck".
    */
@@ -43,7 +43,7 @@ const defaults = {
 export class WebServer extends pulumi.ComponentResource {
   name: string;
   service: EcsService;
-  certificate: AcmCertificate;
+  certificate?: AcmCertificate;
   lbSecurityGroup: aws.ec2.SecurityGroup;
   serviceSecurityGroup: aws.ec2.SecurityGroup;
   lb: aws.lb.LoadBalancer;
@@ -61,7 +61,9 @@ export class WebServer extends pulumi.ComponentResource {
     const { vpcId, domain, hostedZoneId } = args;
 
     this.name = name;
-    this.certificate = this.createTlsCertificate({ domain, hostedZoneId });
+    if (domain && hostedZoneId) {
+      this.certificate = this.createTlsCertificate({ domain, hostedZoneId });
+    }
     const {
       lb,
       lbTargetGroup,
@@ -77,7 +79,9 @@ export class WebServer extends pulumi.ComponentResource {
     this.serviceSecurityGroup = this.createSecurityGroup(vpcId);
     this.service = this.createEcsService(args);
 
-    this.createDnsRecord({ domain, hostedZoneId });
+    if (domain && hostedZoneId) {
+      this.createDnsRecord({ domain, hostedZoneId });
+    }
 
     this.registerOutputs();
   }
@@ -86,6 +90,8 @@ export class WebServer extends pulumi.ComponentResource {
     domain,
     hostedZoneId,
   }: Pick<WebServerArgs, 'domain' | 'hostedZoneId'>) {
+    if (!domain || !hostedZoneId) return undefined;
+
     const certificate = new AcmCertificate(
       `${domain}-acm-certificate`,
       {
@@ -198,7 +204,7 @@ export class WebServer extends pulumi.ComponentResource {
         port: 443,
         protocol: 'HTTPS',
         sslPolicy: 'ELBSecurityPolicy-2016-08',
-        certificateArn: this.certificate.certificate.arn,
+        certificateArn: this.certificate?.certificate.arn,
         defaultActions: [
           {
             type: 'forward',
@@ -275,6 +281,8 @@ export class WebServer extends pulumi.ComponentResource {
     domain,
     hostedZoneId,
   }: Pick<WebServerArgs, 'domain' | 'hostedZoneId'>) {
+    if (!domain || !hostedZoneId) return;
+
     const albAliasRecord = new aws.route53.Record(
       `${this.name}-route53-record`,
       {

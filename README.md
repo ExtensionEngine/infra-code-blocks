@@ -147,8 +147,8 @@ export type WebServerServiceOptions = {
   serviceName: string;
   image: pulumi.Input<string>;
   port: pulumi.Input<number>;
-  domain: pulumi.Input<string>;
-  hostedZoneId: pulumi.Input<string>;
+  domain?: pulumi.Input<string>;
+  hostedZoneId?: pulumi.Input<string>;
   environment?:
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
@@ -479,12 +479,12 @@ new WebServer(name: string, args: WebServerArgs, opts?: pulumi.ComponentResource
 export type WebServerArgs = {
   image: pulumi.Input<string>;
   port: pulumi.Input<number>;
-  domain: pulumi.Input<string>;
-  hostedZoneId: pulumi.Input<string>;
   cluster: aws.ecs.Cluster;
   vpcId: pulumi.Input<string>;
   vpcCidrBlock: pulumi.Input<string>;
   publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
+  domain?: pulumi.Input<string>;
+  hostedZoneId?: pulumi.Input<string>;
   desiredCount?: pulumi.Input<number>;
   autoscaling?: pulumi.Input<{
     enabled: pulumi.Input<boolean>;
