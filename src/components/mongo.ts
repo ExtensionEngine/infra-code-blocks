@@ -1,5 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
+import * as random from '@pulumi/random';
 import { commonTags } from '../constants';
 import { EcsService, EcsServiceArgs } from './ecs-service';
 
@@ -40,7 +41,9 @@ export class Mongo extends pulumi.ComponentResource {
     const { username, password, privateSubnetIds, ...ecsServiceArgs } = args;
 
     this.name = name;
-    this.passwordSecret = this.createPasswordSecret(password);
+
+    const mongoPassword = password || this.createRandomPassword();
+    this.passwordSecret = this.createPasswordSecret(mongoPassword);
 
     this.service = new EcsService(
       name,
@@ -73,6 +76,14 @@ export class Mongo extends pulumi.ComponentResource {
     );
 
     this.registerOutputs();
+  }
+
+  private createRandomPassword() {
+    return new random.RandomPassword(`${this.name}-db-password`, {
+      length: 16,
+      overrideSpecial: '_%$',
+      special: true,
+    }).result;
   }
 
   private createPasswordSecret(password: MongoArgs['password']) {
