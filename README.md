@@ -206,7 +206,7 @@ type MongoServiceOptions = {
   type: 'MONGO';
   serviceName: string;
   username: pulumi.Input<string>;
-  password: pulumi.Input<string>;
+  password?: pulumi.Input<string>;
   port?: pulumi.Input<number>;
   size?: pulumi.Input<Size>;
   tags?: pulumi.Input<{
@@ -586,7 +586,7 @@ export type MongoArgs = {
   vpcCidrBlock: pulumi.Input<string>;
   privateSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
   username: pulumi.Input<string>;
-  password: pulumi.Input<string>;
+  password?: pulumi.Input<string>;
   port?: pulumi.Input<number>;
   size?: pulumi.Input<Size>;
   tags?: pulumi.Input<{

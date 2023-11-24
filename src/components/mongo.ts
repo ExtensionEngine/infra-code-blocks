@@ -16,7 +16,7 @@ export type MongoArgs = Pick<
    * Password for the master DB user.
    * The value will be stored as a secret in AWS Secret Manager.
    */
-  password: pulumi.Input<string>;
+  password?: pulumi.Input<string>;
   privateSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
   /**
    * Exposed service port. Defaults to 27017.
