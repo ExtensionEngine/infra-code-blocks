@@ -47,7 +47,7 @@ export class WebServer extends pulumi.ComponentResource {
   serviceSecurityGroup: aws.ec2.SecurityGroup;
   lb: aws.lb.LoadBalancer;
   lbTargetGroup: aws.lb.TargetGroup;
-  lbHttpListener: aws.lb.Listener;
+  lbHttpListener?: aws.lb.Listener;
   certificate?: AcmCertificate;
   lbTlsListener?: aws.lb.Listener;
 
@@ -60,10 +60,10 @@ export class WebServer extends pulumi.ComponentResource {
 
     const { vpcId, domain, hostedZoneId } = args;
 
-    const hasCustomDomain = domain && hostedZoneId;
+    const hasCustomDomain = !!domain && !!hostedZoneId;
     if (domain && !hostedZoneId) {
       throw new Error(
-        'NuxtSSR:hostedZoneId must be provided when the domain is specified',
+        'WebServer:hostedZoneId must be provided when the domain is specified',
       );
     }
 
@@ -182,46 +182,49 @@ export class WebServer extends pulumi.ComponentResource {
       { parent: this, dependsOn: [this.lb] },
     );
 
-    const lbHttpListener = new aws.lb.Listener(
-      `${this.name}-lb-listener-80`,
-      {
-        loadBalancerArn: lb.arn,
-        port: 80,
-        defaultActions: [
-          {
-            type: 'redirect',
-            redirect: {
-              port: '443',
-              protocol: 'HTTPS',
-              statusCode: 'HTTP_301',
-            },
-          },
-        ],
-        tags: commonTags,
-      },
-      { parent: this },
-    );
+    let lbHttpListener = undefined;
+    let lbTlsListener = undefined;
 
-    const lbTlsListener = this.certificate
-      ? new aws.lb.Listener(
-          `${this.name}-lb-listener-443`,
-          {
-            loadBalancerArn: lb.arn,
-            port: 443,
-            protocol: 'HTTPS',
-            sslPolicy: 'ELBSecurityPolicy-2016-08',
-            certificateArn: this.certificate.certificate.arn,
-            defaultActions: [
-              {
-                type: 'forward',
-                targetGroupArn: lbTargetGroup.arn,
+    if (this.certificate) {
+      lbHttpListener = new aws.lb.Listener(
+        `${this.name}-lb-listener-80`,
+        {
+          loadBalancerArn: lb.arn,
+          port: 80,
+          defaultActions: [
+            {
+              type: 'redirect',
+              redirect: {
+                port: '443',
+                protocol: 'HTTPS',
+                statusCode: 'HTTP_301',
               },
-            ],
-            tags: commonTags,
-          },
-          { parent: this },
-        )
-      : undefined;
+            },
+          ],
+          tags: commonTags,
+        },
+        { parent: this },
+      );
+
+      lbTlsListener = new aws.lb.Listener(
+        `${this.name}-lb-listener-443`,
+        {
+          loadBalancerArn: lb.arn,
+          port: 443,
+          protocol: 'HTTPS',
+          sslPolicy: 'ELBSecurityPolicy-2016-08',
+          certificateArn: this.certificate.certificate.arn,
+          defaultActions: [
+            {
+              type: 'forward',
+              targetGroupArn: lbTargetGroup.arn,
+            },
+          ],
+          tags: commonTags,
+        },
+        { parent: this },
+      );
+    }
 
     return {
       lb,
@@ -261,8 +264,9 @@ export class WebServer extends pulumi.ComponentResource {
   }
 
   private createEcsService(args: WebServerArgs) {
-    const ecsDependencies = [this.lb, this.lbTargetGroup, this.lbHttpListener];
-    if (this.lbTlsListener) ecsDependencies.push(this.lbTlsListener);
+    const ecsDependencies: any = [this.lb, this.lbTargetGroup];
+    if (this.certificate)
+      ecsDependencies.push(this.lbTlsListener, this.lbHttpListener);
 
     const service = new EcsService(
       this.name,
