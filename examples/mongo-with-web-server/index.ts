@@ -26,7 +26,6 @@ const project: Project = new Project('mongo-project', {
       serviceName: 'web-server-example',
       port: 3000,
       image: webServerImage.imageUri,
-      domain: 'ptrutanic.gostudion.com',
       desiredCount: 1,
       size: 'small',
       autoscaling: { enabled: false },
@@ -48,7 +47,6 @@ const project: Project = new Project('mongo-project', {
       },
     },
   ],
-  hostedZoneId: process.env.HOSTED_ZONE_ID,
 });
 
 function createWebServerImage() {
