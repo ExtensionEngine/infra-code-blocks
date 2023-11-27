@@ -1,5 +1,5 @@
 {
-  "name": "database-with-web-server",
+  "name": "database-with-web-server-and-redis",
   "main": "index.ts",
   "devDependencies": {
     "@types/node": "^18"

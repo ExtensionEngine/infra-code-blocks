@@ -23,6 +23,12 @@ const project: Project = new Project('database-project', {
       skipFinalSnapshot: true,
     },
     {
+      type: 'REDIS',
+      serviceName: 'redis',
+      dbName: 'test-db',
+      region: 'us-east-1',
+    },
+    {
       type: 'WEB_SERVER',
       serviceName: 'web-server-example',
       port: 3000,
