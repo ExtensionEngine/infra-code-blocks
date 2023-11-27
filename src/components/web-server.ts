@@ -47,7 +47,7 @@ export class WebServer extends pulumi.ComponentResource {
   serviceSecurityGroup: aws.ec2.SecurityGroup;
   lb: aws.lb.LoadBalancer;
   lbTargetGroup: aws.lb.TargetGroup;
-  lbHttpListener?: aws.lb.Listener;
+  lbHttpListener: aws.lb.Listener;
   certificate?: AcmCertificate;
   lbTlsListener?: aws.lb.Listener;
 
@@ -182,30 +182,28 @@ export class WebServer extends pulumi.ComponentResource {
       { parent: this, dependsOn: [this.lb] },
     );
 
-    let lbHttpListener = undefined;
-    let lbTlsListener = undefined;
-
-    if (this.certificate) {
-      lbHttpListener = new aws.lb.Listener(
-        `${this.name}-lb-listener-80`,
-        {
-          loadBalancerArn: lb.arn,
-          port: 80,
-          defaultActions: [
-            {
-              type: 'redirect',
-              redirect: {
-                port: '443',
-                protocol: 'HTTPS',
-                statusCode: 'HTTP_301',
-              },
+    const lbHttpListener = new aws.lb.Listener(
+      `${this.name}-lb-listener-80`,
+      {
+        loadBalancerArn: lb.arn,
+        port: 80,
+        defaultActions: [
+          {
+            type: 'redirect',
+            redirect: {
+              port: '443',
+              protocol: 'HTTPS',
+              statusCode: 'HTTP_301',
             },
-          ],
-          tags: commonTags,
-        },
-        { parent: this },
-      );
+          },
+        ],
+        tags: commonTags,
+      },
+      { parent: this },
+    );
 
+    let lbTlsListener = undefined;
+    if (this.certificate) {
       lbTlsListener = new aws.lb.Listener(
         `${this.name}-lb-listener-443`,
         {
@@ -264,10 +262,6 @@ export class WebServer extends pulumi.ComponentResource {
   }
 
   private createEcsService(args: WebServerArgs) {
-    const ecsDependencies: any = [this.lb, this.lbTargetGroup];
-    if (this.certificate)
-      ecsDependencies.push(this.lbTlsListener, this.lbHttpListener);
-
     const service = new EcsService(
       this.name,
       {
@@ -280,7 +274,7 @@ export class WebServer extends pulumi.ComponentResource {
       },
       {
         parent: this,
-        dependsOn: ecsDependencies,
+        dependsOn: [this.lb, this.lbTargetGroup],
       },
     );
     return service;
