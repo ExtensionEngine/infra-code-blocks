@@ -4,10 +4,13 @@ import * as awsx from '@pulumi/awsx';
 
 require('dotenv').config();
 
-const mongoPort = 27017;
-const mongoServiceName = 'mongo-example';
+const mongoServiceName = 'mongo-service';
+
 const mongoUsername = process.env.MONGO_USERNAME || '';
 const mongoPassword = process.env.MONGO_PASSWORD || '';
+const mongoDbName = process.env.MONGO_DB || '';
+const mongoPort = parseInt(process.env.MONGO_PORT || '27017');
+const mongoUrl = `mongodb://${mongoUsername}:${mongoPassword}@${mongoServiceName}.${mongoServiceName}:${mongoPort}`;
 
 const webServerImage = createWebServerImage();
 
@@ -23,7 +26,7 @@ const project: Project = new Project('mongo-project', {
     },
     {
       type: 'WEB_SERVER',
-      serviceName: 'web-server-example',
+      serviceName: 'mongo-web-server',
       port: 3000,
       image: webServerImage.imageUri,
       desiredCount: 1,
@@ -33,15 +36,11 @@ const project: Project = new Project('mongo-project', {
         return [
           {
             name: 'MONGO_URL',
-            value: `mongodb://${mongoServiceName}.${mongoServiceName}:${mongoPort}`,
+            value: mongoUrl,
           },
           {
-            name: 'MONGO_USERNAME',
-            value: mongoUsername,
-          },
-          {
-            name: 'MONGO_PASSWORD',
-            value: mongoPassword,
+            name: 'MONGO_DB',
+            value: mongoDbName,
           },
         ];
       },
