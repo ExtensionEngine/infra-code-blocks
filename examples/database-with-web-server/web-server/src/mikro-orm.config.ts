@@ -11,6 +11,7 @@ export default defineConfig({
   migrations: {
     path: 'dist/database/migrations',
     pathTs: 'src/database/migrations',
+    snapshot: false,
   },
   host: process.env.DB_URL,
   port: 5432,
