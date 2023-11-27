@@ -21,7 +21,7 @@ export default defineConfig({
   driverOptions: isProd
     ? {
         connection: {
-          ssl: { ca: readFileSync('./src/eu-north-1-bundle.pem') },
+          ssl: { ca: readFileSync('src/eu-north-1-bundle.pem') },
         },
       }
     : undefined,

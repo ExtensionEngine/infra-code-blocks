@@ -7,6 +7,7 @@ require('dotenv').config();
 const dbName = process.env.DB_NAME || '';
 const dbUsername = process.env.DB_USERNAME || '';
 const dbPassword = process.env.DB_PASSWORD || '';
+const env = process.env.NODE_ENV || 'development';
 
 const webServerImage = createWebServerImage();
 
@@ -18,7 +19,7 @@ const project: Project = new Project('database-project', {
       dbName: dbName,
       username: dbUsername,
       password: dbPassword,
-      applyImmediately: false,
+      applyImmediately: true,
       skipFinalSnapshot: true,
     },
     {
@@ -48,6 +49,10 @@ const project: Project = new Project('database-project', {
           {
             name: 'DB_PASSWORD',
             value: dbPassword,
+          },
+          {
+            name: 'NODE_ENV',
+            value: env,
           },
         ];
       },
