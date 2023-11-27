@@ -10,7 +10,7 @@ const dbPassword = process.env.DB_PASSWORD || '';
 
 const webServerImage = createWebServerImage();
 
-const project = new Project('database-project', {
+const project: Project = new Project('database-project', {
   services: [
     {
       type: 'DATABASE',

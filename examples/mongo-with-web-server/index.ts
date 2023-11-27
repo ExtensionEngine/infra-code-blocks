@@ -11,7 +11,7 @@ const mongoPassword = process.env.MONGO_PASSWORD || '';
 
 const webServerImage = createWebServerImage();
 
-const project = new Project('mongo-project', {
+const project: Project = new Project('mongo-project', {
   services: [
     {
       type: 'MONGO',
