@@ -8,9 +8,8 @@ export class Migration20231127135423_add_posts extends Migration {
   async up(): Promise<void> {
     const postsCollection = this.getCollection(COLLECTION);
 
-    const data = posts.map(post => new Post(post.name, post.content));
-
-    postsCollection.insertMany(data);
+    const mappedPosts = posts.map(post => new Post(post.name, post.content));
+    postsCollection.insertMany(mappedPosts);
   }
 
   async down(): Promise<void> {

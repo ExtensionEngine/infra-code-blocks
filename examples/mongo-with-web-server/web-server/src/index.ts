@@ -22,6 +22,7 @@ export const init = (async () => {
     } catch (error) {
       res.json({
         message: 'Error fetching posts',
+        error,
       });
     }
   });

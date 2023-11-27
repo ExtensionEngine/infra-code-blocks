@@ -18,8 +18,8 @@ export class Migration20231127181815_add_posts extends Migration {
         .defaultTo(knex.fn.now());
     });
 
-    const data = posts.map(post => new Post(post.name, post.content));
-    return knex.batchInsert(TABLE_NAME, data);
+    const mappedPosts = posts.map(post => new Post(post.name, post.content));
+    return knex.batchInsert(TABLE_NAME, mappedPosts);
   }
 
   async down(): Promise<void> {
