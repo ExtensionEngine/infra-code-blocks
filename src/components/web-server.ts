@@ -182,21 +182,26 @@ export class WebServer extends pulumi.ComponentResource {
       { parent: this, dependsOn: [this.lb] },
     );
 
+    const defaultAction = this.certificate
+      ? {
+          type: 'redirect',
+          redirect: {
+            port: '443',
+            protocol: 'HTTPS',
+            statusCode: 'HTTP_301',
+          },
+        }
+      : {
+          type: 'forward',
+          targetGroupArn: lbTargetGroup.arn,
+        };
+
     const lbHttpListener = new aws.lb.Listener(
       `${this.name}-lb-listener-80`,
       {
         loadBalancerArn: lb.arn,
         port: 80,
-        defaultActions: [
-          {
-            type: 'redirect',
-            redirect: {
-              port: '443',
-              protocol: 'HTTPS',
-              statusCode: 'HTTP_301',
-            },
-          },
-        ],
+        defaultActions: [defaultAction],
         tags: commonTags,
       },
       { parent: this },
