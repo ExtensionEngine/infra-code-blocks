@@ -10,9 +10,10 @@ RUN npm ci
 FROM base AS configure
 WORKDIR /usr/src/app
 COPY --chown=node:node --from=install /usr/src/app/node_modules ./node_modules
-COPY --chown=node:node ./index.ts .
+COPY --chown=node:node ./src ./src
 COPY --chown=node:node ./package.json .
+COPY --chown=node:node ./tsconfig.json .
 
 FROM configure AS run
 USER node
-CMD [ "npm", "run", "dev" ]
+CMD [ "npm", "run", "prod" ]
