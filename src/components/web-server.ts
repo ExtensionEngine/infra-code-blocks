@@ -9,7 +9,8 @@ export type WebServerArgs = Pick<
   | 'image'
   | 'port'
   | 'cluster'
-  | 'vpc'
+  | 'vpcId'
+  | 'vpcCidrBlock'
   | 'desiredCount'
   | 'autoscaling'
   | 'size'
@@ -19,6 +20,7 @@ export type WebServerArgs = Pick<
   | 'taskRoleInlinePolicies'
   | 'tags'
 > & {
+  publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
   /**
    * The domain which will be used to access the service.
    * The domain or subdomain must belong to the provided hostedZone.
@@ -56,7 +58,7 @@ export class WebServer extends pulumi.ComponentResource {
   ) {
     super('studion:WebServer', name, args, opts);
 
-    const { vpc, port, healthCheckPath, domain, hostedZoneId } = args;
+    const { vpcId, domain, hostedZoneId } = args;
 
     this.name = name;
     this.certificate = this.createTlsCertificate({ domain, hostedZoneId });
@@ -66,13 +68,13 @@ export class WebServer extends pulumi.ComponentResource {
       lbHttpListener,
       lbTlsListener,
       lbSecurityGroup,
-    } = this.createLoadBalancer({ vpc, port, healthCheckPath });
+    } = this.createLoadBalancer(args);
     this.lb = lb;
     this.lbTargetGroup = lbTargetGroup;
     this.lbHttpListener = lbHttpListener;
     this.lbTlsListener = lbTlsListener;
     this.lbSecurityGroup = lbSecurityGroup;
-    this.serviceSecurityGroup = this.createSecurityGroup({ vpc });
+    this.serviceSecurityGroup = this.createSecurityGroup(vpcId);
     this.service = this.createEcsService(args);
 
     this.createDnsRecord({ domain, hostedZoneId });
@@ -96,14 +98,18 @@ export class WebServer extends pulumi.ComponentResource {
   }
 
   private createLoadBalancer({
-    vpc,
+    vpcId,
+    publicSubnetIds,
     port,
     healthCheckPath,
-  }: Pick<WebServerArgs, 'vpc' | 'port' | 'healthCheckPath'>) {
+  }: Pick<
+    WebServerArgs,
+    'vpcId' | 'publicSubnetIds' | 'port' | 'healthCheckPath'
+  >) {
     const lbSecurityGroup = new aws.ec2.SecurityGroup(
       `${this.name}-lb-security-group`,
       {
-        vpcId: vpc.vpcId,
+        vpcId,
         ingress: [
           {
             protocol: 'tcp',
@@ -136,7 +142,7 @@ export class WebServer extends pulumi.ComponentResource {
       {
         namePrefix: 'lb-',
         loadBalancerType: 'application',
-        subnets: vpc.publicSubnetIds,
+        subnets: publicSubnetIds,
         securityGroups: [lbSecurityGroup.id],
         internal: false,
         ipAddressType: 'ipv4',
@@ -152,7 +158,7 @@ export class WebServer extends pulumi.ComponentResource {
         port,
         protocol: 'HTTP',
         targetType: 'ip',
-        vpcId: vpc.vpcId,
+        vpcId,
         healthCheck: {
           healthyThreshold: 3,
           unhealthyThreshold: 2,
@@ -213,11 +219,11 @@ export class WebServer extends pulumi.ComponentResource {
     };
   }
 
-  private createSecurityGroup({ vpc }: Pick<WebServerArgs, 'vpc'>) {
+  private createSecurityGroup(vpcId: WebServerArgs['vpcId']) {
     const securityGroup = new aws.ec2.SecurityGroup(
       `${this.name}-security-group`,
       {
-        vpcId: vpc.vpcId,
+        vpcId,
         ingress: [
           {
             fromPort: 0,
@@ -249,6 +255,7 @@ export class WebServer extends pulumi.ComponentResource {
         enableServiceAutoDiscovery: false,
         lbTargetGroupArn: this.lbTargetGroup.arn,
         assignPublicIp: true,
+        subnetIds: args.publicSubnetIds,
         securityGroup: this.serviceSecurityGroup,
       },
       {

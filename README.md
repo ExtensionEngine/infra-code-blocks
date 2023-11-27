@@ -61,8 +61,9 @@ $ pulumi up
 3. [Redis](#redis)
 4. [StaticSite](#static-site)
 5. [WebServer](#web-server)
-6. [Mongo](#mongo)
-7. [EcsService](#ecs-service)
+6. [Nuxt SSR](#nuxt-ssr-preset)
+7. [Mongo](#mongo)
+8. [EcsService](#ecs-service)
 
 ### Project
 
@@ -84,14 +85,14 @@ new Project(name: string, args: ProjectArgs, opts?: pulumi.CustomResourceOptions
 ```ts
 type ProjectArgs = {
   services: (
-    | DatabaseService
-    | RedisService
-    | StaticSiteService
-    | WebServerService
-    | MongoService
-    | EcsService
+    | DatabaseServiceOptions
+    | RedisServiceOptions
+    | StaticSiteServiceOptions
+    | WebServerServiceOptions
+    | NuxtSSRServiceOptions
+    | MongoServiceOptions
+    | EcsServiceOptions
   )[];
-  hostedZoneId?: pulumi.Input<string>;
   enableSSMConnect?: pulumi.Input<boolean>;
 };
 ```
@@ -99,11 +100,10 @@ type ProjectArgs = {
 | Argument         |                                                                         Description                                                                          |
 | :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | services \*      |                                                                        Service list.                                                                         |
-| hostedZoneId     |                     Route53 hosted zone ID responsible for managing records for the domain. Required for 'STATIC_SITE' and 'WEB_SERVER'                      |
 | enableSSMConnect | Setup ec2 instance and SSM in order to connect to the database in the private subnet. Please refer to the [SSM Connect](#ssm-connect) section for more info. |
 
 ```ts
-type DatabaseService = {
+type DatabaseServiceOptions = {
   type: 'DATABASE';
   serviceName: string;
   dbName: pulumi.Input<string>;
@@ -121,7 +121,7 @@ type DatabaseService = {
 ```
 
 ```ts
-export type RedisService = {
+export type RedisServiceOptions = {
   type: 'REDIS';
   serviceName: string;
   dbName: pulumi.Input<string>;
@@ -130,10 +130,11 @@ export type RedisService = {
 ```
 
 ```ts
-export type StaticSiteService = {
+export type StaticSiteServiceOptions = {
   type: 'STATIC_SITE';
   serviceName: string;
   domain?: pulumi.Input<string>;
+  hostedZoneId?: pulumi.Input<string>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
@@ -141,12 +142,13 @@ export type StaticSiteService = {
 ```
 
 ```ts
-export type WebServerService = {
+export type WebServerServiceOptions = {
   type: 'WEB_SERVER';
   serviceName: string;
   image: pulumi.Input<string>;
   port: pulumi.Input<number>;
   domain: pulumi.Input<string>;
+  hostedZoneId: pulumi.Input<string>;
   environment?:
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
@@ -170,11 +172,41 @@ export type WebServerService = {
 ```
 
 ```ts
-type MongoService = {
+export type NuxtSSRServiceOptions = {
+  type: 'NUXT_SSR';
+  serviceName: string;
+  image: pulumi.Input<string>;
+  port: pulumi.Input<number>;
+  domain?: pulumi.Input<string>;
+  hostedZoneId?: pulumi.Input<string>;
+  environment?:
+    | aws.ecs.KeyValuePair[]
+    | ((services: Services) => aws.ecs.KeyValuePair[]);
+  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
+  desiredCount?: pulumi.Input<number>;
+  autoscaling?: pulumi.Input<{
+    enabled: pulumi.Input<boolean>;
+    minCount?: pulumi.Input<number>;
+    maxCount?: pulumi.Input<number>;
+  }>;
+  size?: pulumi.Input<Size>;
+  healthCheckPath?: pulumi.Input<string>;
+  taskExecutionRoleInlinePolicies?: pulumi.Input<
+    pulumi.Input<RoleInlinePolicy>[]
+  >;
+  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
+};
+```
+
+```ts
+type MongoServiceOptions = {
   type: 'MONGO';
   serviceName: string;
   username: pulumi.Input<string>;
-  password: pulumi.Input<string>;
+  password?: pulumi.Input<string>;
   port?: pulumi.Input<number>;
   size?: pulumi.Input<Size>;
   tags?: pulumi.Input<{
@@ -184,8 +216,8 @@ type MongoService = {
 ```
 
 ```ts
-type EcsService = {
-  type: 'ECS';
+type EcsServiceOptions = {
+  type: 'ECS_SERVICE';
   serviceName: string;
   image: pulumi.Input<string>;
   port: pulumi.Input<number>;
@@ -223,7 +255,6 @@ recieves services bag as argument.
 
 ```ts
 const project = new studion.Project('demo-project', {
-  environment: 'DEVELOPMENT',
   services: [
     {
       type: 'REDIS',
@@ -236,6 +267,7 @@ const project = new studion.Project('demo-project', {
       image: imageUri,
       port: 3000,
       domain: 'api.my-domain.com',
+      hostedZoneId: 'my-domain.com-hostedZoneId',
       environment: (services: Services) => {
         const redisServiceName = 'redis';
         const redis = services[redisServiceName];
@@ -254,7 +286,6 @@ Secret Manager based on arn that is provided for the `valueFrom` field.
 
 ```ts
 const project = new studion.Project('demo-project', {
-  environment: 'DEVELOPMENT',
   services: [
     {
       type: 'WEB_SERVER',
@@ -262,6 +293,7 @@ const project = new studion.Project('demo-project', {
       image: imageUri,
       port: 3000,
       domain: 'api.my-domain.com',
+      hostedZoneId: 'my-domain.com-hostedZoneId',
       secrets: [
         { name: 'DB_PASSWORD', valueFrom: 'arn-of-the-secret-manager-secret' },
       ],
@@ -272,7 +304,6 @@ const project = new studion.Project('demo-project', {
 
 ```ts
 const project = new studion.Project('demo-project', {
-  environment: 'DEVELOPMENT',
   services: [
     {
       type: 'REDIS',
@@ -285,6 +316,7 @@ const project = new studion.Project('demo-project', {
       image: imageUri,
       port: 3000,
       domain: 'api.my-domain.com',
+      hostedZoneId: 'my-domain.com-hostedZoneId',
       secrets: (services: Services) => {
         const redisServiceName = 'redis';
         const redis = services[redisServiceName];
@@ -323,7 +355,9 @@ new Database(name: string, args: DatabaseArgs, opts?: pulumi.CustomResourceOptio
 type DatabaseArgs = {
   dbName: pulumi.Input<string>;
   username: pulumi.Input<string>;
-  vpc: awsx.ec2.Vpc;
+  vpcId: pulumi.Input<string>;
+  isolatedSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
+  vpcCidrBlock: pulumi.Input<string>;
   password?: pulumi.Input<string>;
   applyImmediately?: pulumi.Input<boolean>;
   skipFinalSnapshot?: pulumi.Input<boolean>;
@@ -386,7 +420,7 @@ will exist on the resource.
 
 ### Static Site
 
-AWS S3 + Cloudfront static site.
+AWS S3 + Cloudfront.
 
 Features:
 
@@ -419,7 +453,7 @@ type StaticSiteArgs = {
 
 ### Web Server
 
-AWS ECS Fargate web server.
+AWS ECS Fargate.
 
 Features:
 
@@ -446,9 +480,11 @@ export type WebServerArgs = {
   image: pulumi.Input<string>;
   port: pulumi.Input<number>;
   domain: pulumi.Input<string>;
-  cluster: aws.ecs.Cluster;
   hostedZoneId: pulumi.Input<string>;
-  vpc: awsx.ec2.Vpc;
+  cluster: aws.ecs.Cluster;
+  vpcId: pulumi.Input<string>;
+  vpcCidrBlock: pulumi.Input<string>;
+  publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
   desiredCount?: pulumi.Input<number>;
   autoscaling?: pulumi.Input<{
     enabled: pulumi.Input<boolean>;
@@ -469,9 +505,60 @@ export type WebServerArgs = {
 };
 ```
 
+### Nuxt SSR preset
+
+AWS ECS Fargate + Cloudfront.
+
+Features:
+
+- memory and CPU autoscaling enabled
+- creates TLS certificate for the specified domain
+- redirects HTTP traffic to HTTPS
+- creates CloudWatch log group
+- comes with predefined cpu and memory options: `small`, `medium`, `large`, `xlarge`
+- CDN in front of the application load balancer for static resource caching
+
+<br>
+
+```ts
+new NuxtSSR(name: string, args: NuxtSSRArgs, opts?: pulumi.ComponentResourceOptions );
+```
+
+| Argument |                  Description                   |
+| :------- | :--------------------------------------------: |
+| name \*  |        The unique name of the resource.        |
+| args \*  |     The arguments to resource properties.      |
+| opts     | Bag of options to control resource's behavior. |
+
+```ts
+export type NuxtSSRArgs = {
+  image: pulumi.Input<string>;
+  port: pulumi.Input<number>;
+  cluster: aws.ecs.Cluster;
+  vpcId: pulumi.Input<string>;
+  vpcCidrBlock: pulumi.Input<string>;
+  publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
+  domain?: pulumi.Input<string>;
+  hostedZoneId?: pulumi.Input<string>;
+  desiredCount?: pulumi.Input<number>;
+  autoscaling?: pulumi.Input<{
+    enabled: pulumi.Input<boolean>;
+    minCount?: pulumi.Input<number>;
+    maxCount?: pulumi.Input<number>;
+  }>;
+  size?: pulumi.Input<Size>;
+  environment?: aws.ecs.KeyValuePair[];
+  secrets?: aws.ecs.Secret[];
+  healthCheckPath?: pulumi.Input<string>;
+  tags?: pulumi.Input<{
+    [key: string]: pulumi.Input<string>;
+  }>;
+};
+```
+
 ### Mongo
 
-AWS ECS Fargate mongo service.
+AWS ECS Fargate.
 
 Features:
 
@@ -495,9 +582,11 @@ new Mongo(name: string, args: MongoArgs, opts?: pulumi.ComponentResourceOptions 
 ```ts
 export type MongoArgs = {
   cluster: aws.ecs.Cluster;
-  vpc: awsx.ec2.Vpc;
+  vpcId: pulumi.Input<string>;
+  vpcCidrBlock: pulumi.Input<string>;
+  privateSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
   username: pulumi.Input<string>;
-  password: pulumi.Input<string>;
+  password?: pulumi.Input<string>;
   port?: pulumi.Input<number>;
   size?: pulumi.Input<Size>;
   tags?: pulumi.Input<{
@@ -506,9 +595,13 @@ export type MongoArgs = {
 };
 ```
 
+If the password is not specified it will be autogenerated.
+The mongo password is stored as a secret inside AWS Secret Manager.
+The secret will be available on the `Mongo` resource as `passwordSecret`.
+
 ### Ecs Service
 
-AWS ECS Fargate service.
+AWS ECS Fargate.
 
 Features:
 
@@ -535,7 +628,9 @@ export type EcsServiceArgs = {
   image: pulumi.Input<string>;
   port: pulumi.Input<number>;
   cluster: aws.ecs.Cluster;
-  vpc: awsx.ec2.Vpc;
+  vpcId: pulumi.Input<string>;
+  vpcCidrBlock: pulumi.Input<string>;
+  subnetIds: pulumi.Input<pulumi.Input<string>[]>;
   desiredCount?: pulumi.Input<number>;
   autoscaling?: pulumi.Input<{
     enabled: pulumi.Input<boolean>;

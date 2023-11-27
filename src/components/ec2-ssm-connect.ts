@@ -1,6 +1,5 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
-import * as awsx from '@pulumi/awsx';
 import { commonTags } from '../constants';
 
 const config = new pulumi.Config('aws');
@@ -19,7 +18,12 @@ const AmazonLinux2023_ARM_EC2_AMI = aws.ec2.getAmiOutput({
 });
 
 export type Ec2SSMConnectArgs = {
-  vpc: awsx.ec2.Vpc;
+  vpcId: pulumi.Input<string>;
+  privateSubnetId: pulumi.Input<string>;
+  /**
+   * The IPv4 CIDR block for the VPC.
+   */
+  vpcCidrBlock: pulumi.Input<string>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
@@ -39,7 +43,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
   ) {
     super('studion:Ec2BastionSSMConnect', name, {}, opts);
 
-    const subnetId = args.vpc.privateSubnetIds.apply(ids => ids[0]);
+    const subnetId = args.privateSubnetId;
 
     this.ec2SecurityGroup = new aws.ec2.SecurityGroup(
       `${name}-ec2-security-group`,
@@ -49,19 +53,19 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
             protocol: 'tcp',
             fromPort: 22,
             toPort: 22,
-            cidrBlocks: [args.vpc.vpc.cidrBlock],
+            cidrBlocks: [args.vpcCidrBlock],
           },
           {
             protocol: 'tcp',
             fromPort: 443,
             toPort: 443,
-            cidrBlocks: [args.vpc.vpc.cidrBlock],
+            cidrBlocks: [args.vpcCidrBlock],
           },
         ],
         egress: [
           { protocol: '-1', fromPort: 0, toPort: 0, cidrBlocks: ['0.0.0.0/0'] },
         ],
-        vpcId: args.vpc.vpcId,
+        vpcId: args.vpcId,
         tags: commonTags,
       },
       { parent: this },
@@ -126,7 +130,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     this.ssmVpcEndpoint = new aws.ec2.VpcEndpoint(
       `${name}-ssm-vpc-endpoint`,
       {
-        vpcId: args.vpc.vpcId,
+        vpcId: args.vpcId,
         ipAddressType: 'ipv4',
         serviceName: `com.amazonaws.${awsRegion}.ssm`,
         vpcEndpointType: 'Interface',
@@ -141,7 +145,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     this.ec2MessagesVpcEndpoint = new aws.ec2.VpcEndpoint(
       `${name}-ec2messages-vpc-endpoint`,
       {
-        vpcId: args.vpc.vpcId,
+        vpcId: args.vpcId,
         ipAddressType: 'ipv4',
         serviceName: `com.amazonaws.${awsRegion}.ec2messages`,
         vpcEndpointType: 'Interface',
@@ -156,7 +160,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     this.ssmMessagesVpcEndpoint = new aws.ec2.VpcEndpoint(
       `${name}-ssmmessages-vpc-endpoint`,
       {
-        vpcId: args.vpc.vpcId,
+        vpcId: args.vpcId,
         ipAddressType: 'ipv4',
         serviceName: `com.amazonaws.${awsRegion}.ssmmessages`,
         vpcEndpointType: 'Interface',

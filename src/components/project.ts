@@ -10,12 +10,14 @@ import { StaticSite, StaticSiteArgs } from './static-site';
 import { Ec2SSMConnect } from './ec2-ssm-connect';
 import { commonTags } from '../constants';
 import { EcsService, EcsServiceArgs } from './ecs-service';
+import { NuxtSSR, NuxtSSRArgs } from './nuxt-ssr';
 
 export type Service =
   | Database
   | Redis
   | StaticSite
   | WebServer
+  | NuxtSSR
   | Mongo
   | EcsService;
 export type Services = Record<string, Service>;
@@ -28,13 +30,12 @@ type ServiceArgs = {
 };
 
 export type DatabaseServiceOptions = { type: 'DATABASE' } & ServiceArgs &
-  Omit<DatabaseArgs, 'vpc'>;
+  Omit<DatabaseArgs, 'vpcId' | 'vpcCidrBlock' | 'isolatedSubnetIds'>;
 
-export type RedisServiceOptions = { type: 'REDIS' } & ServiceArgs &
-  Pick<RedisArgs, 'dbName' | 'region'>;
+export type RedisServiceOptions = { type: 'REDIS' } & ServiceArgs & RedisArgs;
 
 export type StaticSiteServiceOptions = { type: 'STATIC_SITE' } & ServiceArgs &
-  Omit<StaticSiteArgs, 'hostedZoneId'>;
+  StaticSiteArgs;
 
 export type WebServerServiceOptions = {
   type: 'WEB_SERVER';
@@ -45,16 +46,46 @@ export type WebServerServiceOptions = {
 } & ServiceArgs &
   Omit<
     WebServerArgs,
-    'cluster' | 'vpc' | 'hostedZoneId' | 'environment' | 'secrets'
+    | 'cluster'
+    | 'vpcId'
+    | 'vpcCidrBlock'
+    | 'publicSubnetIds'
+    | 'environment'
+    | 'secrets'
+  >;
+
+export type NuxtSSRServiceOptions = {
+  type: 'NUXT_SSR';
+  environment?:
+    | aws.ecs.KeyValuePair[]
+    | ((services: Services) => aws.ecs.KeyValuePair[]);
+  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
+} & ServiceArgs &
+  Omit<
+    NuxtSSRArgs,
+    | 'cluster'
+    | 'vpcId'
+    | 'vpcCidrBlock'
+    | 'publicSubnetIds'
+    | 'environment'
+    | 'secrets'
   >;
 
 export type MongoServiceOptions = {
   type: 'MONGO';
 } & ServiceArgs &
-  Omit<MongoArgs, 'cluster' | 'vpc' | 'environment' | 'secrets'>;
+  Omit<
+    MongoArgs,
+    | 'cluster'
+    | 'vpcId'
+    | 'vpcCidrBlock'
+    | 'privateSubnetIds'
+    | 'environment'
+    | 'secrets'
+  >;
 
 export type EcsServiceOptions = {
-  type: 'ECS';
+  type: 'ECS_SERVICE';
   environment?:
     | aws.ecs.KeyValuePair[]
     | ((services: Services) => aws.ecs.KeyValuePair[]);
@@ -62,7 +93,12 @@ export type EcsServiceOptions = {
 } & ServiceArgs &
   Omit<
     EcsServiceArgs,
-    'cluster' | 'vpc' | 'hostedZoneId' | 'environment' | 'secrets'
+    | 'cluster'
+    | 'vpcId'
+    | 'vpcCidrBlock'
+    | 'subnetIds'
+    | 'environment'
+    | 'secrets'
   >;
 
 export type ProjectArgs = {
@@ -71,22 +107,12 @@ export type ProjectArgs = {
     | RedisServiceOptions
     | StaticSiteServiceOptions
     | WebServerServiceOptions
+    | NuxtSSRServiceOptions
     | MongoServiceOptions
     | EcsServiceOptions
   )[];
-  hostedZoneId?: pulumi.Input<string>;
   enableSSMConnect?: pulumi.Input<boolean>;
 };
-
-export class MissingHostedZoneId extends Error {
-  constructor(serviceType: string) {
-    super(
-      `Project::hostedZoneId argument must be provided 
-      in order to create ${serviceType} service`,
-    );
-    this.name = this.constructor.name;
-  }
-}
 
 export class MissingEcsCluster extends Error {
   constructor() {
@@ -99,7 +125,6 @@ export class Project extends pulumi.ComponentResource {
   name: string;
   vpc: awsx.ec2.Vpc;
   cluster?: aws.ecs.Cluster;
-  hostedZoneId?: pulumi.Input<string>;
   upstashProvider?: upstash.Provider;
   ec2SSMConnect?: Ec2SSMConnect;
   services: Services = {};
@@ -110,16 +135,16 @@ export class Project extends pulumi.ComponentResource {
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:Project', name, {}, opts);
-    const { services, hostedZoneId } = args;
     this.name = name;
-    this.hostedZoneId = hostedZoneId;
 
     this.vpc = this.createVpc();
-    this.createServices(services);
+    this.createServices(args.services);
 
     if (args.enableSSMConnect) {
       this.ec2SSMConnect = new Ec2SSMConnect(`${name}-ssm-connect`, {
-        vpc: this.vpc,
+        vpcId: this.vpc.vpcId,
+        privateSubnetId: this.vpc.privateSubnetIds.apply(ids => ids[0]),
+        vpcCidrBlock: this.vpc.vpc.cidrBlock,
       });
     }
 
@@ -150,7 +175,10 @@ export class Project extends pulumi.ComponentResource {
     const shouldCreateEcsCluster =
       services.some(
         it =>
-          it.type === 'WEB_SERVER' || it.type === 'MONGO' || it.type === 'ECS',
+          it.type === 'WEB_SERVER' ||
+          it.type === 'NUXT_SSR' ||
+          it.type === 'MONGO' ||
+          it.type === 'ECS_SERVICE',
       ) && !this.cluster;
     if (hasRedisService) this.createRedisPrerequisites();
     if (shouldCreateEcsCluster) this.createEcsCluster();
@@ -159,8 +187,9 @@ export class Project extends pulumi.ComponentResource {
       if (it.type === 'REDIS') this.createRedisService(it);
       if (it.type === 'STATIC_SITE') this.createStaticSiteService(it);
       if (it.type === 'WEB_SERVER') this.createWebServerService(it);
+      if (it.type === 'NUXT_SSR') this.createNuxtSSRService(it);
       if (it.type === 'MONGO') this.createMongoService(it);
-      if (it.type === 'ECS') this.createEcsService(it);
+      if (it.type === 'ECS_SERVICE') this.createEcsService(it);
     });
   }
 
@@ -191,7 +220,9 @@ export class Project extends pulumi.ComponentResource {
       serviceName,
       {
         ...databaseOptions,
-        vpc: this.vpc,
+        vpcId: this.vpc.vpcId,
+        isolatedSubnetIds: this.vpc.isolatedSubnetIds,
+        vpcCidrBlock: this.vpc.vpc.cidrBlock,
       },
       { parent: this },
     );
@@ -210,20 +241,14 @@ export class Project extends pulumi.ComponentResource {
 
   private createStaticSiteService(options: StaticSiteServiceOptions) {
     const { serviceName, ...staticSiteOptions } = options;
-    const service = new StaticSite(
-      serviceName,
-      {
-        ...staticSiteOptions,
-        hostedZoneId: this.hostedZoneId,
-      },
-      { parent: this },
-    );
+    const service = new StaticSite(serviceName, staticSiteOptions, {
+      parent: this,
+    });
     this.services[serviceName] = service;
   }
 
   private createWebServerService(options: WebServerServiceOptions) {
     if (!this.cluster) throw new MissingEcsCluster();
-    if (!this.hostedZoneId) throw new MissingHostedZoneId(options.type);
 
     const { serviceName, environment, secrets, ...ecsOptions } = options;
     const parsedEnv =
@@ -239,8 +264,37 @@ export class Project extends pulumi.ComponentResource {
       {
         ...ecsOptions,
         cluster: this.cluster,
-        vpc: this.vpc,
-        hostedZoneId: this.hostedZoneId,
+        vpcId: this.vpc.vpcId,
+        vpcCidrBlock: this.vpc.vpc.cidrBlock,
+        publicSubnetIds: this.vpc.publicSubnetIds,
+        environment: parsedEnv,
+        secrets: parsedSecrets,
+      },
+      { parent: this },
+    );
+    this.services[options.serviceName] = service;
+  }
+
+  private createNuxtSSRService(options: NuxtSSRServiceOptions) {
+    if (!this.cluster) throw new MissingEcsCluster();
+
+    const { serviceName, environment, secrets, ...ecsOptions } = options;
+    const parsedEnv =
+      typeof environment === 'function'
+        ? environment(this.services)
+        : environment;
+
+    const parsedSecrets =
+      typeof secrets === 'function' ? secrets(this.services) : secrets;
+
+    const service = new NuxtSSR(
+      serviceName,
+      {
+        ...ecsOptions,
+        cluster: this.cluster,
+        vpcId: this.vpc.vpcId,
+        vpcCidrBlock: this.vpc.vpc.cidrBlock,
+        publicSubnetIds: this.vpc.publicSubnetIds,
         environment: parsedEnv,
         secrets: parsedSecrets,
       },
@@ -259,7 +313,9 @@ export class Project extends pulumi.ComponentResource {
       {
         ...mongoOptions,
         cluster: this.cluster,
-        vpc: this.vpc,
+        vpcId: this.vpc.vpcId,
+        vpcCidrBlock: this.vpc.vpc.cidrBlock,
+        privateSubnetIds: this.vpc.privateSubnetIds,
       },
       { parent: this },
     );
@@ -283,7 +339,11 @@ export class Project extends pulumi.ComponentResource {
       {
         ...ecsOptions,
         cluster: this.cluster,
-        vpc: this.vpc,
+        vpcId: this.vpc.vpcId,
+        vpcCidrBlock: this.vpc.vpc.cidrBlock,
+        subnetIds: ecsOptions.assignPublicIp
+          ? this.vpc.publicSubnetIds
+          : this.vpc.privateSubnetIds,
         environment: parsedEnv,
         secrets: parsedSecrets,
       },
