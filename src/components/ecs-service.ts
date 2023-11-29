@@ -265,7 +265,7 @@ export class EcsService extends pulumi.ComponentResource {
           {
             Sid: 'AllowContainerToGetSecretManagerSecrets',
             Effect: 'Allow',
-            Action: ['secretsmanager:GetSecretValue'],
+            Action: ['ssm:GetParameters', 'secretsmanager:GetSecretValue'],
             Resource: '*',
           },
         ],
