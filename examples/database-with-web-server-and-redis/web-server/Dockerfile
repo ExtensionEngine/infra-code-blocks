@@ -13,6 +13,7 @@ COPY --chown=node:node --from=install /usr/src/app/node_modules ./node_modules
 COPY --chown=node:node ./src ./src
 COPY --chown=node:node ./package.json .
 COPY --chown=node:node ./tsconfig.json .
+COPY --chown=node:node ./knexfile.ts .
 
 FROM configure AS run
 USER node

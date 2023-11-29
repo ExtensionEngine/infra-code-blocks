@@ -1,36 +1,27 @@
 import * as express from 'express';
-import { MikroORM, PostgreSqlDriver } from '@mikro-orm/postgresql';
-import { RequestContext } from '@mikro-orm/core';
-import { Post } from './database/entities/post.entity';
 import { Redis } from 'ioredis';
+import { knex } from 'knex';
 
 const app = express.default();
 
 require('dotenv').config();
 
 export const init = (async () => {
-  const orm = await MikroORM.init<PostgreSqlDriver>();
+  const databaseConnectionString = process.env.DATABASE_CONNECTION_STRING || '';
+  const redisConnectionString = process.env.REDIS_CONNECTION_STRING || '';
 
-  const redisUrl = process.env.REDIS_URL || '';
-  const redisClient = new Redis(redisUrl);
+  const knexClient = knex({
+    client: 'pg',
+    connection: databaseConnectionString,
+  });
+  const redisClient = new Redis(redisConnectionString);
 
   app.use(express.json());
 
-  app.use((req, res, next) => {
-    RequestContext.create(orm.em, next);
-  });
-
   app.use('/database', async (req: any, res: any) => {
-    try {
-      const postRepository = orm.em.getRepository(Post);
-      const posts = await postRepository.findAll();
-      res.json(posts);
-    } catch (error) {
-      res.json({
-        message: 'Error fetching posts',
-        error,
-      });
-    }
+    const posts = await knexClient('posts').select('*');
+
+    return res.json({ posts });
   });
 
   app.get('/redis', async (req: any, res: any) => {

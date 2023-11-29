@@ -1,4 +1,7 @@
-export const posts = [
+import { Knex } from 'knex';
+
+const TABLE_NAME = 'posts';
+export const postsSeed = [
   {
     name: 'What is Lorem Ipsum?',
     content:
@@ -15,3 +18,17 @@ export const posts = [
       'Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source.',
   },
 ];
+
+export async function up(knex: Knex): Promise<void> {
+  await knex.schema.createTable(TABLE_NAME, table => {
+    table.increments('id').primary();
+    table.string('name').notNullable();
+    table.string('content', 9999).notNullable();
+  });
+
+  return knex.batchInsert(TABLE_NAME, postsSeed);
+}
+
+export async function down(knex: Knex): Promise<void> {
+  return knex.schema.dropTable(TABLE_NAME);
+}

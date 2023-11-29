@@ -1,0 +1,4 @@
+config:
+  aws:region: us-east-1
+  upstash:apiKey: 800cb3e0-3f5c-48ee-ad12-7e72dda394e6
+  upstash:email: petar.trutanic@gostudion.com

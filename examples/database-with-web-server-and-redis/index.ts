@@ -4,13 +4,11 @@ import * as awsx from '@pulumi/awsx';
 
 require('dotenv').config();
 
+const webServerImage = createWebServerImage();
+
 const dbName = process.env.DB_NAME || '';
 const dbUsername = process.env.DB_USERNAME || '';
 const dbPassword = process.env.DB_PASSWORD || '';
-const redisUrl = process.env.REDIS_URL || '';
-const env = process.env.NODE_ENV || 'development';
-
-const webServerImage = createWebServerImage();
 
 const project: Project = new Project('database-project', {
   services: [
@@ -40,30 +38,17 @@ const project: Project = new Project('database-project', {
       environment: (services: Services) => {
         const db = services['database-example'] as Database;
 
+        const databaseConnectionString = `postgres://${dbUsername}:${dbPassword}@${db.instance.address}:5432/${dbName}"`;
+        const redisConnectionString = process.env.REDIS_CONNECTION_STRING || '';
+
         return [
           {
-            name: 'DB_URL',
-            value: db.instance.address,
+            name: 'DATABASE_CONNECTION_STRING',
+            value: databaseConnectionString,
           },
           {
-            name: 'DB_NAME',
-            value: dbName,
-          },
-          {
-            name: 'DB_USERNAME',
-            value: dbUsername,
-          },
-          {
-            name: 'DB_PASSWORD',
-            value: dbPassword,
-          },
-          {
-            name: 'NODE_ENV',
-            value: env,
-          },
-          {
-            name: 'REDIS_URL',
-            value: redisUrl,
+            name: 'REDIS_CONNECTION_STRING',
+            value: redisConnectionString,
           },
         ];
       },
