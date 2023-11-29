@@ -14,7 +14,7 @@ export const init = (async () => {
     RequestContext.create(orm.em, next);
   });
 
-  app.use('/', async (req: any, res: any) => {
+  app.use('/mongo', async (req: any, res: any) => {
     try {
       const postRepository = orm.em.getRepository(Post);
       const posts = await postRepository.findAll();
