@@ -16,4 +16,4 @@ COPY --chown=node:node ./tsconfig.json .
 
 FROM configure AS run
 USER node
-CMD [ "npm", "run", "prod" ]
+CMD npm run migrate && npm run dev

@@ -6,8 +6,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "nodemon",
-    "migrate": "npx mikro-orm-esm migration:up",
-    "prod": "npm run migrate; nodemon"
+    "migrate": "npx mikro-orm-esm migration:up"
   },
   "nodemonConfig": {
     "watch": [
