@@ -1,3 +1,3 @@
-name: database_with_web_server
+name: database_with_web_server_and_redis
 runtime: nodejs
-description: Infra Code Blocks database with web server example
+description: Infra Code Blocks database with web server and redis example

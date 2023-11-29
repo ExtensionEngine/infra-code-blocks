@@ -7,6 +7,7 @@ require('dotenv').config();
 const dbName = process.env.DB_NAME || '';
 const dbUsername = process.env.DB_USERNAME || '';
 const dbPassword = process.env.DB_PASSWORD || '';
+const redisUrl = process.env.REDIS_URL || '';
 const env = process.env.NODE_ENV || 'development';
 
 const webServerImage = createWebServerImage();
@@ -59,6 +60,10 @@ const project: Project = new Project('database-project', {
           {
             name: 'NODE_ENV',
             value: env,
+          },
+          {
+            name: 'REDIS_URL',
+            value: redisUrl,
           },
         ];
       },
