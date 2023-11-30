@@ -1,4 +1,4 @@
-Infra code blocks examples.
+# Infra code blocks examples
 
 ## Table of contents
 
