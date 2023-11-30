@@ -1,0 +1,16 @@
+{
+  "name": "static_site",
+  "main": "index.ts",
+  "scripts": {
+    "deploy": "aws s3 sync src s3://$S3_SITE_BUCKET --no-progress --delete"
+  },
+  "devDependencies": {
+    "@types/node": "^18"
+  },
+  "dependencies": {
+    "@pulumi/pulumi": "^3.0.0",
+    "@pulumi/aws": "^6.0.0",
+    "@pulumi/awsx": "^2.0.2",
+    "@studion/infra-code-blocks": "file:../../"
+  }
+}
