@@ -10,7 +10,7 @@ const mongoUsername = process.env.MONGO_USERNAME || '';
 const mongoPassword = process.env.MONGO_PASSWORD || '';
 const mongoDbName = process.env.MONGO_DB || '';
 const mongoPort = parseInt(process.env.MONGO_PORT || '27017');
-const mongoUrl = `mongodb://${mongoUsername}:${mongoPassword}@${mongoServiceName}.${mongoServiceName}:${mongoPort}`;
+const mongoConnectionString = `mongodb://${mongoUsername}:${mongoPassword}@${mongoServiceName}.${mongoServiceName}:${mongoPort}/${mongoDbName}`;
 
 const webServerImage = createWebServerImage();
 
@@ -35,12 +35,8 @@ const project: Project = new Project('mongo-project', {
       environment: () => {
         return [
           {
-            name: 'MONGO_URL',
-            value: mongoUrl,
-          },
-          {
-            name: 'MONGO_DB',
-            value: mongoDbName,
+            name: 'MONGO_CONNECTION_STRING',
+            value: mongoConnectionString,
           },
         ];
       },
