@@ -1,4 +1,5 @@
 import * as express from 'express';
+import knexConfig from '../knexfile';
 import { Redis } from 'ioredis';
 import { knex } from 'knex';
 
@@ -7,13 +8,9 @@ const app = express.default();
 require('dotenv').config();
 
 export const init = (async () => {
-  const databaseConnectionString = process.env.DATABASE_CONNECTION_STRING || '';
   const redisConnectionString = process.env.REDIS_CONNECTION_STRING || '';
 
-  const knexClient = knex({
-    client: 'pg',
-    connection: databaseConnectionString,
-  });
+  const knexClient = knex(knexConfig.development);
   const redisClient = new Redis(redisConnectionString);
 
   app.use(express.json());

@@ -1,15 +1,19 @@
+import { readFileSync } from 'fs';
 import type { Knex } from 'knex';
 
 require('dotenv').config();
 
-const config: { [key: string]: Knex.Config } = {
+const knexConfig: { [key: string]: Knex.Config } = {
   development: {
     client: 'postgresql',
-    connection: process.env.DATABASE_CONNECTION_STRING,
+    connection: {
+      connectionString: process.env.DATABASE_CONNECTION_STRING,
+      ssl: { ca: readFileSync('src/eu-north-1-bundle.pem') },
+    },
     migrations: {
       directory: 'src/migrations',
     },
   },
 };
 
-module.exports = config;
+export default knexConfig;

@@ -38,7 +38,10 @@ const project: Project = new Project('database-project', {
       environment: (services: Services) => {
         const db = services['database-example'] as Database;
 
-        const databaseConnectionString = `postgres://${dbUsername}:${dbPassword}@${db.instance.address}:5432/${dbName}"`;
+        const databaseConnectionString = db.instance.address.apply(
+          address =>
+            `postgres://${dbUsername}:${dbPassword}@${address}:5432/${dbName}`,
+        );
         const redisConnectionString = process.env.REDIS_CONNECTION_STRING || '';
 
         return [
