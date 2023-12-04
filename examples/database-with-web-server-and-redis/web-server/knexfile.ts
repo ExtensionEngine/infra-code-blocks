@@ -8,7 +8,7 @@ const knexConfig: { [key: string]: Knex.Config } = {
     client: 'postgresql',
     connection: {
       connectionString: process.env.DATABASE_CONNECTION_STRING,
-      ssl: { ca: readFileSync('src/eu-north-1-bundle.pem') },
+      ssl: { rejectUnauthorized: false },
     },
     migrations: {
       directory: 'src/migrations',
