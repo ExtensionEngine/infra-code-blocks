@@ -60,14 +60,13 @@ const project: Project = new Project('database-project', {
 });
 
 function createWebServerImage() {
-  const imageRepository = new aws.ecr.Repository('database-web-server', {
-    name: 'database-web-server',
+  const imageRepository = new aws.ecr.Repository('repository', {
     forceDelete: true,
   });
 
-  return new awsx.ecr.Image('database-web-server', {
+  return new awsx.ecr.Image('app', {
     repositoryUrl: imageRepository.repositoryUrl,
-    context: './web-server',
+    context: './app',
     extraOptions: ['--platform', 'linux/amd64', '--ssh', 'default'],
   });
 }

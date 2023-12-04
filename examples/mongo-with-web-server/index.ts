@@ -45,14 +45,13 @@ const project: Project = new Project('mongo-project', {
 });
 
 function createWebServerImage() {
-  const imageRepository = new aws.ecr.Repository('mongo-web-server', {
-    name: 'mongo-web-server',
+  const imageRepository = new aws.ecr.Repository('repository', {
     forceDelete: true,
   });
 
-  return new awsx.ecr.Image('mongo-web-server', {
+  return new awsx.ecr.Image('app', {
     repositoryUrl: imageRepository.repositoryUrl,
-    context: './web-server',
+    context: './app',
     extraOptions: ['--platform', 'linux/amd64', '--ssh', 'default'],
   });
 }
