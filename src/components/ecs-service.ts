@@ -438,7 +438,7 @@ export class EcsService extends pulumi.ComponentResource {
     );
 
     return new aws.servicediscovery.Service(
-      `mongo-service`,
+      `${this.name}-service-discovery`,
       {
         name: this.name,
         dnsConfig: {
