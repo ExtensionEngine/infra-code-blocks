@@ -1,16 +1,19 @@
 import { Project } from '@studion/infra-code-blocks';
+import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 
-require('dotenv').config();
+const config = new pulumi.Config('mongo');
 
-const mongoServiceName = 'mongo-service';
+const serviceName = 'mongo-service';
 
-const mongoUsername = process.env.MONGO_USERNAME || '';
-const mongoPassword = process.env.MONGO_PASSWORD || '';
-const mongoDbName = process.env.MONGO_DB || '';
-const mongoPort = parseInt(process.env.MONGO_PORT || '27017');
-const mongoConnectionString = `mongodb://${mongoUsername}:${mongoPassword}@${mongoServiceName}.${mongoServiceName}:${mongoPort}/${mongoDbName}`;
+const host = `${serviceName}.${serviceName}`;
+const username = config.require('username');
+const password = config.require('password');
+const database = config.require('database');
+const port = parseInt(config.require('port') || '27017');
+
+const mongoConnectionString = `mongodb://${username}:${password}@${host}:${port}/${database}`;
 
 const webServerImage = createWebServerImage();
 
@@ -18,10 +21,10 @@ const project: Project = new Project('mongo-project', {
   services: [
     {
       type: 'MONGO',
-      serviceName: mongoServiceName,
-      port: mongoPort,
-      username: mongoUsername,
-      password: mongoPassword,
+      serviceName: serviceName,
+      port: port,
+      username: username,
+      password: password,
       size: 'small',
     },
     {

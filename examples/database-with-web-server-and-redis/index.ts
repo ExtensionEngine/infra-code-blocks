@@ -1,14 +1,17 @@
 import { Database, Project, Services } from '@studion/infra-code-blocks';
+import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 
-require('dotenv').config();
+const databaseConfig = new pulumi.Config('database');
+const username = databaseConfig.require('username');
+const password = databaseConfig.require('password');
+const dbName = databaseConfig.require('dbname');
+
+const redisConfig = new pulumi.Config('redis');
+const redisConnectionString = redisConfig.require('connection');
 
 const webServerImage = createWebServerImage();
-
-const dbName = process.env.DB_NAME || '';
-const dbUsername = process.env.DB_USERNAME || '';
-const dbPassword = process.env.DB_PASSWORD || '';
 
 const project: Project = new Project('database-project', {
   services: [
@@ -16,8 +19,8 @@ const project: Project = new Project('database-project', {
       type: 'DATABASE',
       serviceName: 'database-example',
       dbName: dbName,
-      username: dbUsername,
-      password: dbPassword,
+      username,
+      password,
       applyImmediately: true,
       skipFinalSnapshot: true,
     },
@@ -40,9 +43,8 @@ const project: Project = new Project('database-project', {
 
         const databaseConnectionString = db.instance.address.apply(
           address =>
-            `postgres://${dbUsername}:${dbPassword}@${address}:5432/${dbName}`,
+            `postgres://${username}:${password}@${address}:5432/${dbName}`,
         );
-        const redisConnectionString = process.env.REDIS_CONNECTION_STRING || '';
 
         return [
           {
