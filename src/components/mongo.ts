@@ -6,7 +6,7 @@ import { EcsService, EcsServiceArgs } from './ecs-service';
 
 export type MongoArgs = Pick<
   EcsServiceArgs,
-  'size' | 'cluster' | 'vpcId' | 'vpcCidrBlock' | 'tags'
+  'size' | 'clusterId' | 'clusterName' | 'vpcId' | 'vpcCidrBlock' | 'tags'
 > & {
   /**
    * Username for the master DB user.

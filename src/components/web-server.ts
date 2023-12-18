@@ -8,7 +8,8 @@ export type WebServerArgs = Pick<
   EcsServiceArgs,
   | 'image'
   | 'port'
-  | 'cluster'
+  | 'clusterId'
+  | 'clusterName'
   | 'vpcId'
   | 'vpcCidrBlock'
   | 'desiredCount'

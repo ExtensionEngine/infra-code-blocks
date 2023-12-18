@@ -479,7 +479,8 @@ new WebServer(name: string, args: WebServerArgs, opts?: pulumi.ComponentResource
 export type WebServerArgs = {
   image: pulumi.Input<string>;
   port: pulumi.Input<number>;
-  cluster: aws.ecs.Cluster;
+  clusterId: pulumi.Input<string>;
+  clusterName: pulumi.Input<string>;
   vpcId: pulumi.Input<string>;
   vpcCidrBlock: pulumi.Input<string>;
   publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
@@ -534,7 +535,8 @@ new NuxtSSR(name: string, args: NuxtSSRArgs, opts?: pulumi.ComponentResourceOpti
 export type NuxtSSRArgs = {
   image: pulumi.Input<string>;
   port: pulumi.Input<number>;
-  cluster: aws.ecs.Cluster;
+  clusterId: pulumi.Input<string>;
+  clusterName: pulumi.Input<string>;
   vpcId: pulumi.Input<string>;
   vpcCidrBlock: pulumi.Input<string>;
   publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
@@ -581,7 +583,8 @@ new Mongo(name: string, args: MongoArgs, opts?: pulumi.ComponentResourceOptions 
 
 ```ts
 export type MongoArgs = {
-  cluster: aws.ecs.Cluster;
+  clusterId: pulumi.Input<string>;
+  clusterName: pulumi.Input<string>;
   vpcId: pulumi.Input<string>;
   vpcCidrBlock: pulumi.Input<string>;
   privateSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
@@ -627,7 +630,8 @@ new EcsService(name: string, args: EcsServiceArgs, opts?: pulumi.ComponentResour
 export type EcsServiceArgs = {
   image: pulumi.Input<string>;
   port: pulumi.Input<number>;
-  cluster: aws.ecs.Cluster;
+  clusterId: pulumi.Input<string>;
+  clusterName: pulumi.Input<string>;
   vpcId: pulumi.Input<string>;
   vpcCidrBlock: pulumi.Input<string>;
   subnetIds: pulumi.Input<pulumi.Input<string>[]>;

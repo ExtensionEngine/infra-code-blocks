@@ -9,7 +9,8 @@ export type NuxtSSRArgs = Pick<
   EcsServiceArgs,
   | 'image'
   | 'port'
-  | 'cluster'
+  | 'clusterId'
+  | 'clusterName'
   | 'vpcId'
   | 'vpcCidrBlock'
   | 'desiredCount'

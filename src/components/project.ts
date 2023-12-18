@@ -46,7 +46,8 @@ export type WebServerServiceOptions = {
 } & ServiceArgs &
   Omit<
     WebServerArgs,
-    | 'cluster'
+    | 'clusterId'
+    | 'clusterName'
     | 'vpcId'
     | 'vpcCidrBlock'
     | 'publicSubnetIds'
@@ -63,7 +64,8 @@ export type NuxtSSRServiceOptions = {
 } & ServiceArgs &
   Omit<
     NuxtSSRArgs,
-    | 'cluster'
+    | 'clusterId'
+    | 'clusterName'
     | 'vpcId'
     | 'vpcCidrBlock'
     | 'publicSubnetIds'
@@ -76,7 +78,8 @@ export type MongoServiceOptions = {
 } & ServiceArgs &
   Omit<
     MongoArgs,
-    | 'cluster'
+    | 'clusterId'
+    | 'clusterName'
     | 'vpcId'
     | 'vpcCidrBlock'
     | 'privateSubnetIds'
@@ -93,7 +96,8 @@ export type EcsServiceOptions = {
 } & ServiceArgs &
   Omit<
     EcsServiceArgs,
-    | 'cluster'
+    | 'clusterId'
+    | 'clusterName'
     | 'vpcId'
     | 'vpcCidrBlock'
     | 'subnetIds'
@@ -263,7 +267,8 @@ export class Project extends pulumi.ComponentResource {
       serviceName,
       {
         ...ecsOptions,
-        cluster: this.cluster,
+        clusterId: this.cluster.id,
+        clusterName: this.cluster.name,
         vpcId: this.vpc.vpcId,
         vpcCidrBlock: this.vpc.vpc.cidrBlock,
         publicSubnetIds: this.vpc.publicSubnetIds,
@@ -291,7 +296,8 @@ export class Project extends pulumi.ComponentResource {
       serviceName,
       {
         ...ecsOptions,
-        cluster: this.cluster,
+        clusterId: this.cluster.id,
+        clusterName: this.cluster.name,
         vpcId: this.vpc.vpcId,
         vpcCidrBlock: this.vpc.vpc.cidrBlock,
         publicSubnetIds: this.vpc.publicSubnetIds,
@@ -312,7 +318,8 @@ export class Project extends pulumi.ComponentResource {
       serviceName,
       {
         ...mongoOptions,
-        cluster: this.cluster,
+        clusterId: this.cluster.id,
+        clusterName: this.cluster.name,
         vpcId: this.vpc.vpcId,
         vpcCidrBlock: this.vpc.vpc.cidrBlock,
         privateSubnetIds: this.vpc.privateSubnetIds,
@@ -338,7 +345,8 @@ export class Project extends pulumi.ComponentResource {
       serviceName,
       {
         ...ecsOptions,
-        cluster: this.cluster,
+        clusterId: this.cluster.id,
+        clusterName: this.cluster.name,
         vpcId: this.vpc.vpcId,
         vpcCidrBlock: this.vpc.vpc.cidrBlock,
         subnetIds: ecsOptions.assignPublicIp
