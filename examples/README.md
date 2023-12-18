@@ -3,11 +3,18 @@
 ## Table of contents
 
 1. [Prerequisites](#prerequisites)
-2. [Mongo with web server](#mongo-with-web-server)
-3. [Database with web server and redis](#database-with-web-server-and-redis)
-4. [Static site](#static-site)
+2. [Setup](#setup)
+3. [Mongo with web server](#mongo-with-web-server)
+4. [Database with web server and redis](#database-with-web-server-and-redis)
+5. [Static site](#static-site)
 
 ### Prerequisites
+
+- Working [Pulumi](https://www.pulumi.com/docs/clouds/aws/get-started/begin/#pulumi-aws-before-you-begin) project
+- AWS account with neccessary permissions for each component used
+- aws-cli package
+
+### Setup
 
 - Build infra code blocks library:
 
