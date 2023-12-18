@@ -6,7 +6,7 @@ import {
 
 const serviceName = 'static-site-example';
 
-const project: Project = new Project('mongo-project', {
+const project: Project = new Project('static-site', {
   services: [
     {
       type: 'STATIC_SITE',
