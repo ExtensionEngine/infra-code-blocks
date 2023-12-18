@@ -42,9 +42,13 @@ export type EcsServiceArgs = {
    */
   port: pulumi.Input<number>;
   /**
-   * The aws.ecs.Cluster resource.
+   * The aws.ecs.Cluster id.
    */
-  cluster: aws.ecs.Cluster;
+  clusterId: pulumi.Input<string>;
+  /**
+   * The aws.ecs.Cluster name.
+   */
+  clusterName: pulumi.Input<string>;
   vpcId: pulumi.Input<string>;
   /**
    * The IPv4 CIDR block for the VPC.
@@ -494,7 +498,7 @@ export class EcsService extends pulumi.ComponentResource {
       `${this.name}-service`,
       {
         name: this.name,
-        cluster: argsWithDefaults.cluster.id,
+        cluster: argsWithDefaults.clusterId,
         launchType: 'FARGATE',
         desiredCount: argsWithDefaults.desiredCount,
         taskDefinition: this.taskDefinition.arn,
@@ -537,7 +541,7 @@ export class EcsService extends pulumi.ComponentResource {
       {
         minCapacity: argsWithDefaults.autoscaling.minCount,
         maxCapacity: argsWithDefaults.autoscaling.maxCount,
-        resourceId: pulumi.interpolate`service/${argsWithDefaults.cluster.name}/${this.service.name}`,
+        resourceId: pulumi.interpolate`service/${argsWithDefaults.clusterName}/${this.service.name}`,
         serviceNamespace: 'ecs',
         scalableDimension: 'ecs:service:DesiredCount',
         tags: commonTags,
