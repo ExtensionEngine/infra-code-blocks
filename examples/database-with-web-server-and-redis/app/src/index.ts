@@ -15,13 +15,13 @@ export const init = (async () => {
 
   app.use(express.json());
 
-  app.use('/database', async (req: any, res: any) => {
+  app.use('/posts', async (req: any, res: any) => {
     const posts = await knexClient('posts').select('*');
 
     return res.json({ posts });
   });
 
-  app.get('/redis', async (req: any, res: any) => {
+  app.get('/counters/visit', async (req: any, res: any) => {
     const COUNTER_KEY = 'VISIT_COUNTER';
     const counterResult = await redisClient.get(COUNTER_KEY);
 
