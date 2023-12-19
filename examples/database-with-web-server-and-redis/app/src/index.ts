@@ -9,7 +9,10 @@ require('dotenv').config();
 
 const redisConnectionString = process.env.REDIS_CONNECTION_STRING || '';
 
-const knexClient = knex(knexConfig.development);
+const isProd = process.env.NODE_ENV == 'production';
+const config = isProd ? knexConfig.production : knexConfig.development;
+
+const knexClient = knex(config);
 const redisClient = new Redis(redisConnectionString);
 
 app.use(express.json());

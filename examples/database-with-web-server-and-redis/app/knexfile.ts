@@ -6,7 +6,6 @@ const username = process.env.DATABASE_USERNAME;
 const password = process.env.DATABASE_PASSWORD;
 const host = process.env.DATABASE_HOST;
 const dbName = process.env.DATABASE_DBNAME;
-const isProd = process.env.NODE_ENV == 'production';
 
 const connectionString = `postgres://${username}:${password}@${host}:5432/${dbName}`;
 
