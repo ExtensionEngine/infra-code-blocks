@@ -7,15 +7,23 @@ require('dotenv').config();
 const app = express.default();
 
 export const init = (async () => {
-  const mongoConnectionString = process.env.MONGO_CONNECTION_STRING || '';
+  const username = process.env.MONGO_USERNAME;
+  const password = process.env.MONGO_PASSWORD;
+  const host = process.env.MONGO_HOST;
+  const dbname = process.env.MONGO_DATABASE;
+  const port = process.env.MONGO_PORT;
+
+  const mongoConnectionString = `mongodb://${username}:${password}@${host}:${port}/${dbname}`;
+
   await connect(mongoConnectionString, {
     authSource: 'admin',
   });
+
   const Post = await createDatabaseWithPosts();
 
   app.use(express.json());
 
-  app.use('/mongo', async (req: any, res: any) => {
+  app.use('/posts', async (req: any, res: any) => {
     const posts = await Post.find();
     return res.json(posts);
   });

@@ -12,7 +12,8 @@ WORKDIR /usr/src/app
 COPY --chown=node:node --from=install /usr/src/app/node_modules ./node_modules
 COPY --chown=node:node ./src ./src
 COPY --chown=node:node ./package.json ./tsconfig.json ./
+RUN npm run build
 
 FROM configure AS run
 USER node
-CMD ["npm", "run", "dev"]
+CMD npm run prod

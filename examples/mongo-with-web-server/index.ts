@@ -13,7 +13,7 @@ const password = config.require('password');
 const database = config.require('database');
 const port = parseInt(config.require('port') || '27017');
 
-const mongoConnectionString = `mongodb://${username}:${password}@${host}:${port}/${database}`;
+const passwordSecret = createPasswordSecret(password);
 
 const webServerImage = createWebServerImage();
 
@@ -38,11 +38,24 @@ const project: Project = new Project('mongo-project', {
       environment: () => {
         return [
           {
-            name: 'MONGO_CONNECTION_STRING',
-            value: mongoConnectionString,
+            name: 'MONGO_USERNAME',
+            value: username,
+          },
+          {
+            name: 'MONGO_HOST',
+            value: host,
+          },
+          {
+            name: 'MONGO_DATABASE',
+            value: database,
+          },
+          {
+            name: 'MONGO_PORT',
+            value: port.toString(),
           },
         ];
       },
+      secrets: [{ name: 'MONGO_PASSWORD', valueFrom: passwordSecret.arn }],
     },
   ],
 });
@@ -57,6 +70,29 @@ function createWebServerImage() {
     context: './app',
     extraOptions: ['--platform', 'linux/amd64', '--ssh', 'default'],
   });
+}
+
+function createPasswordSecret(password: string) {
+  const project = pulumi.getProject();
+  const stack = pulumi.getStack();
+
+  const passwordSecret = new aws.secretsmanager.Secret(
+    'mongo-password-secret',
+    {
+      namePrefix: `${stack}/${project}/MongoPassword-`,
+    },
+  );
+
+  const passwordSecretValue = new aws.secretsmanager.SecretVersion(
+    'mongo-password-secret-value',
+    {
+      secretId: passwordSecret.id,
+      secretString: password,
+    },
+    { dependsOn: [passwordSecret] },
+  );
+
+  return passwordSecret;
 }
 
 export default project.name;

@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "dev": "nodemon"
+    "dev": "nodemon",
+    "prod": "node dist/index.js"
   },
   "nodemonConfig": {
     "watch": [
