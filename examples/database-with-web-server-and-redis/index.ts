@@ -60,6 +60,10 @@ const project: Project = new Project('database-project', {
             name: 'REDIS_CONNECTION_STRING',
             value: redisConnectionString,
           },
+          {
+            name: 'NODE_ENV',
+            value: 'production',
+          },
         ];
       },
       secrets: [

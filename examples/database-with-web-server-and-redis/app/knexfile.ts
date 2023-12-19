@@ -15,7 +15,16 @@ const knexConfig: { [key: string]: Knex.Config } = {
     client: 'postgresql',
     connection: {
       connectionString,
-      ...(isProd && { ssl: { rejectUnauthorized: false } }),
+    },
+    migrations: {
+      directory: 'src/migrations',
+    },
+  },
+  production: {
+    client: 'postgresql',
+    connection: {
+      connectionString,
+      ssl: { rejectUnauthorized: false },
     },
     migrations: {
       directory: 'src/migrations',

@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "nodemon",
-    "migrate": "npx knex migrate:latest"
+    "migrate": "npx knex migrate:latest",
+    "prod": "node dist/src/index.js"
   },
   "nodemonConfig": {
     "watch": [
