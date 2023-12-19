@@ -22,6 +22,7 @@ app.use('/posts', async (req: any, res: any) => {
 
 app.get('/counters/visit', async (req: any, res: any) => {
   const COUNTER_KEY = 'VISIT_COUNTER';
+
   const counterResult = await redisClient.get(COUNTER_KEY);
 
   const counter = counterResult ? parseInt(counterResult) : 0;
