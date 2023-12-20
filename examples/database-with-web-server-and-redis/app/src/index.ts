@@ -7,13 +7,23 @@ const app = express.default();
 
 require('dotenv').config();
 
-const redisConnectionString = process.env.REDIS_CONNECTION_STRING || '';
+const redisPort = process.env.REDIS_PORT;
+const redisEndpoint = process.env.REDIS_ENDPOINT;
+const redisPassword = process.env.REDIS_PASSWORD;
+
+if (!redisPort || !redisEndpoint || !redisPassword)
+  throw new Error('Invalid redis configuration');
+
+const redisClient = new Redis({
+  port: parseInt(redisPort),
+  host: redisEndpoint,
+  password: redisPassword,
+  tls: {},
+});
 
 const isProd = process.env.NODE_ENV == 'production';
 const config = isProd ? knexConfig.production : knexConfig.development;
-
 const knexClient = knex(config);
-const redisClient = new Redis(redisConnectionString);
 
 app.use(express.json());
 

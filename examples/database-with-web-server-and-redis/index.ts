@@ -1,4 +1,4 @@
-import { Database, Project, Services } from '@studion/infra-code-blocks';
+import { Database, Project, Redis, Services } from '@studion/infra-code-blocks';
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
@@ -8,10 +8,7 @@ const username = databaseConfig.require('username');
 const password = databaseConfig.require('password');
 const dbName = databaseConfig.require('dbname');
 
-const passwordSecret = createPasswordSecret(password);
-
-const redisConfig = new pulumi.Config('redis');
-const redisConnectionString = redisConfig.require('connection');
+const databasePasswordSecret = createPasswordSecret('database', password);
 
 const webServerImage = createWebServerImage();
 
@@ -42,6 +39,9 @@ const project: Project = new Project('database-project', {
       autoscaling: { enabled: false },
       environment: (services: Services) => {
         const db = services['database-example'] as Database;
+        const redis = services['redis'] as Redis;
+
+        const redisPort = redis.instance.port.apply(port => port.toString());
 
         return [
           {
@@ -57,8 +57,12 @@ const project: Project = new Project('database-project', {
             value: dbName,
           },
           {
-            name: 'REDIS_CONNECTION_STRING',
-            value: redisConnectionString,
+            name: 'REDIS_PORT',
+            value: redisPort,
+          },
+          {
+            name: 'REDIS_ENDPOINT',
+            value: redis.instance.endpoint,
           },
           {
             name: 'NODE_ENV',
@@ -66,12 +70,24 @@ const project: Project = new Project('database-project', {
           },
         ];
       },
-      secrets: [
-        {
-          name: 'DATABASE_PASSWORD',
-          valueFrom: passwordSecret.arn,
-        },
-      ],
+      secrets: (services: Services) => {
+        const redis = services['redis'] as Redis;
+
+        const redisPasswordSecret = redis.instance.password.apply(password =>
+          createPasswordSecret('redis', password),
+        );
+
+        return [
+          {
+            name: 'DATABASE_PASSWORD',
+            valueFrom: databasePasswordSecret.arn,
+          },
+          {
+            name: 'REDIS_PASSWORD',
+            valueFrom: redisPasswordSecret.arn,
+          },
+        ];
+      },
     },
   ],
 });
@@ -88,19 +104,19 @@ function createWebServerImage() {
   });
 }
 
-function createPasswordSecret(password: string) {
+function createPasswordSecret(name: string, password: string) {
   const project = pulumi.getProject();
   const stack = pulumi.getStack();
 
   const passwordSecret = new aws.secretsmanager.Secret(
-    'database-password-secret',
+    `${name}-password-secret`,
     {
-      namePrefix: `${stack}/${project}/DatabasePassword-`,
+      namePrefix: `${stack}/${project}/${name}Password-`,
     },
   );
 
   const passwordSecretValue = new aws.secretsmanager.SecretVersion(
-    'database-password-secret-value',
+    `${name}-password-secret-value`,
     {
       secretId: passwordSecret.id,
       secretString: password,
