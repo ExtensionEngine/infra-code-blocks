@@ -1,6 +1,6 @@
 import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
-import * as random from '@pulumi/random';
+import { Password } from './password';
 import { commonTags } from '../constants';
 
 export type DatabaseArgs = {
@@ -68,7 +68,7 @@ export class Database extends pulumi.ComponentResource {
   kms: aws.kms.Key;
   dbSubnetGroup: aws.rds.SubnetGroup;
   dbSecurityGroup: aws.ec2.SecurityGroup;
-  passwordSecret: aws.secretsmanager.Secret;
+  password: Password;
 
   constructor(
     name: string,
@@ -83,9 +83,12 @@ export class Database extends pulumi.ComponentResource {
     this.dbSubnetGroup = this.createSubnetGroup({ isolatedSubnetIds });
     this.dbSecurityGroup = this.createSecurityGroup({ vpcId, vpcCidrBlock });
     this.kms = this.createEncryptionKey();
-    const { instance, passwordSecret } = this.createDatabaseInstance(args);
-    this.instance = instance;
-    this.passwordSecret = passwordSecret;
+    this.password = new Password(
+      `${this.name}-database-password`,
+      { value: args.password },
+      { parent: this },
+    );
+    this.instance = this.createDatabaseInstance(args);
 
     this.registerOutputs();
   }
@@ -144,43 +147,9 @@ export class Database extends pulumi.ComponentResource {
     return kms;
   }
 
-  private createPasswordSecret({ password }: Pick<DatabaseArgs, 'password'>) {
-    const project = pulumi.getProject();
-    const stack = pulumi.getStack();
-
-    const passwordSecret = new aws.secretsmanager.Secret(
-      `${this.name}-password-secret`,
-      {
-        namePrefix: `${stack}/${project}/DatabasePassword-`,
-        tags: commonTags,
-      },
-      { parent: this },
-    );
-
-    const passwordSecretValue = new aws.secretsmanager.SecretVersion(
-      `${this.name}-password-secret-value`,
-      {
-        secretId: passwordSecret.id,
-        secretString: password,
-      },
-      { parent: this, dependsOn: [passwordSecret] },
-    );
-
-    return passwordSecret;
-  }
-
   private createDatabaseInstance(args: DatabaseArgs) {
     const argsWithDefaults = Object.assign({}, defaults, args);
     const stack = pulumi.getStack();
-    const password =
-      argsWithDefaults.password ||
-      new random.RandomPassword(`${this.name}-db-password`, {
-        length: 16,
-        overrideSpecial: '_%$',
-        special: true,
-      }).result;
-
-    const passwordSecret = this.createPasswordSecret({ password });
 
     const instance = new aws.rds.Instance(
       `${this.name}-rds`,
@@ -193,7 +162,7 @@ export class Database extends pulumi.ComponentResource {
         instanceClass: argsWithDefaults.instanceClass,
         dbName: argsWithDefaults.dbName,
         username: argsWithDefaults.username,
-        password,
+        password: this.password.value,
         dbSubnetGroupName: this.dbSubnetGroup.name,
         vpcSecurityGroupIds: [this.dbSecurityGroup.id],
         storageEncrypted: true,
@@ -208,8 +177,8 @@ export class Database extends pulumi.ComponentResource {
         backupRetentionPeriod: 14,
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
-      { parent: this },
+      { parent: this, dependsOn: [this.password] },
     );
-    return { instance, passwordSecret };
+    return instance;
   }
 }

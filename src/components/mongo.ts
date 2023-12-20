@@ -1,8 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
-import * as aws from '@pulumi/aws';
-import * as random from '@pulumi/random';
-import { commonTags } from '../constants';
 import { EcsService, EcsServiceArgs } from './ecs-service';
+import { Password } from './password';
 
 export type MongoArgs = Pick<
   EcsServiceArgs,
@@ -27,7 +25,7 @@ export type MongoArgs = Pick<
 export class Mongo extends pulumi.ComponentResource {
   name: string;
   service: EcsService;
-  passwordSecret: aws.secretsmanager.Secret;
+  password: Password;
 
   constructor(
     name: string,
@@ -42,8 +40,11 @@ export class Mongo extends pulumi.ComponentResource {
 
     this.name = name;
 
-    const mongoPassword = password || this.createRandomPassword();
-    this.passwordSecret = this.createPasswordSecret(mongoPassword);
+    this.password = new Password(
+      `${this.name}-mongo-password`,
+      { value: password },
+      { parent: this },
+    );
 
     this.service = new EcsService(
       name,
@@ -68,7 +69,7 @@ export class Mongo extends pulumi.ComponentResource {
         secrets: [
           {
             name: 'MONGO_INITDB_ROOT_PASSWORD',
-            valueFrom: this.passwordSecret.arn,
+            valueFrom: this.password.secret.arn,
           },
         ],
       },
@@ -76,40 +77,5 @@ export class Mongo extends pulumi.ComponentResource {
     );
 
     this.registerOutputs();
-  }
-
-  private createRandomPassword() {
-    const password = new random.RandomPassword(`${this.name}-mongo-password`, {
-      length: 16,
-      overrideSpecial: '_%$',
-      special: true,
-    });
-
-    return password.result;
-  }
-
-  private createPasswordSecret(password: MongoArgs['password']) {
-    const project = pulumi.getProject();
-    const stack = pulumi.getStack();
-
-    const passwordSecret = new aws.secretsmanager.Secret(
-      `${this.name}-password-secret`,
-      {
-        namePrefix: `${stack}/${project}/MongoPassword-`,
-        tags: commonTags,
-      },
-      { parent: this },
-    );
-
-    const passwordSecretValue = new aws.secretsmanager.SecretVersion(
-      `${this.name}-password-secret-value`,
-      {
-        secretId: passwordSecret.id,
-        secretString: password,
-      },
-      { parent: this, dependsOn: [passwordSecret] },
-    );
-
-    return passwordSecret;
   }
 }
