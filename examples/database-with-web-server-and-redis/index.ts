@@ -73,10 +73,6 @@ const project: Project = new Project('database-project', {
       secrets: (services: Services) => {
         const redis = services['redis'] as Redis;
 
-        const redisPasswordSecret = redis.instance.password.apply(password =>
-          createPasswordSecret('redis', password),
-        );
-
         return [
           {
             name: 'DATABASE_PASSWORD',
@@ -84,7 +80,7 @@ const project: Project = new Project('database-project', {
           },
           {
             name: 'REDIS_PASSWORD',
-            valueFrom: redisPasswordSecret.arn,
+            valueFrom: redis.passwordSecret.arn,
           },
         ];
       },
