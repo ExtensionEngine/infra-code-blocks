@@ -10,8 +10,8 @@ RUN npm ci
 FROM base AS configure
 WORKDIR /usr/src/app
 COPY --chown=node:node --from=install /usr/src/app/node_modules ./node_modules
-COPY --chown=node:node ./src ./src
 COPY --chown=node:node ./package.json ./tsconfig.json ./knexfile.ts ./
+COPY --chown=node:node ./src ./src
 RUN npm run build
 
 FROM configure AS run
