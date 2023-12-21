@@ -8,8 +8,6 @@ const username = databaseConfig.require('username');
 const password = databaseConfig.require('password');
 const dbName = databaseConfig.require('dbname');
 
-const databasePasswordSecret = createPasswordSecret('database', password);
-
 const webServerImage = createWebServerImage();
 
 const project: Project = new Project('database-project', {
@@ -71,12 +69,13 @@ const project: Project = new Project('database-project', {
         ];
       },
       secrets: (services: Services) => {
+        const db = services['database-example'] as Database;
         const redis = services['redis'] as Redis;
 
         return [
           {
             name: 'DATABASE_PASSWORD',
-            valueFrom: databasePasswordSecret.arn,
+            valueFrom: db.passwordSecret.arn,
           },
           {
             name: 'REDIS_PASSWORD',
@@ -98,29 +97,6 @@ function createWebServerImage() {
     context: './app',
     extraOptions: ['--platform', 'linux/amd64', '--ssh', 'default'],
   });
-}
-
-function createPasswordSecret(name: string, password: string) {
-  const project = pulumi.getProject();
-  const stack = pulumi.getStack();
-
-  const passwordSecret = new aws.secretsmanager.Secret(
-    `${name}-password-secret`,
-    {
-      namePrefix: `${stack}/${project}/${name}Password-`,
-    },
-  );
-
-  const passwordSecretValue = new aws.secretsmanager.SecretVersion(
-    `${name}-password-secret-value`,
-    {
-      secretId: passwordSecret.id,
-      secretString: password,
-    },
-    { dependsOn: [passwordSecret] },
-  );
-
-  return passwordSecret;
 }
 
 export default project.name;
