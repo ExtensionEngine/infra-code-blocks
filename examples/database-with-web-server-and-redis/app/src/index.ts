@@ -8,15 +8,15 @@ const app = express.default();
 require('dotenv').config();
 
 const redisPort = process.env.REDIS_PORT;
-const redisEndpoint = process.env.REDIS_ENDPOINT;
+const redisHost = process.env.REDIS_HOST;
 const redisPassword = process.env.REDIS_PASSWORD;
 
-if (!redisPort || !redisEndpoint || !redisPassword)
+if (!redisPort || !redisHost || !redisPassword)
   throw new Error('Invalid redis configuration');
 
 const redisClient = new Redis({
   port: parseInt(redisPort),
-  host: redisEndpoint,
+  host: redisHost,
   password: redisPassword,
   tls: {},
 });

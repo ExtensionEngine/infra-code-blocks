@@ -61,7 +61,7 @@ const project: Project = new Project('database-project', {
             value: redisPort,
           },
           {
-            name: 'REDIS_ENDPOINT',
+            name: 'REDIS_HOST',
             value: redis.instance.endpoint,
           },
           {
