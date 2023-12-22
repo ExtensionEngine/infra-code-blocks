@@ -1,0 +1,5 @@
+/bin/
+/node_modules/
+.env
+
+Pulumi.*.yaml
