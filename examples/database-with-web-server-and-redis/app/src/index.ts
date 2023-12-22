@@ -3,6 +3,8 @@ import knexConfig from '../knexfile';
 import { Redis } from 'ioredis';
 import { knex } from 'knex';
 
+const COUNTER_KEY = 'VISIT_COUNTER';
+
 const app = express.default();
 
 require('dotenv').config();
@@ -30,19 +32,21 @@ app.use(express.json());
 app.use('/posts', async (req: any, res: any) => {
   const posts = await knexClient('posts').select('*');
 
+  const counter = await getVisitCounter();
+  redisClient.set(COUNTER_KEY, counter + 1);
+
   return res.json({ posts });
 });
 
 app.get('/counters/visit', async (req: any, res: any) => {
-  const COUNTER_KEY = 'VISIT_COUNTER';
-
-  const counterResult = await redisClient.get(COUNTER_KEY);
-
-  const counter = counterResult ? parseInt(counterResult) : 0;
-  redisClient.set(COUNTER_KEY, counter + 1);
-
-  return res.json({ visitCounter: counter + 1 });
+  const counter = await getVisitCounter();
+  return res.json({ visitCounter: counter });
 });
+
+async function getVisitCounter() {
+  const counterResult = await redisClient.get(COUNTER_KEY);
+  return counterResult ? parseInt(counterResult) : 0;
+}
 
 app.listen(3000, () => {
   console.log('App is listening on port 3000');
