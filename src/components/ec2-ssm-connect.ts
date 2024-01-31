@@ -41,7 +41,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
         { name: 'ena-support', values: ['true'] },
       ],
       owners: ['amazon'],
-      nameRegex: 'al2023-ami-2023.3.20240122.0-kernel-6.1-arm64',
+      nameRegex: 'al2023-ami-20[0-9]+.*-kernel-6.1-arm64',
       mostRecent: true,
     });
 
