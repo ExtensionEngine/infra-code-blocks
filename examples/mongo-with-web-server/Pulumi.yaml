@@ -1,0 +1,3 @@
+name: mongo_with_web_server
+runtime: nodejs
+description: Infra Code Blocks mongo with web server example

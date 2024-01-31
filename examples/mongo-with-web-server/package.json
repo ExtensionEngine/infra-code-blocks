@@ -1,0 +1,13 @@
+{
+  "name": "mongo-with-web-server",
+  "main": "index.ts",
+  "devDependencies": {
+    "@types/node": "^18"
+  },
+  "dependencies": {
+    "@pulumi/aws": "^6.9.0",
+    "@pulumi/awsx": "^2.2.0",
+    "@studion/infra-code-blocks": "file:../../",
+    "dotenv": "^16.3.1"
+  }
+}
