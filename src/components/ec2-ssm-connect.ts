@@ -5,18 +5,6 @@ import { commonTags } from '../constants';
 const config = new pulumi.Config('aws');
 const awsRegion = config.require('region');
 
-const AmazonLinux2023_ARM_EC2_AMI = aws.ec2.getAmiOutput({
-  filters: [
-    { name: 'architecture', values: ['arm64'] },
-    { name: 'root-device-type', values: ['ebs'] },
-    { name: 'virtualization-type', values: ['hvm'] },
-    { name: 'ena-support', values: ['true'] },
-  ],
-  owners: ['amazon'],
-  nameRegex: 'al2023-ami-2023.2.20231030.1-kernel-6.1-arm64',
-  mostRecent: true,
-});
-
 export type Ec2SSMConnectArgs = {
   vpcId: pulumi.Input<string>;
   privateSubnetId: pulumi.Input<string>;
@@ -44,6 +32,18 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     super('studion:Ec2BastionSSMConnect', name, {}, opts);
 
     const subnetId = args.privateSubnetId;
+
+    const AmazonLinux2023_ARM_EC2_AMI = aws.ec2.getAmiOutput({
+      filters: [
+        { name: 'architecture', values: ['arm64'] },
+        { name: 'root-device-type', values: ['ebs'] },
+        { name: 'virtualization-type', values: ['hvm'] },
+        { name: 'ena-support', values: ['true'] },
+      ],
+      owners: ['amazon'],
+      nameRegex: 'al2023-ami-2023.3.20240122.0-kernel-6.1-arm64',
+      mostRecent: true,
+    });
 
     this.ec2SecurityGroup = new aws.ec2.SecurityGroup(
       `${name}-ec2-security-group`,
