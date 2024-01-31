@@ -41,6 +41,8 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
         { name: 'ena-support', values: ['true'] },
       ],
       owners: ['amazon'],
+      // TODO: Improve this nameRegex property. Use * for kernel version.
+      // https://docs.aws.amazon.com/linux/al2023/ug/ec2.html
       nameRegex: 'al2023-ami-20[0-9]+.*-kernel-6.1-arm64',
       mostRecent: true,
     });
