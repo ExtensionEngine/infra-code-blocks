@@ -109,11 +109,13 @@ type DatabaseServiceOptions = {
   dbName: pulumi.Input<string>;
   username: pulumi.Input<string>;
   password?: pulumi.Input<string>;
+  multiAz?: pulumi.Input<boolean>;
   applyImmediately?: pulumi.Input<boolean>;
   skipFinalSnapshot?: pulumi.Input<boolean>;
   allocatedStorage?: pulumi.Input<number>;
   maxAllocatedStorage?: pulumi.Input<number>;
   instanceClass?: pulumi.Input<string>;
+  enableMonitoring?: pulumi.Input<boolean>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
@@ -359,11 +361,13 @@ type DatabaseArgs = {
   isolatedSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
   vpcCidrBlock: pulumi.Input<string>;
   password?: pulumi.Input<string>;
+  multiAz?: pulumi.Input<boolean>;
   applyImmediately?: pulumi.Input<boolean>;
   skipFinalSnapshot?: pulumi.Input<boolean>;
   allocatedStorage?: pulumi.Input<number>;
   maxAllocatedStorage?: pulumi.Input<number>;
   instanceClass?: pulumi.Input<string>;
+  enableMonitoring?: pulumi.Input<boolean>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
