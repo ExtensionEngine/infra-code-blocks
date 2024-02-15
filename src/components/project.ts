@@ -116,6 +116,7 @@ export type ProjectArgs = {
     | EcsServiceOptions
   )[];
   enableSSMConnect?: pulumi.Input<boolean>;
+  numberOfAvailabilityZones?: number;
 };
 
 export class MissingEcsCluster extends Error {
@@ -141,7 +142,7 @@ export class Project extends pulumi.ComponentResource {
     super('studion:Project', name, {}, opts);
     this.name = name;
 
-    this.vpc = this.createVpc();
+    this.vpc = this.createVpc(args.numberOfAvailabilityZones);
     this.createServices(args.services);
 
     if (args.enableSSMConnect) {
@@ -155,11 +156,11 @@ export class Project extends pulumi.ComponentResource {
     this.registerOutputs();
   }
 
-  private createVpc() {
+  private createVpc(numberOfAvailabilityZones: number = 2) {
     const vpc = new awsx.ec2.Vpc(
       `${this.name}-vpc`,
       {
-        numberOfAvailabilityZones: 2,
+        numberOfAvailabilityZones,
         enableDnsHostnames: true,
         enableDnsSupport: true,
         subnetSpecs: [

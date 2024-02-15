@@ -94,6 +94,7 @@ type ProjectArgs = {
     | EcsServiceOptions
   )[];
   enableSSMConnect?: pulumi.Input<boolean>;
+  numberOfAvailabilityZones?: number;
 };
 ```
 
@@ -101,6 +102,7 @@ type ProjectArgs = {
 | :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | services \*      |                                                                        Service list.                                                                         |
 | enableSSMConnect | Setup ec2 instance and SSM in order to connect to the database in the private subnet. Please refer to the [SSM Connect](#ssm-connect) section for more info. |
+| numberOfAvailabilityZones | Default is 2 which is recommended. If building a dev server, we can reduce to 1 availability zone to reduce hosting cost. |
 
 ```ts
 type DatabaseServiceOptions = {
