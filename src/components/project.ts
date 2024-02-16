@@ -156,7 +156,9 @@ export class Project extends pulumi.ComponentResource {
     this.registerOutputs();
   }
 
-  private createVpc(numberOfAvailabilityZones: number = 2) {
+  private createVpc(
+    numberOfAvailabilityZones: ProjectArgs['numberOfAvailabilityZones'] = 2,
+  ) {
     const vpc = new awsx.ec2.Vpc(
       `${this.name}-vpc`,
       {
