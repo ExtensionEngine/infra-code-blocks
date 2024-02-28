@@ -118,6 +118,7 @@ type DatabaseServiceOptions = {
   maxAllocatedStorage?: pulumi.Input<number>;
   instanceClass?: pulumi.Input<string>;
   enableMonitoring?: pulumi.Input<boolean>;
+  replicateSourceDb?: pulumi.Input<string>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
@@ -370,6 +371,7 @@ type DatabaseArgs = {
   maxAllocatedStorage?: pulumi.Input<number>;
   instanceClass?: pulumi.Input<string>;
   enableMonitoring?: pulumi.Input<boolean>;
+  replicateSourceDb?: pulumi.Input<string>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;

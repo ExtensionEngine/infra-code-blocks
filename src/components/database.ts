@@ -55,6 +55,13 @@ export type DatabaseArgs = {
    */
   enableMonitoring?: pulumi.Input<boolean>;
   /**
+   * ARN of the primary DB that we want to replicate. If this param is set,
+   * the instance will be set up as a replica.
+   * Note: if we provide this param, we need to omit dbName and username since those
+   * are inherited from the replication source.
+   */
+  replicateSourceDb?: pulumi.Input<string>;
+  /**
    * A map of tags to assign to the resource.
    */
   tags?: pulumi.Input<{
@@ -230,6 +237,7 @@ export class Database extends pulumi.ComponentResource {
         finalSnapshotIdentifier: `${this.name}-final-snapshot-${stack}`,
         backupWindow: '06:00-06:30',
         backupRetentionPeriod: 14,
+        replicateSourceDb: argsWithDefaults.replicateSourceDb,
         ...monitoringOptions,
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
