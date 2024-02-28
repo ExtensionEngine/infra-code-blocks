@@ -57,8 +57,8 @@ export type DatabaseArgs = {
   /**
    * ARN of the primary DB that we want to replicate. If this param is set,
    * the instance will be set up as a replica.
-   * Note: if we provide this param, we need to omit dbName and username since those
-   * are inherited from the replication source.
+   * NOTE: if we provide this param, we need to omit dbName, username and password
+   * since those are inherited from the replication source.
    */
   replicateSourceDb?: pulumi.Input<string>;
   /**
@@ -82,10 +82,10 @@ const defaults = {
 export class Database extends pulumi.ComponentResource {
   name: string;
   instance: aws.rds.Instance;
-  kms: aws.kms.Key;
+  kms?: aws.kms.Key;
   dbSubnetGroup: aws.rds.SubnetGroup;
   dbSecurityGroup: aws.ec2.SecurityGroup;
-  password: Password;
+  password?: Password;
   monitoringRole?: aws.iam.Role;
 
   constructor(
@@ -98,16 +98,19 @@ export class Database extends pulumi.ComponentResource {
     this.name = name;
 
     const argsWithDefaults = Object.assign({}, defaults, args);
-    const { vpcId, isolatedSubnetIds, vpcCidrBlock, enableMonitoring } =
-      argsWithDefaults;
+    const {
+      enableMonitoring, isolatedSubnetIds, replicateSourceDb, vpcCidrBlock, vpcId
+    } = argsWithDefaults;
     this.dbSubnetGroup = this.createSubnetGroup({ isolatedSubnetIds });
     this.dbSecurityGroup = this.createSecurityGroup({ vpcId, vpcCidrBlock });
-    this.kms = this.createEncryptionKey();
-    this.password = new Password(
-      `${this.name}-database-password`,
-      { value: args.password },
-      { parent: this },
-    );
+    if (!replicateSourceDb) {
+      this.kms = this.createEncryptionKey();
+      this.password = new Password(
+        `${this.name}-database-password`,
+        { value: args.password },
+        { parent: this },
+      );
+    }
     if (enableMonitoring) {
       this.monitoringRole = this.createMonitoringRole();
     }
@@ -212,6 +215,8 @@ export class Database extends pulumi.ComponentResource {
           }
         : {};
 
+    const options: pulumi.CustomResourceOptions = { parent: this };
+    if (!argsWithDefaults.replicateSourceDb) options.dependsOn = this.password;
     const instance = new aws.rds.Instance(
       `${this.name}-rds`,
       {
@@ -223,11 +228,11 @@ export class Database extends pulumi.ComponentResource {
         instanceClass: argsWithDefaults.instanceClass,
         dbName: argsWithDefaults.dbName,
         username: argsWithDefaults.username,
-        password: this.password.value,
+        password: this.password?.value,
         dbSubnetGroupName: this.dbSubnetGroup.name,
         vpcSecurityGroupIds: [this.dbSecurityGroup.id],
         storageEncrypted: true,
-        kmsKeyId: this.kms.arn,
+        kmsKeyId: this.kms?.arn,
         multiAz: argsWithDefaults.multiAz,
         publiclyAccessible: false,
         skipFinalSnapshot: argsWithDefaults.skipFinalSnapshot,
@@ -241,7 +246,7 @@ export class Database extends pulumi.ComponentResource {
         ...monitoringOptions,
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
-      { parent: this, dependsOn: [this.password] },
+      options
     );
     return instance;
   }
