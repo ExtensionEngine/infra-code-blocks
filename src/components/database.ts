@@ -91,7 +91,7 @@ export class Database extends pulumi.ComponentResource {
     this.name = name;
 
     const argsWithDefaults = Object.assign({}, defaults, args);
-    const { enableMonitoring, isolatedSubnetIds, vpcCidrBlock, vpcId } =
+    const { vpcId, isolatedSubnetIds, vpcCidrBlock, enableMonitoring } =
       argsWithDefaults;
     this.dbSubnetGroup = this.createSubnetGroup({ isolatedSubnetIds });
     this.dbSecurityGroup = this.createSecurityGroup({ vpcId, vpcCidrBlock });
@@ -216,11 +216,11 @@ export class Database extends pulumi.ComponentResource {
         instanceClass: argsWithDefaults.instanceClass,
         dbName: argsWithDefaults.dbName,
         username: argsWithDefaults.username,
-        password: this.password?.value,
+        password: this.password.value,
         dbSubnetGroupName: this.dbSubnetGroup.name,
         vpcSecurityGroupIds: [this.dbSecurityGroup.id],
         storageEncrypted: true,
-        kmsKeyId: this.kms?.arn,
+        kmsKeyId: this.kms.arn,
         multiAz: argsWithDefaults.multiAz,
         publiclyAccessible: false,
         skipFinalSnapshot: argsWithDefaults.skipFinalSnapshot,
@@ -233,7 +233,7 @@ export class Database extends pulumi.ComponentResource {
         ...monitoringOptions,
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
-      { parent: this, dependsOn: [this.password] }
+      { parent: this, dependsOn: [this.password] },
     );
     return instance;
   }
