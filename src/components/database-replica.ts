@@ -46,10 +46,6 @@ export type DatabaseReplicaArgs = {
    */
   instanceClass?: pulumi.Input<string>;
   /**
-   * Set this to true to enable database monitoring. Defaults to false.
-   */
-  enableMonitoring?: pulumi.Input<boolean>;
-  /**
    * A map of tags to assign to the resource.
    */
   tags?: pulumi.Input<{
