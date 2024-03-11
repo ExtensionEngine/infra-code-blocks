@@ -55,6 +55,11 @@ export type DatabaseArgs = {
    */
   enableMonitoring?: pulumi.Input<boolean>;
   /**
+   * The name of custom aws.rds.ParameterGroup. Setting this param will apply custom
+   * DB parameters to this instance.
+   */
+  parameterGroupName?: pulumi.Input<string>;
+  /**
    * A map of tags to assign to the resource.
    */
   tags?: pulumi.Input<{
@@ -230,6 +235,7 @@ export class Database extends pulumi.ComponentResource {
         finalSnapshotIdentifier: `${this.name}-final-snapshot-${stack}`,
         backupWindow: '06:00-06:30',
         backupRetentionPeriod: 14,
+        parameterGroupName: argsWithDefaults.parameterGroupName,
         ...monitoringOptions,
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
