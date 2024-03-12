@@ -46,6 +46,11 @@ export type DatabaseReplicaArgs = {
    */
   instanceClass?: pulumi.Input<string>;
   /**
+   * The name of custom aws.rds.ParameterGroup. Setting this param will apply custom
+   * DB parameters to this instance.
+   */
+  parameterGroupName?: pulumi.Input<string>;
+  /**
    * A map of tags to assign to the resource.
    */
   tags?: pulumi.Input<{
@@ -116,6 +121,7 @@ export class DatabaseReplica extends pulumi.ComponentResource {
         autoMinorVersionUpgrade: true,
         maintenanceWindow: 'Mon:07:00-Mon:07:30',
         replicateSourceDb: argsWithDefaults.replicateSourceDb,
+        parameterGroupName: argsWithDefaults.parameterGroupName,
         ...monitoringOptions,
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
