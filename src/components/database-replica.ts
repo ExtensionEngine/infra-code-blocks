@@ -61,7 +61,6 @@ export type DatabaseReplicaArgs = {
 const defaults = {
   multiAz: false,
   applyImmediately: false,
-  skipFinalSnapshot: false,
   allocatedStorage: 20,
   maxAllocatedStorage: 100,
   instanceClass: 'db.t4g.micro',
@@ -122,6 +121,7 @@ export class DatabaseReplica extends pulumi.ComponentResource {
         maintenanceWindow: 'Mon:07:00-Mon:07:30',
         replicateSourceDb: argsWithDefaults.replicateSourceDb,
         parameterGroupName: argsWithDefaults.parameterGroupName,
+        skipFinalSnapshot: true,
         ...monitoringOptions,
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
