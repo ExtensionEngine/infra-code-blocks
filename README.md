@@ -407,8 +407,8 @@ new DatabaseReplica(name: string, args: DatabaseReplicaArgs, opts?: pulumi.Custo
 ```ts
 type DatabaseReplicaArgs = {
   replicateSourceDb: pulumi.Input<string>;
-  dbSubnetGroupName: pulumi.Input<string>;
   dbSecurityGroupId: pulumi.Input<string>;
+  dbSubnetGroupName?: pulumi.Input<string>;
   monitoringRole?: aws.iam.Role;
   multiAz?: pulumi.Input<boolean>;
   applyImmediately?: pulumi.Input<boolean>;
@@ -421,7 +421,15 @@ type DatabaseReplicaArgs = {
   }>;
 };
 ```
-Database replica requires primary DB instance to exist.
+Database replica requires primary DB instance to exist. If the replica is in the same
+region as primary instance, we should not set `dbSubnetGroupNameParam`.
+The `replicateSourceDb` param is referenced like this:
+```javascript
+  const primaryDb = new studion.Database(...);
+  const replica = new studion.DatabaseReplica('replica', {
+    replicateSourceDb: primaryDb.instance.identifier
+  });
+```
 
 ### Redis
 
