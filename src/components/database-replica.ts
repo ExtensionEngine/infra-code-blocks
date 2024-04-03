@@ -12,7 +12,7 @@ export type DatabaseReplicaArgs = {
    * * If primary DB is instance of studion:Database, it can be accessed as
    * `db.dbSubnetGroup.name`.
    */
-  dbSubnetGroupName: pulumi.Input<string>;
+  dbSubnetGroupName?: pulumi.Input<string>;
   /**
    * DB security group ID. Should be the same as primary instance.
    * If primary DB is instance of studion:Database, it can be accessed as
