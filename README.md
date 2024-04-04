@@ -68,10 +68,14 @@ $ pulumi up
 
 ### Project
 
-Project component makes it really easy to spin up project infrastructure,
+Project component makes it easy to spin up project infrastructure,
 hiding infrastructure complexity.
 <br>
 The component creates its own VPC used for resources within the project.
+<br><br>
+Services are created only if specified in the `services` list.
+<br>
+If `services` is an empty list, VPC is the only service created by default.
 
 ```ts
 new Project(name: string, args: ProjectArgs, opts?: pulumi.CustomResourceOptions);
