@@ -6,6 +6,7 @@ export type MongoArgs = Pick<
   EcsServiceArgs,
   'size' | 'clusterId' | 'clusterName' | 'vpcId' | 'vpcCidrBlock' | 'tags'
 > & {
+  privateSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
   /**
    * Username for the master DB user.
    */
@@ -15,11 +16,18 @@ export type MongoArgs = Pick<
    * The value will be stored as a secret in AWS Secret Manager.
    */
   password?: pulumi.Input<string>;
-  privateSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
+  /**
+   * Mongo Docker image. Defaults to mongo:7.0.3.
+   */
+  image?: pulumi.Input<string>;
   /**
    * Exposed service port. Defaults to 27017.
    */
   port?: pulumi.Input<number>;
+  /**
+   * Persistent storage volume path. Defaults to '/data/db'.
+   */
+  persistentStorageVolumePath?: pulumi.Input<string>;
 };
 
 export class Mongo extends pulumi.ComponentResource {
@@ -34,7 +42,12 @@ export class Mongo extends pulumi.ComponentResource {
   ) {
     super('studion:Mongo', name, args, opts);
 
+    const image =
+      args.image ||
+      'mongo:7.0.3@sha256:238b1636bdd7820c752b91bec8a669f92568eb313ad89a1fc4a92903c1b40489';
     const port = args.port || 27017;
+    const persistentStorageVolumePath =
+      args.persistentStorageVolumePath || '/data/db';
 
     const { username, password, privateSubnetIds, ...ecsServiceArgs } = args;
 
@@ -51,12 +64,11 @@ export class Mongo extends pulumi.ComponentResource {
       {
         ...ecsServiceArgs,
         port,
-        image:
-          'mongo:7.0.3@sha256:238b1636bdd7820c752b91bec8a669f92568eb313ad89a1fc4a92903c1b40489',
+        image,
         desiredCount: 1,
         autoscaling: { enabled: false },
         enableServiceAutoDiscovery: true,
-        persistentStorageVolumePath: '/data/db',
+        persistentStorageVolumePath,
         dockerCommand: ['mongod', '--port', port.toString()],
         assignPublicIp: false,
         subnetIds: privateSubnetIds,
