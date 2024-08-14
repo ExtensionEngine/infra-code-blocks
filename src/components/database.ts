@@ -235,6 +235,7 @@ export class Database extends pulumi.ComponentResource {
         finalSnapshotIdentifier: `${this.name}-final-snapshot-${stack}`,
         backupWindow: '06:00-06:30',
         backupRetentionPeriod: 14,
+        caCertIdentifier: 'rds-ca-rsa2048-g1',
         parameterGroupName: argsWithDefaults.parameterGroupName,
         ...monitoringOptions,
         tags: { ...commonTags, ...argsWithDefaults.tags },
