@@ -60,6 +60,12 @@ export type DatabaseArgs = {
    */
   parameterGroupName?: pulumi.Input<string>;
   /**
+   * Specifies whether or not to create this database from a snapshot.
+   * This correlates to the snapshot ID you'd find in the RDS console,
+   * e.g: rds:production-2015-06-26-06-05.
+   */
+  snapshotIdentifier?: pulumi.Input<string>;
+  /**
    * A map of tags to assign to the resource.
    */
   tags?: pulumi.Input<{
@@ -84,6 +90,7 @@ export class Database extends pulumi.ComponentResource {
   dbSubnetGroup: aws.rds.SubnetGroup;
   dbSecurityGroup: aws.ec2.SecurityGroup;
   password: Password;
+  encryptedSnapshotCopy?: aws.rds.SnapshotCopy;
   monitoringRole?: aws.iam.Role;
 
   constructor(
@@ -96,8 +103,13 @@ export class Database extends pulumi.ComponentResource {
     this.name = name;
 
     const argsWithDefaults = Object.assign({}, defaults, args);
-    const { vpcId, isolatedSubnetIds, vpcCidrBlock, enableMonitoring } =
-      argsWithDefaults;
+    const {
+      vpcId,
+      isolatedSubnetIds,
+      vpcCidrBlock,
+      enableMonitoring,
+      snapshotIdentifier,
+    } = argsWithDefaults;
     this.dbSubnetGroup = this.createSubnetGroup({ isolatedSubnetIds });
     this.dbSecurityGroup = this.createSecurityGroup({ vpcId, vpcCidrBlock });
     this.kms = this.createEncryptionKey();
@@ -108,6 +120,10 @@ export class Database extends pulumi.ComponentResource {
     );
     if (enableMonitoring) {
       this.monitoringRole = this.createMonitoringRole();
+    }
+    if (snapshotIdentifier) {
+      this.encryptedSnapshotCopy =
+        this.createEncryptedSnapshotCopy(snapshotIdentifier);
     }
     this.instance = this.createDatabaseInstance(args);
 
@@ -196,6 +212,20 @@ export class Database extends pulumi.ComponentResource {
     return monitoringRole;
   }
 
+  private createEncryptedSnapshotCopy(
+    snapshotIdentifier: NonNullable<DatabaseArgs['snapshotIdentifier']>,
+  ) {
+    const encryptedSnapshotCopy = new aws.rds.SnapshotCopy(
+      `${this.name}-encrypted-snapshot-copy`,
+      {
+        sourceDbSnapshotIdentifier: snapshotIdentifier,
+        targetDbSnapshotIdentifier: `${snapshotIdentifier}-${Date.now()}`,
+        kmsKeyId: this.kms.arn,
+      },
+    );
+    return encryptedSnapshotCopy;
+  }
+
   private createDatabaseInstance(args: DatabaseArgs) {
     const argsWithDefaults = Object.assign({}, defaults, args);
     const stack = pulumi.getStack();
@@ -238,6 +268,8 @@ export class Database extends pulumi.ComponentResource {
         caCertIdentifier: 'rds-ca-rsa2048-g1',
         parameterGroupName: argsWithDefaults.parameterGroupName,
         ...monitoringOptions,
+        snapshotIdentifier:
+          this.encryptedSnapshotCopy?.targetDbSnapshotIdentifier,
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
       { parent: this, dependsOn: [this.password] },
