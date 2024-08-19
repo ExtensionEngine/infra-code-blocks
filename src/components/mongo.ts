@@ -33,6 +33,8 @@ export type MongoArgs = Pick<
 export class Mongo extends pulumi.ComponentResource {
   readonly name: string;
   readonly username: pulumi.Output<string>;
+  readonly port: pulumi.Output<number>;
+  readonly host: pulumi.Output<string>;
   readonly service: EcsService;
   readonly password: Password;
 
@@ -53,7 +55,9 @@ export class Mongo extends pulumi.ComponentResource {
     const { username, password, privateSubnetIds, ...ecsServiceArgs } = args;
 
     this.name = name;
+    this.host = pulumi.output(`${name}.${name}`);
     this.username = pulumi.output(username);
+    this.port = pulumi.output(port);
 
     this.password = new Password(
       `${this.name}-mongo-password`,
