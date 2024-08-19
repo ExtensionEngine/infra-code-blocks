@@ -268,9 +268,10 @@ export class Database extends pulumi.ComponentResource {
         backupRetentionPeriod: 14,
         caCertIdentifier: 'rds-ca-rsa2048-g1',
         parameterGroupName: argsWithDefaults.parameterGroupName,
-        ...monitoringOptions,
+        allowMajorVersionUpgrade: Boolean(argsWithDefaults.snapshotIdentifier),
         snapshotIdentifier:
           this.encryptedSnapshotCopy?.targetDbSnapshotIdentifier,
+        ...monitoringOptions,
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
       { parent: this, dependsOn: [this.password] },
