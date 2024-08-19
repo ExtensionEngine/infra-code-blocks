@@ -1,5 +1,6 @@
 import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
+import * as random from '@pulumi/random';
 import { Password } from './password';
 import { commonTags } from '../constants';
 
@@ -215,11 +216,20 @@ export class Database extends pulumi.ComponentResource {
   private createEncryptedSnapshotCopy(
     snapshotIdentifier: NonNullable<DatabaseArgs['snapshotIdentifier']>,
   ) {
+    const targetDbSnapshotIdentifier = new random.RandomString(
+      `${this.name}-snapshot-copy-identifier-sufix`,
+      {
+        length: 10,
+        special: false,
+      },
+      { parent: this },
+    ).result.apply(sufix => `${snapshotIdentifier}-${sufix}`);
+
     const encryptedSnapshotCopy = new aws.rds.SnapshotCopy(
       `${this.name}-encrypted-snapshot-copy`,
       {
         sourceDbSnapshotIdentifier: snapshotIdentifier,
-        targetDbSnapshotIdentifier: `${snapshotIdentifier}-${Date.now()}`,
+        targetDbSnapshotIdentifier,
         kmsKeyId: this.kms.arn,
       },
       { parent: this },
