@@ -222,6 +222,7 @@ export class Database extends pulumi.ComponentResource {
         targetDbSnapshotIdentifier: `${snapshotIdentifier}-${Date.now()}`,
         kmsKeyId: this.kms.arn,
       },
+      { parent: this },
     );
     return encryptedSnapshotCopy;
   }
