@@ -1,6 +1,5 @@
 import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
-import * as random from '@pulumi/random';
 import { Password } from './password';
 import { commonTags } from '../constants';
 
@@ -56,6 +55,11 @@ export type DatabaseArgs = {
    */
   enableMonitoring?: pulumi.Input<boolean>;
   /**
+   * Set this to true to allow major version upgrades, for example when creating
+   * db from the snapshot. Defaults to false.
+   */
+  allowMajorVersionUpgrade?: pulumi.Input<boolean>;
+  /**
    * The name of custom aws.rds.ParameterGroup. Setting this param will apply custom
    * DB parameters to this instance.
    */
@@ -82,6 +86,7 @@ const defaults = {
   maxAllocatedStorage: 100,
   instanceClass: 'db.t4g.micro',
   enableMonitoring: false,
+  allowMajorVersionUpgrade: false,
 };
 
 export class Database extends pulumi.ComponentResource {
@@ -216,20 +221,11 @@ export class Database extends pulumi.ComponentResource {
   private createEncryptedSnapshotCopy(
     snapshotIdentifier: NonNullable<DatabaseArgs['snapshotIdentifier']>,
   ) {
-    const targetDbSnapshotIdentifier = new random.RandomString(
-      `${this.name}-snapshot-copy-identifier-sufix`,
-      {
-        length: 10,
-        special: false,
-      },
-      { parent: this },
-    ).result.apply(sufix => `${snapshotIdentifier}-${sufix}`);
-
     const encryptedSnapshotCopy = new aws.rds.SnapshotCopy(
       `${this.name}-encrypted-snapshot-copy`,
       {
         sourceDbSnapshotIdentifier: snapshotIdentifier,
-        targetDbSnapshotIdentifier,
+        targetDbSnapshotIdentifier: `${snapshotIdentifier}-encrypted-copy`,
         kmsKeyId: this.kms.arn,
       },
       { parent: this },
@@ -278,7 +274,7 @@ export class Database extends pulumi.ComponentResource {
         backupRetentionPeriod: 14,
         caCertIdentifier: 'rds-ca-rsa2048-g1',
         parameterGroupName: argsWithDefaults.parameterGroupName,
-        allowMajorVersionUpgrade: Boolean(argsWithDefaults.snapshotIdentifier),
+        allowMajorVersionUpgrade: argsWithDefaults.allowMajorVersionUpgrade,
         snapshotIdentifier:
           this.encryptedSnapshotCopy?.targetDbSnapshotIdentifier,
         ...monitoringOptions,
