@@ -31,9 +31,10 @@ export type MongoArgs = Pick<
 };
 
 export class Mongo extends pulumi.ComponentResource {
-  name: string;
-  service: EcsService;
-  password: Password;
+  readonly name: string;
+  readonly username: pulumi.Output<string>;
+  readonly service: EcsService;
+  readonly password: Password;
 
   constructor(
     name: string,
@@ -52,6 +53,7 @@ export class Mongo extends pulumi.ComponentResource {
     const { username, password, privateSubnetIds, ...ecsServiceArgs } = args;
 
     this.name = name;
+    this.username = pulumi.output(username);
 
     this.password = new Password(
       `${this.name}-mongo-password`,
