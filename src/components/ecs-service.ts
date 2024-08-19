@@ -79,11 +79,11 @@ export type EcsServiceArgs = {
    * please use the `secrets` property.
    * Defaults to [].
    */
-  environment?: aws.ecs.KeyValuePair[];
+  environment?: pulumi.Input<aws.ecs.KeyValuePair[]>;
   /**
    * The secrets to pass to the container. Defaults to [].
    */
-  secrets?: aws.ecs.Secret[];
+  secrets?: pulumi.Input<aws.ecs.Secret[]>;
   /**
    * Enable service auto discovery and assign DNS record to service.
    * Defaults to false.
