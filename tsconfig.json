@@ -11,7 +11,8 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "forceConsistentCasingInFileNames": true,
-    "declaration": true
+    "declaration": true,
+    "skipLibCheck": true
   },
   "files": ["src/index.ts"]
 }
