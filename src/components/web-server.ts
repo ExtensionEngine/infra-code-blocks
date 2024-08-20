@@ -226,7 +226,7 @@ export class WebServer extends pulumi.ComponentResource {
           ],
           tags: commonTags,
         },
-        { parent: this },
+        { parent: this, dependsOn: [this.certificate] },
       );
     }
 
