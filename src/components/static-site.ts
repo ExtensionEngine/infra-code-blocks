@@ -14,6 +14,10 @@ export type StaticSiteArgs = {
    */
   hostedZoneId?: pulumi.Input<string>;
   /**
+   * ARN of the CloudFront viewer-request function.
+   */
+  viewerRequestFunctionArn?: pulumi.Input<string>;
+  /**
    * A map of tags to assign to the resource.
    */
   tags?: pulumi.Input<{
@@ -35,7 +39,7 @@ export class StaticSite extends pulumi.ComponentResource {
     super('studion:StaticSite', name, {}, opts);
 
     this.name = name;
-    const { domain, hostedZoneId, tags } = args;
+    const { domain, hostedZoneId, viewerRequestFunctionArn, tags } = args;
     const hasCustomDomain = domain && hostedZoneId;
     if (domain && !hostedZoneId) {
       throw new Error(
@@ -46,7 +50,11 @@ export class StaticSite extends pulumi.ComponentResource {
       this.certificate = this.createTlsCertificate({ domain, hostedZoneId });
     }
     this.bucket = this.createPublicBucket({ tags });
-    this.cloudfront = this.createCloudfrontDistribution({ domain, tags });
+    this.cloudfront = this.createCloudfrontDistribution({
+      domain,
+      viewerRequestFunctionArn,
+      tags,
+    });
     if (hasCustomDomain) {
       this.createDnsRecord({ domain, hostedZoneId });
     }
@@ -123,8 +131,18 @@ export class StaticSite extends pulumi.ComponentResource {
 
   private createCloudfrontDistribution({
     domain,
+    viewerRequestFunctionArn,
     tags,
-  }: Pick<StaticSiteArgs, 'domain' | 'tags'>) {
+  }: Pick<StaticSiteArgs, 'domain' | 'viewerRequestFunctionArn' | 'tags'>) {
+    const functionAssociations = viewerRequestFunctionArn
+      ? [
+          {
+            eventType: 'viewer-request',
+            functionArn: viewerRequestFunctionArn,
+          },
+        ]
+      : [];
+
     const cloudfront = new aws.cloudfront.Distribution(
       `${this.name}-cloudfront`,
       {
@@ -172,6 +190,7 @@ export class StaticSite extends pulumi.ComponentResource {
             cookies: { forward: 'none' },
             queryString: false,
           },
+          functionAssociations,
         },
         priceClass: 'PriceClass_100',
         restrictions: {
