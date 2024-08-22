@@ -30,7 +30,7 @@ export class Password extends pulumi.ComponentResource {
         `${this.name}-random-password`,
         {
           length: 16,
-          overrideSpecial: '_%$',
+          overrideSpecial: '_$',
           special: true,
         },
         { parent: this },
