@@ -377,6 +377,7 @@ type DatabaseArgs = {
   instanceClass?: pulumi.Input<string>;
   enableMonitoring?: pulumi.Input<boolean>;
   parameterGroupName?: pulumi.Input<string>;
+  engineVersion?: pulumi.Input<string>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
@@ -420,6 +421,7 @@ type DatabaseReplicaArgs = {
   maxAllocatedStorage?: pulumi.Input<number>;
   instanceClass?: pulumi.Input<string>;
   parameterGroupName?: pulumi.Input<string>;
+  engineVersion?: pulumi.Input<string>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;

@@ -65,11 +65,15 @@ export type DatabaseArgs = {
    */
   parameterGroupName?: pulumi.Input<string>;
   /**
-   * Specifies whether or not to create this database from a snapshot.
+   * Specifies whether to create this database from a snapshot.
    * This correlates to the snapshot ID you'd find in the RDS console,
    * e.g: rds:production-2015-06-26-06-05.
    */
   snapshotIdentifier?: pulumi.Input<string>;
+  /**
+   * The DB engine version. Defaults to '15.5'.
+   */
+  engineVersion?: pulumi.Input<string>;
   /**
    * A map of tags to assign to the resource.
    */
@@ -87,6 +91,7 @@ const defaults = {
   instanceClass: 'db.t4g.micro',
   enableMonitoring: false,
   allowMajorVersionUpgrade: false,
+  engineVersion: '15.5',
 };
 
 export class Database extends pulumi.ComponentResource {
@@ -252,7 +257,7 @@ export class Database extends pulumi.ComponentResource {
       {
         identifierPrefix: `${this.name}-`,
         engine: 'postgres',
-        engineVersion: '15.5',
+        engineVersion: argsWithDefaults.engineVersion,
         allocatedStorage: argsWithDefaults.allocatedStorage,
         maxAllocatedStorage: argsWithDefaults.maxAllocatedStorage,
         instanceClass: argsWithDefaults.instanceClass,
