@@ -51,6 +51,10 @@ export type DatabaseReplicaArgs = {
    */
   parameterGroupName?: pulumi.Input<string>;
   /**
+   * The DB engine version. Defaults to '15.5'.
+   */
+  engineVersion?: pulumi.Input<string>;
+  /**
    * A map of tags to assign to the resource.
    */
   tags?: pulumi.Input<{
