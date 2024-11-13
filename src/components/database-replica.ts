@@ -51,6 +51,10 @@ export type DatabaseReplicaArgs = {
    */
   parameterGroupName?: pulumi.Input<string>;
   /**
+   * The DB engine version. Defaults to '15.5'.
+   */
+  engineVersion?: pulumi.Input<string>;
+  /**
    * A map of tags to assign to the resource.
    */
   tags?: pulumi.Input<{
@@ -65,6 +69,7 @@ const defaults = {
   maxAllocatedStorage: 100,
   instanceClass: 'db.t4g.micro',
   enableMonitoring: false,
+  engineVersion: '15.5',
 };
 
 export class DatabaseReplica extends pulumi.ComponentResource {
@@ -107,7 +112,7 @@ export class DatabaseReplica extends pulumi.ComponentResource {
       {
         identifierPrefix: `${this.name}-`,
         engine: 'postgres',
-        engineVersion: '15.5',
+        engineVersion: argsWithDefaults.engineVersion,
         allocatedStorage: argsWithDefaults.allocatedStorage,
         maxAllocatedStorage: argsWithDefaults.maxAllocatedStorage,
         instanceClass: argsWithDefaults.instanceClass,
