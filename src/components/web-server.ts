@@ -17,6 +17,7 @@ export type WebServerArgs = Pick<
   | 'size'
   | 'environment'
   | 'secrets'
+  | 'persistentStorageConfig'
   | 'taskExecutionRoleInlinePolicies'
   | 'taskRoleInlinePolicies'
   | 'tags'

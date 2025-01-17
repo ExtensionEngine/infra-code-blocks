@@ -32,6 +32,19 @@ export type RoleInlinePolicy = {
   policy?: pulumi.Input<string>;
 };
 
+export type PersistentStorageMountPoint = {
+  sourceVolume: string;
+  containerPath: string;
+  readOnly?: boolean;
+};
+
+export type PersistentStorageVolume = { name: string; };
+
+export type PersistentStorageConfig = {
+  volumes: PersistentStorageVolume[],
+  mountPoints: PersistentStorageMountPoint[]
+};
+
 export type EcsServiceArgs = {
   /**
    * The ECR image used to start a container.
@@ -90,9 +103,10 @@ export type EcsServiceArgs = {
    */
   enableServiceAutoDiscovery: pulumi.Input<boolean>;
   /**
-   * Location of persistent storage volume.
+   * Configuration for multiple EFS mount points.
+   * Each mount point specifies a container path where the EFS volume will be mounted.
    */
-  persistentStorageVolumePath?: pulumi.Input<string>;
+  persistentStorageConfig?: pulumi.Input<PersistentStorageConfig>;
   /**
    * Alternate docker CMD instruction.
    */
@@ -342,6 +356,8 @@ export class EcsService extends pulumi.ComponentResource {
       throw Error('Incorrect EcsService size argument');
     });
 
+    const fileSystemId = this.createPersistentStorage(argsWithDefaults).id;
+
     const taskDefinition = new aws.ecs.TaskDefinition(
       `${this.name}-task-definition`,
       {
@@ -359,7 +375,7 @@ export class EcsService extends pulumi.ComponentResource {
             argsWithDefaults.port,
             argsWithDefaults.environment,
             argsWithDefaults.secrets,
-            argsWithDefaults.persistentStorageVolumePath,
+            argsWithDefaults.persistentStorageConfig,
             argsWithDefaults.dockerCommand,
             this.logGroup.name,
             awsRegion,
@@ -371,7 +387,7 @@ export class EcsService extends pulumi.ComponentResource {
               port,
               environment,
               secrets,
-              persistentStorageVolumePath,
+              persistentStorageConfig,
               command,
               logGroup,
               region,
@@ -388,13 +404,14 @@ export class EcsService extends pulumi.ComponentResource {
                       protocol: 'tcp',
                     },
                   ],
-                  ...(persistentStorageVolumePath && {
-                    mountPoints: [
-                      {
-                        containerPath: persistentStorageVolumePath,
-                        sourceVolume: `${this.name}-volume`,
-                      },
-                    ],
+                  ...(persistentStorageConfig && {
+                    mountPoints: (persistentStorageConfig as PersistentStorageConfig).mountPoints.map(
+                      mountPoint => ({
+                        containerPath: mountPoint.containerPath,
+                        sourceVolume: mountPoint.sourceVolume,
+                        readOnly: mountPoint.readOnly ?? false,
+                      }),
+                    ),
                   }),
                   logConfiguration: {
                     logDriver: 'awslogs',
@@ -411,16 +428,16 @@ export class EcsService extends pulumi.ComponentResource {
               ] as ContainerDefinition[]);
             },
           ),
-        ...(argsWithDefaults.persistentStorageVolumePath && {
-          volumes: [
-            {
-              name: `${this.name}-volume`,
+        ...(argsWithDefaults.persistentStorageConfig && {
+          volumes: (argsWithDefaults.persistentStorageConfig as PersistentStorageConfig)
+            .volumes
+            .map(volume => ({
+              name: volume.name,
               efsVolumeConfiguration: {
-                fileSystemId: this.createPersistentStorage(argsWithDefaults).id,
-                transitEncryption: 'ENABLED',
-              },
-            },
-          ],
+                fileSystemId,
+                transitEncryption: 'ENABLED'
+              }
+            })),
         }),
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
