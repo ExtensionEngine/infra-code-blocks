@@ -358,6 +358,25 @@ export class EcsService extends pulumi.ComponentResource {
 
     const fileSystemId = this.createPersistentStorage(argsWithDefaults).id;
 
+    const accessPoint = new aws.efs.AccessPoint(
+      `${this.name}-efs-ap`,
+      {
+        fileSystemId,
+        posixUser: {
+          uid: 1000,
+          gid: 1000,
+        },
+        rootDirectory: {
+          path: '/data',
+          creationInfo: {
+            ownerUid: 1000,
+            ownerGid: 1000,
+            permissions: '0755',
+          },
+        },
+      },
+    );
+
     const taskDefinition = new aws.ecs.TaskDefinition(
       `${this.name}-task-definition`,
       {
@@ -435,7 +454,11 @@ export class EcsService extends pulumi.ComponentResource {
               name: volume.name,
               efsVolumeConfiguration: {
                 fileSystemId,
-                transitEncryption: 'ENABLED'
+                transitEncryption: 'ENABLED',
+                authorizationConfig: {
+                  accessPointId: accessPoint.id,
+                  iam: 'ENABLED',
+                },
               }
             })),
         }),
