@@ -103,7 +103,7 @@ export type EcsServiceArgs = {
    */
   enableServiceAutoDiscovery: pulumi.Input<boolean>;
   /**
-   * Configuration for multiple EFS mount points.
+   * Configuration for multiple EFS volumes and their mount points.
    * Each mount point specifies a container path where the EFS volume will be mounted.
    */
   persistentStorageConfig?: pulumi.Input<PersistentStorageConfig>;

@@ -25,7 +25,9 @@ export type MongoArgs = Pick<
    */
   port?: pulumi.Input<number>;
   /**
-   * TODO document parameter
+   * Configuration for persistent storage using EFS volumes.
+   * By default, creates a volume named 'mongo' mounted at '/data/db'.
+   * You can override this by providing your own volume and mount point configuration.
    */
   persistentStorageConfig?: EcsServiceArgs['persistentStorageConfig']
 };
