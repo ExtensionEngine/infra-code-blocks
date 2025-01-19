@@ -48,7 +48,8 @@
     "prettier": "^3.0.3",
     "release-it": "^16.2.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "upath": "^2.0.1"
   },
   "publishConfig": {
     "access": "public"
