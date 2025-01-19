@@ -49,4 +49,16 @@ describe('Web server component deployment', () => {
       }
     );
   });
+
+  it('should have cross zone load balancing enabled', async () => {
+    const { lb } = outputs.project.value.services['web-server-example'];
+    assert.strictEqual(lb.enableCrossZoneLoadBalancing, true);
+  });
+
+  it('should have VPC with subnets in different availability zones', async () => {
+    const { subnets } = outputs.project.value.vpc;
+    assert.ok(subnets.length >= 2, 'Should have at least 2 subnets');
+    const azs = new Set(subnets.map((subnet: any) => subnet.availabilityZone));
+    assert.ok(azs.size >= 2, 'Subnets should be in different availability zones');
+  });
 });
