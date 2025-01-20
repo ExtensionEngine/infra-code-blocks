@@ -71,7 +71,7 @@ export type DatabaseArgs = {
    */
   snapshotIdentifier?: pulumi.Input<string>;
   /**
-   * The DB engine version. Defaults to '15.5'.
+   * The DB engine version. Defaults to '17.2'.
    */
   engineVersion?: pulumi.Input<string>;
   /**
@@ -91,7 +91,7 @@ const defaults = {
   instanceClass: 'db.t4g.micro',
   enableMonitoring: false,
   allowMajorVersionUpgrade: false,
-  engineVersion: '15.5',
+  engineVersion: '17.2',
 };
 
 export class Database extends pulumi.ComponentResource {
