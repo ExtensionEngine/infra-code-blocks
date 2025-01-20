@@ -29,7 +29,7 @@ export type MongoArgs = Pick<
    * By default, creates a volume named 'mongo' mounted at '/data/db'.
    * You can override this by providing your own volume and mount point configuration.
    */
-  persistentStorageConfig?: EcsServiceArgs['persistentStorageConfig']
+  persistentStorageConfig?: EcsServiceArgs['persistentStorageConfig'];
 };
 
 export class Mongo extends pulumi.ComponentResource {

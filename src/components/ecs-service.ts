@@ -41,8 +41,8 @@ export type PersistentStorageMountPoint = {
 export type PersistentStorageVolume = { name: string; };
 
 export type PersistentStorageConfig = {
-  volumes: PersistentStorageVolume[],
-  mountPoints: PersistentStorageMountPoint[]
+  volumes: PersistentStorageVolume[];
+  mountPoints: PersistentStorageMountPoint[];
 };
 
 export type EcsServiceArgs = {
