@@ -25,9 +25,11 @@ export type MongoArgs = Pick<
    */
   port?: pulumi.Input<number>;
   /**
-   * Persistent storage volume path. Defaults to '/data/db'.
+   * Configuration for persistent storage using EFS volumes.
+   * By default, creates a volume named 'mongo' mounted at '/data/db'.
+   * You can override this by providing your own volume and mount point configuration.
    */
-  persistentStorageVolumePath?: pulumi.Input<string>;
+  persistentStorageConfig?: EcsServiceArgs['persistentStorageConfig'];
 };
 
 export class Mongo extends pulumi.ComponentResource {
@@ -49,8 +51,13 @@ export class Mongo extends pulumi.ComponentResource {
       args.image ||
       'mongo:7.0.3@sha256:238b1636bdd7820c752b91bec8a669f92568eb313ad89a1fc4a92903c1b40489';
     const port = args.port || 27017;
-    const persistentStorageVolumePath =
-      args.persistentStorageVolumePath || '/data/db';
+    const persistentStorageConfig = args.persistentStorageConfig || {
+      volumes: [{ name: 'mongo' }],
+      mountPoints: [{
+        sourceVolume: 'mongo',
+        containerPath:  '/data/db'
+      }]
+    };
 
     const { username, password, privateSubnetIds, ...ecsServiceArgs } = args;
 
@@ -74,7 +81,7 @@ export class Mongo extends pulumi.ComponentResource {
         desiredCount: 1,
         autoscaling: { enabled: false },
         enableServiceAutoDiscovery: true,
-        persistentStorageVolumePath,
+        persistentStorageConfig,
         dockerCommand: ['mongod', '--port', port.toString()],
         assignPublicIp: false,
         subnetIds: privateSubnetIds,
