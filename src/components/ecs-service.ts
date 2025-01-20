@@ -150,6 +150,20 @@ export type EcsServiceArgs = {
   }>;
 };
 
+/**
+ * Standard directory permissions:
+ * - Owner: read, write, execute (7)
+ * - Group: read, execute (5)
+ * - Others: read, execute (5)
+ */
+const STANDARD_DIRECTORY_PERMISSIONS = '0755';
+
+const FIRST_POSIX_NON_ROOT_USER = {
+  userId: 1000,
+  groupId: 1000,
+  permissions: STANDARD_DIRECTORY_PERMISSIONS
+} as const;
+
 const defaults = {
   desiredCount: 1,
   size: 'small',
@@ -363,15 +377,15 @@ export class EcsService extends pulumi.ComponentResource {
       {
         fileSystemId,
         posixUser: {
-          uid: 1000,
-          gid: 1000,
+          uid: FIRST_POSIX_NON_ROOT_USER.userId,
+          gid: FIRST_POSIX_NON_ROOT_USER.groupId,
         },
         rootDirectory: {
           path: '/data',
           creationInfo: {
-            ownerUid: 1000,
-            ownerGid: 1000,
-            permissions: '0755',
+            ownerUid: FIRST_POSIX_NON_ROOT_USER.userId,
+            ownerGid: FIRST_POSIX_NON_ROOT_USER.groupId,
+            permissions: FIRST_POSIX_NON_ROOT_USER.permissions,
           },
         },
       },
