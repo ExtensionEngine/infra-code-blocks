@@ -28,7 +28,7 @@
     "build": "npm run clean && tsc",
     "format": "prettier -w .",
     "release": "npm run build && release-it",
-    "test": "ts-node ./tests/web-server/test.ts"
+    "test": "node --test -r ts-node/register ./tests/**/*.test.ts"
   },
   "prettier": "@studion/prettier-config",
   "dependencies": {
