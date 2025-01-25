@@ -1,4 +1,5 @@
 import {
+  DestroyResult,
   LocalProgramArgs,
   LocalWorkspace,
   OutputMap
@@ -7,18 +8,16 @@ import {
 export async function deploy(args: LocalProgramArgs): Promise<OutputMap> {
   const stack = await LocalWorkspace.createOrSelectStack(args);
   await stack.setConfig('aws:region', { value: 'us-east-2' });
-  const up = await stack.up({
-    onOutput: console.info,
-    logToStdErr: true
-  });
+  const up = await stack.up({ logToStdErr: true });
 
+  console.info('Deploying stack...');
   return up.outputs;
 }
 
-export async function destroy(args: LocalProgramArgs) {
+export async function destroy(args: LocalProgramArgs): Promise<DestroyResult> {
   const stack = await LocalWorkspace.createOrSelectStack(args);
-
-  return stack.destroy({ onOutput: console.info });
+  console.log('Destroying stack...');
+  return stack.destroy();
 }
 
 export async function getOutputs(args: LocalProgramArgs): Promise<OutputMap> {
