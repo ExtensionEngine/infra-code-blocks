@@ -49,6 +49,9 @@
     "access": "public"
   },
   "release-it": {
+    "git": {
+      "commitMessage": "chore: release ${version}"
+    },
     "github": {
       "release": true
     }
