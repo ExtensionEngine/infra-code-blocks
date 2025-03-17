@@ -6,5 +6,5 @@ export * from './components/database-replica';
 export * from './components/redis';
 export * from './components/project';
 export * from './components/ec2-ssm-connect';
-export * from './components/ecs-service';
 export * from './components/nuxt-ssr';
+export * as next from './v2';

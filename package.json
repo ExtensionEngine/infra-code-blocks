@@ -28,7 +28,7 @@
     "build": "npm run clean && tsc",
     "format": "prettier -w .",
     "release": "npm run build && release-it",
-    "test": "TS_NODE_PROJECT=./tsconfig.test.json node --test -r ts-node/register ./tests/**/*.test.ts"
+    "test": "TS_NODE_PROJECT=./tsconfig.test.json node --test --test-concurrency=none -r ts-node/register ./tests/**/*.test.ts"
   },
   "prettier": "@studion/prettier-config",
   "dependencies": {
@@ -39,6 +39,13 @@
     "@upstash/pulumi": "^0.3.14"
   },
   "devDependencies": {
+    "@aws-sdk/client-application-auto-scaling": "^3.758.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.767.0",
+    "@aws-sdk/client-ec2": "^3.767.0",
+    "@aws-sdk/client-ecs": "^3.766.0",
+    "@aws-sdk/client-efs": "^3.758.0",
+    "@aws-sdk/client-elastic-load-balancing-v2": "^3.764.0",
+    "@aws-sdk/client-servicediscovery": "^3.758.0",
     "@studion/prettier-config": "^0.1.0",
     "@types/node": "^22",
     "exponential-backoff": "^3.1.2",
