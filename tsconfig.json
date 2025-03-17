@@ -14,5 +14,6 @@
     "declaration": true,
     "skipLibCheck": true
   },
-  "include": ["tests/**/*", "src/index.ts"]
+  "include": ["tests/**/*", "src/index.ts"],
+  "exclude": ["tests/**/app"]
 }
