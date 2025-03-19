@@ -14,5 +14,5 @@
     "declaration": true,
     "skipLibCheck": true
   },
-  "files": ["src/index.ts"]
+  "include": ["tests/**/*", "src/index.ts"]
 }
