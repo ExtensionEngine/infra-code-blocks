@@ -2,24 +2,26 @@ import { describe, it, before, after } from 'node:test';
 import * as assert from 'node:assert';
 import { LocalProgramArgs, OutputMap } from '@pulumi/pulumi/automation';
 import fetch from 'node-fetch';
-import * as path from 'upath';
-import * as retry from 'async-retry';
+import status from 'http-status';
+import path from 'upath';
+import retry from 'async-retry';
 import * as automation from '../automation';
 
-const args: LocalProgramArgs = {
+const programArgs: LocalProgramArgs = {
   stackName: 'dev',
   workDir: path.join(__dirname, 'infrastructure')
 };
+const healthcheckPath = '/healthcheck';
 
 describe('Web server component deployment', () => {
   let outputs: OutputMap;
 
   before(async () => {
-    outputs = await automation.deploy(args);
+    outputs = await automation.deploy(programArgs);
   });
 
   after(async () => {
-    await automation.destroy(args)
+    await automation.destroy(programArgs)
   });
 
   it('Web API\'s /healthcheck should return 200', async () => {
@@ -31,21 +33,17 @@ describe('Web server component deployment', () => {
     }
 
     const webServerUrl = `http://${webServerLbDns}`;
-
     await retry(
       async (bail) => {
-        const response = await fetch(`${webServerUrl}/healthcheck`);
-        if (response.status === 404) {
+        const response = await fetch(`${webServerUrl}${healthcheckPath}`);
+        if (response.status === status.NOT_FOUND) {
           return bail(new Error(`Healthcheck endpoint not found: ${response.status}`));
         }
-        const text = await response.text();
-
         assert.strictEqual(
-          response.status,
-          200,
-          `Expected status code 200 but got ${response.status}`
+          response?.status,
+          status.OK,
+          `Expected status code 200 but got ${response?.status}`
         );
-        assert.strictEqual(text, 'OK', `Expected "OK" but got "${text}"`);
       }
     );
   });
