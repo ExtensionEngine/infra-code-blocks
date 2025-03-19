@@ -3,8 +3,8 @@ import * as assert from 'node:assert';
 import { LocalProgramArgs, OutputMap } from '@pulumi/pulumi/automation';
 import fetch from 'node-fetch';
 import status from 'http-status';
-import path from 'upath';
-import retry from 'async-retry';
+import * as path from 'upath';
+import * as retry from 'async-retry';
 import * as automation from '../automation';
 
 const programArgs: LocalProgramArgs = {
