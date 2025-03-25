@@ -3,7 +3,6 @@
     "strict": true,
     "outDir": "dist",
     "target": "ES2016",
-    "esModuleInterop": true,
     "module": "commonjs",
     "moduleResolution": "node",
     "sourceMap": false,
