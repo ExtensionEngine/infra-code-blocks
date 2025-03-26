@@ -1,8 +1,8 @@
-FROM node:20.9-bookworm-slim@sha256:c325fe5059c504933948ae6483f3402f136b96492dff640ced5dfa1f72a51716 AS base
+FROM node:22.14-bookworm-slim@sha256:bac8ff0b5302b06924a5e288fb4ceecef9c8bb0bb92515985d2efdc3a2447052 AS base
 RUN apt update && apt install -y --no-install-recommends dumb-init
 ENTRYPOINT ["dumb-init", "--"]
 
-FROM node:20.9-bookworm@sha256:3c48678afb1ae5ca5931bd154d8c1a92a4783555331b535bbd7e0822f9ca8603 AS install
+FROM node:22.14-bookworm@sha256:0d6c855cacc3e167d82d74e4e1cbb62082a12bba57cb5e99325a4c6680fae79a AS install
 WORKDIR /usr/src/app
 COPY package*.json .
 RUN npm ci
