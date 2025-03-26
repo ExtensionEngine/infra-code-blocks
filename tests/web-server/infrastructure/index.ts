@@ -1,7 +1,7 @@
 import { Project } from '../../../src';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
-import * as path from 'path';
+import * as path from 'pathe';
 
 const webServerImage = createWebServerImage();
 const serviceName = 'web-server-example';

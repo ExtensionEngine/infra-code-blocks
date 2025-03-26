@@ -2,14 +2,16 @@ import { describe, it, before, after } from 'node:test';
 import * as assert from 'node:assert';
 import { LocalProgramArgs, OutputMap } from '@pulumi/pulumi/automation';
 import { request } from 'undici';
-import * as path from 'upath';
 import { backOff } from 'exponential-backoff';
+import status from 'http-status';
+import * as path from 'pathe';
 import * as automation from '../automation';
 
-const args: LocalProgramArgs = {
+const programArgs: LocalProgramArgs = {
   stackName: 'dev',
   workDir: path.join(__dirname, 'infrastructure')
 };
+const healthcheckPath = '/healthcheck';
 
 class NonRetryableError extends Error {
   constructor(message: string) {
@@ -22,10 +24,10 @@ describe('Web server component deployment', () => {
   let outputs: OutputMap;
 
   before(async () => {
-    outputs = await automation.deploy(args);
+    outputs = await automation.deploy(programArgs);
   });
 
-  after(() => automation.destroy(args));
+  after(() => automation.destroy(programArgs));
 
   it('Web API\'s /healthcheck should return 200', () => {
     const { services } = outputs.project.value;
@@ -38,15 +40,15 @@ describe('Web server component deployment', () => {
     const webServerUrl = `http://${webServerLbDns}`;
 
     return backOff(async () => {
-      const response = await request(`${webServerUrl}/healthcheck`);
-      if (response.statusCode === 404) {
+      const response = await request(`${webServerUrl}${healthcheckPath}`);
+      if (response.statusCode === status.NOT_FOUND) {
         throw new NonRetryableError('Healthcheck endpoint not found');
       }
 
       const body = await response.body.text();
       assert.strictEqual(
         response.statusCode,
-        200,
+        status.OK,
         `Expected status code 200 but got ${response.statusCode}`
       );
       assert.strictEqual(

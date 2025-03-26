@@ -42,6 +42,7 @@
     "@studion/prettier-config": "^0.1.0",
     "@types/node": "^22",
     "exponential-backoff": "^3.1.2",
+    "pathe": "^2.0.3",
     "prettier": "^3.4.2",
     "release-it": "^18.1.1",
     "ts-node": "^10.9.2",
