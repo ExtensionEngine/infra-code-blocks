@@ -30,8 +30,8 @@ describe('Web server component deployment', () => {
   after(() => automation.destroy(programArgs));
 
   it('Web API\'s /healthcheck should return 200', () => {
-    const { services } = outputs.project.value;
-    const webServerLbDns = services['web-server-example'].lb.dnsName;
+    const webServer = outputs.webServer.value;
+    const webServerLbDns = webServer.lb.dnsName;
 
     if (!webServerLbDns || typeof webServerLbDns !== 'string') {
       throw new Error(`Invalid load balancer DNS name: ${webServerLbDns}`);
