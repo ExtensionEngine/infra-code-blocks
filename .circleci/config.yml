@@ -1,0 +1,43 @@
+version: 2.1
+
+orbs:
+  core: studion/core@3.0.0
+  security: studion/security@2.0.0
+
+change-filters: &change-filters
+  branches:
+    ignore: master
+
+trunk-filters: &trunk-filters
+  branches:
+    only: master
+    
+jobs:
+  detect-leaks:
+    executor: security/node
+    steps:
+      - checkout
+      - security/detect_secrets
+      - security/scan_dockerfile
+  audit-dependencies:
+    executor: core/node
+    parameters:
+      pkg_json_dir:
+        type: string
+        default: '.'
+    steps:
+      - checkout
+      - security/scan_dependencies:
+          pkg_manager: npm
+          pkg_json_dir: <<parameters.pkg_json_dir>>
+
+workflows:
+  scan-and-test:
+    jobs:
+      - detect-leaks:
+          filters: *change-filters
+      - audit-dependencies:
+          filters: *trunk-filters
+      - security/detect_secrets_dir:
+          name: detect-secrets
+          filters: *trunk-filters
