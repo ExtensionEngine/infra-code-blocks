@@ -1,4 +1,4 @@
-import { Project } from '../../../src';
+import { Project } from '@studion/infra-code-blocks';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 import * as path from 'pathe';
