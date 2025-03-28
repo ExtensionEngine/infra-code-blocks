@@ -2,6 +2,7 @@
   "name": "@studion/infra-code-blocks",
   "version": "0.7.0",
   "description": "Studion common infra components",
+  "workspaces": ["tests"],
   "keywords": [
     "infrastructure",
     "Pulumi",
@@ -28,7 +29,7 @@
     "build": "npm run clean && tsc",
     "format": "prettier -w .",
     "release": "npm run build && release-it",
-    "test": "TS_NODE_PROJECT=./tsconfig.test.json node --test -r ts-node/register ./tests/**/*.test.ts"
+    "test": "TS_NODE_PROJECT=./tsconfig.test.json node --test -r ts-node/register ./tests/**/*.test.ts --workspace=tests"
   },
   "prettier": "@studion/prettier-config",
   "dependencies": {
