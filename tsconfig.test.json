@@ -1,4 +1,4 @@
 {
   "extends": "./tsconfig.base.json",
-  "files": ["src/index.ts"]
+  "include": ["tests/**/*"]
 }

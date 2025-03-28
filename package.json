@@ -28,7 +28,7 @@
     "build": "npm run clean && tsc",
     "format": "prettier -w .",
     "release": "npm run build && release-it",
-    "test": ""
+    "test": "TS_NODE_PROJECT=./tsconfig.test.json node --test -r ts-node/register ./tests/**/*.test.ts"
   },
   "prettier": "@studion/prettier-config",
   "dependencies": {
@@ -41,9 +41,15 @@
   "devDependencies": {
     "@studion/prettier-config": "^0.1.0",
     "@types/node": "^22",
+    "exponential-backoff": "^3.1.2",
+    "pathe": "^2.0.3",
     "prettier": "^3.4.2",
     "release-it": "^18.1.1",
-    "typescript": "^5.7.3"
+    "http-status": "^2.1.0",
+    "nanospinner": "^1.2.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3",
+    "undici": "^6.21.2"
   },
   "publishConfig": {
     "access": "public"
