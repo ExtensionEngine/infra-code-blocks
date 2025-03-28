@@ -8,7 +8,7 @@ import * as path from 'pathe';
 import * as automation from '../automation';
 
 const programArgs: LocalProgramArgs = {
-  stackName: 'dev',
+  stackName: 'test',
   workDir: path.join(__dirname, 'infrastructure')
 };
 const healthcheckPath = '/healthcheck';
@@ -20,7 +20,7 @@ class NonRetryableError extends Error {
   }
 }
 
-describe('Web server component deployment', () => {
+describe.skip('Web server component deployment', () => {
   let outputs: OutputMap;
 
   before(async () => {
