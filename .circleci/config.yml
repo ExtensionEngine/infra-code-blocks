@@ -3,6 +3,9 @@ version: 2.1
 orbs:
   core: studion/core@3.0.0
   security: studion/security@2.0.0
+  aws-cli: circleci/aws-cli@5.2.0
+  node: circleci/node@7.1.0
+  pulumi: pulumi/pulumi@2.1.0
 
 change-filters: &change-filters
   branches:
@@ -28,8 +31,28 @@ jobs:
     steps:
       - checkout
       - security/scan_dependencies:
-          pkg_manager: npm
           pkg_json_dir: <<parameters.pkg_json_dir>>
+  test-components:
+    machine:
+      image: ubuntu-2204:current
+    steps:
+      - checkout
+      - aws-cli/setup:
+          role_arn: ${AWS_ROLE_ARN}
+      - pulumi/login
+      - run:
+          name: Set Pulumi Org
+          command: pulumi org set-default extensionengine
+      - node/install
+      - core/install_dependencies
+      - core/run_script:
+          skip_install_dependencies: true
+          script: 'build'
+      - core/install_dependencies:
+          pkg_json_dir: './tests/web-server/infrastructure'
+      - core/run_script:
+          skip_install_dependencies: true
+          script: 'test'
 
 workflows:
   scan-and-test:
@@ -41,3 +64,5 @@ workflows:
       - security/detect_secrets_dir:
           name: detect-secrets
           filters: *trunk-filters
+      - test-components:
+          filters: *change-filters
