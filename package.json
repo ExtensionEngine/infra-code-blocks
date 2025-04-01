@@ -28,7 +28,8 @@
     "build": "npm run clean && tsc",
     "format": "prettier -w .",
     "release": "npm run build && release-it",
-    "test": "TS_NODE_PROJECT=./tsconfig.test.json node --test -r ts-node/register ./tests/**/*.test.ts"
+    "test:unit": "PULUMI_CONFIG='{ \"aws:region\": \"us-west-2\" }' TS_NODE_PROJECT=./tsconfig.test.json node --test -r ts-node/register ./tests/**/unit.test.ts",
+    "test": "TS_NODE_PROJECT=./tsconfig.test.json node --test -r ts-node/register ./tests/**/integration.test.ts"
   },
   "prettier": "@studion/prettier-config",
   "dependencies": {
