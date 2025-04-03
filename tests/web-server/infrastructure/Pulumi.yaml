@@ -1,4 +1,4 @@
-name: test-web-server
+name: icb-test-web-server
 description: A minimal AWS TypeScript Pulumi program
 runtime:
   name: nodejs
