@@ -15,14 +15,32 @@ type PersistentStorage = {
 };
 
 namespace EcsService {
+  /**
+   * Create a named volume that can be mounted into one or more containers.
+   * Used with Amazon EFS to enable persistent storage across:
+   * - Container restarts
+   * - Multiple containers
+   */
   export type PersistentStorageVolume = { name: pulumi.Input<string>; };
 
+  /**
+   * Specifies how an EFS volume is mounted into a container.
+   * `sourceVolume`: Name of the defined ECS service volume.
+   * `containerPath`: Path into which the volume is mounted in the container.
+   *
+   * @see {@link PersistentStorageVolume} - Required to define volumes before mounting
+   * @see {@link Container} - Where `mountPoints` are specified
+   */
   export type PersistentStorageMountPoint = {
     sourceVolume: pulumi.Input<string>;
     containerPath: pulumi.Input<string>;
     readOnly?: pulumi.Input<boolean>;
   };
 
+  /**
+   * Container configuration for the ECS task definition.
+   * Multiple containers can be defined to create multi-container tasks.
+   */
   export type Container = {
     name: pulumi.Input<string>;
     image: pulumi.Input<string>;
@@ -32,11 +50,19 @@ namespace EcsService {
     environment?: pulumi.Input<aws.ecs.KeyValuePair[]>;
     secrets?: pulumi.Input<aws.ecs.Secret[]>;
     dependsOn?: pulumi.Input<aws.ecs.ContainerDependency[]>;
+    /**
+     * If `false`, task can continue running if this container fails.
+     * Should be `false` for containers that execute and then tear down.
+     *
+     * Examples: Database migration, or configuration containers
+     *
+     * All containers not marked as `false` will be essential by default.
+     */
     essential?: pulumi.Input<boolean>;
     healthCheck?: pulumi.Input<aws.ecs.HealthCheck>
   };
-  export type Tags = { [key: string]: pulumi.Input<string>; };
 
+  export type Tags = { [key: string]: pulumi.Input<string>; };
 
   export type LoadBalancerConfig = {
     containerName: pulumi.Input<string>;
@@ -52,48 +78,52 @@ namespace EcsService {
     volumes?: pulumi.Input<EcsService.PersistentStorageVolume[]>;
     /**
      * Number of instances of the task definition to place and keep running.
-     * Default: 1
+     * @default 1
      */
     desiredCount?: pulumi.Input<number>;
     /**
-     * CPU and memory size used for running the container. 
+     * CPU and memory size used for running the container.
      * Available predefined options are:
-     * - small (0.25 vCPU, 0.5 GB memory)
-     * - medium (0.5 vCPU, 1 GB memory)
-     * - large (1 vCPU memory, 2 GB memory)
-     * - xlarge (2 vCPU, 4 GB memory)
+     * - `small` (0.25 vCPU, 0.5 GB memory)
+     * - `medium` (0.5 vCPU, 1 GB memory)
+     * - `large` (1 vCPU memory, 2 GB memory)
+     * - `xlarge` (2 vCPU, 4 GB memory)
      *
-     * Default: "small"
+     * @default "small"
      */
     size?: pulumi.Input<Size>;
     /**
      * Custom service security group
-     * In case no security group is provided, default security group will be used.
+     * In case no security group is provided, default security group will be automatically created.
      */
     securityGroup?: pulumi.Input<aws.ec2.SecurityGroup>;
-    /**
-     * Assign public IP address to service.
-     */
     assignPublicIp?: pulumi.Input<boolean>;
     taskExecutionRoleInlinePolicies?: pulumi.Input<pulumi.Input<Policy>[]>;
     taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<Policy>[]>;
     /**
-     * Registers tasks with AWS Cloud Map and create discoverable DNS entries for each task.
-     * Simplify service-to-service communication by enabling finding based on DNS records such as http://serviceName.local.
-     * Default: false.
+     * Registers tasks with AWS Cloud Map and creates discoverable DNS entries for each task.
+     * Simplifies service-to-service communication by enabling service finding based on DNS records such as `http://serviceName.local`.
+     *
+     * @default false
      */
     enableServiceAutoDiscovery?: pulumi.Input<boolean>;
     autoscaling?: pulumi.Input<{
       /**
-       * Is autoscaling enabled or disabled. Defaults to false.
+       * Is autoscaling enabled or disabled.
+       *
+       * @default false
        */
       enabled: pulumi.Input<boolean>;
       /**
-       * Min capacity of the scalable target. Defaults to 1.
+       * Min capacity of the scalable target.
+       *
+       * @default 1
        */
       minCount?: pulumi.Input<number>;
       /**
-       * Max capacity of the scalable target. Defaults to 1.
+       * Max capacity of the scalable target.
+       *
+       * @default 1
        */
       maxCount?: pulumi.Input<number>;
     }>;
