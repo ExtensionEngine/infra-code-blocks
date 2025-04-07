@@ -192,7 +192,11 @@ export class EcsService extends pulumi.ComponentResource {
     args: EcsServiceArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:ecs:Service', name, {}, opts);
+    const aliases = opts.aliases || [];
+    super('studion:ecs:LegacyService', name, {}, {
+      ...opts,
+      aliases: [...aliases, { type: 'studion:ecs:Service' }]
+    });
     const argsWithDefaults = Object.assign({}, defaults, args);
 
     this.name = name;
