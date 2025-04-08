@@ -44,7 +44,7 @@ export namespace EcsService {
   export type Container = {
     name: pulumi.Input<string>;
     image: pulumi.Input<string>;
-    portMappings: pulumi.Input<aws.ecs.PortMapping>[];
+    portMappings: pulumi.Input<pulumi.Input<aws.ecs.PortMapping>[]>;
     command?: pulumi.Input<string[]>;
     mountPoints?: PersistentStorageMountPoint[];
     environment?: pulumi.Input<aws.ecs.KeyValuePair[]>;
@@ -223,7 +223,9 @@ export class EcsService extends pulumi.ComponentResource {
     this.registerOutputs();
   }
 
-  public static createTcpPortMapping(port: number): aws.ecs.PortMapping {
+  public static createTcpPortMapping(
+    port: pulumi.Input<number>
+  ): aws.ecs.PortMapping {
     return {
       containerPort: port,
       hostPort: port,

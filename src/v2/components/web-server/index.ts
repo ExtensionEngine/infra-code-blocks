@@ -11,7 +11,6 @@ export namespace WebServer {
     EcsService.Args,
     | 'cluster'
     | 'vpc'
-    | 'containers'
     | 'desiredCount'
     | 'autoscaling'
     | 'size'
@@ -19,23 +18,25 @@ export namespace WebServer {
     | 'taskExecutionRoleInlinePolicies'
     | 'taskRoleInlinePolicies'
     | 'tags'
-  > & {
-    port: pulumi.Input<number>;
-    publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
-    /**
-     * The domain which will be used to access the service.
-     * The domain or subdomain must belong to the provided hostedZone.
-     */
-    domain?: pulumi.Input<string>;
-    hostedZoneId?: pulumi.Input<string>;
-    /**
-     * Path for the load balancer target group health check request.
-     *
-     * @default
-     * "/healthcheck"
-     */
-    healthCheckPath?: pulumi.Input<string>;
-  };
+  >
+    & Pick<EcsService.Container, 'image' | 'environment' | 'secrets' | 'mountPoints'>
+    & {
+      port: pulumi.Input<number>,
+      publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
+      /**
+       * The domain which will be used to access the service.
+       * The domain or subdomain must belong to the provided hostedZone.
+       */
+      domain?: pulumi.Input<string>;
+      hostedZoneId?: pulumi.Input<string>;
+      /**
+       * Path for the load balancer target group health check request.
+       *
+       * @default
+       * "/healthcheck"
+       */
+      healthCheckPath?: pulumi.Input<string>;
+    };
 }
 
 export class WebServer extends pulumi.ComponentResource {
@@ -115,9 +116,20 @@ export class WebServer extends pulumi.ComponentResource {
     }, { parent: this });
   }
 
-  private createEcsService(args: WebServer.Args): EcsService {
+  private createEcsService(
+    args: WebServer.Args
+  ): EcsService {
     return new EcsService(this.name, {
       ...args,
+      containers: [{
+        name: this.name,
+        image: args.image,
+        portMappings: [EcsService.createTcpPortMapping(args.port)],
+        mountPoints: args.mountPoints,
+        environment: args.environment,
+        secrets: args.secrets,
+        essential: true
+      }],
       enableServiceAutoDiscovery: false,
       loadBalancers: [{
         containerName: this.name,
