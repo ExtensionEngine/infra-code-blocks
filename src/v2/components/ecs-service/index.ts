@@ -14,7 +14,7 @@ type PersistentStorage = {
   accessPoint: aws.efs.AccessPoint
 };
 
-namespace EcsService {
+export namespace EcsService {
   /**
    * Create a named volume that can be mounted into one or more containers.
    * Used with Amazon EFS to enable persistent storage across:
