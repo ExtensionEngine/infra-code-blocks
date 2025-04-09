@@ -1,6 +1,6 @@
 import { describe, it, before, after } from 'node:test';
 import * as assert from 'node:assert';
-import { LocalProgramArgs } from '@pulumi/pulumi/automation';
+import { InlineProgramArgs } from '@pulumi/pulumi/automation';
 import {
   ECSClient,
   ListTasksCommand,
@@ -21,9 +21,10 @@ import { testEcsServiceWithStorage } from './persistent-storage.test';
 import { testEcsServiceWithServiceDiscovery } from './service-discovery.test';
 import { testEcsServiceWithAutoscaling } from './autoscaling.test';
 
-const programArgs: LocalProgramArgs = {
+const programArgs: InlineProgramArgs = {
   stackName: 'dev',
-  workDir: path.join(__dirname, 'infrastructure')
+  projectName: 'icb-test-ecs-service',
+  program: () => import('./infrastructure')
 };
 
 describe('EcsService component deployment', () => {

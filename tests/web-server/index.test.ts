@@ -1,6 +1,6 @@
 import { describe, it, before, after } from 'node:test';
 import * as assert from 'node:assert';
-import { LocalProgramArgs } from '@pulumi/pulumi/automation';
+import { InlineProgramArgs } from '@pulumi/pulumi/automation';
 import { ECSClient } from '@aws-sdk/client-ecs';
 import { EC2Client, DescribeSecurityGroupsCommand } from '@aws-sdk/client-ec2';
 import {
@@ -18,9 +18,10 @@ import status from 'http-status';
 import * as automation from '../automation';
 import { WebServerTestContext } from './test-context';
 
-const programArgs: LocalProgramArgs = {
+const programArgs: InlineProgramArgs = {
   stackName: 'dev',
-  workDir: path.join(__dirname, 'infrastructure')
+  projectName: 'icb-test-web-server',
+  program: () => import('./infrastructure')
 };
 
 class NonRetryableError extends Error {
