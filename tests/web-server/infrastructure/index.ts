@@ -1,4 +1,4 @@
-import { Project, WebServer } from '@studion/infra-code-blocks';
+import { Project, next as studion } from '@studion/infra-code-blocks';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 import * as pulumi from '@pulumi/pulumi';
@@ -15,11 +15,9 @@ const cluster = new aws.ecs.Cluster(`${serviceName}-cluster`, {
   tags
 });
 
-const webServer = new WebServer(serviceName, {
-  clusterId: cluster.id,
-  clusterName: cluster.name,
-  vpcId: project.vpc.vpcId,
-  vpcCidrBlock: project.vpc.vpc.cidrBlock,
+const webServer = new studion.WebServer(serviceName, {
+  cluster,
+  vpc: project.vpc,
   publicSubnetIds: project.vpc.publicSubnetIds,
   port: 3000,
   image: webServerImage.imageUri,

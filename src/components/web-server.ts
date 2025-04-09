@@ -58,7 +58,11 @@ export class WebServer extends pulumi.ComponentResource {
     args: WebServerArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:WebServer', name, args, opts);
+    const aliases = opts.aliases || [];
+    super('studion:LegacyWebServer', name, args, {
+      ...opts,
+      aliases: [...aliases, { type: 'studion:WebServer' }]
+    });
 
     const { vpcId, domain, hostedZoneId } = args;
 
