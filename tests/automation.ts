@@ -1,12 +1,12 @@
 import {
   DestroyResult,
-  LocalProgramArgs,
+  InlineProgramArgs,
   LocalWorkspace,
   OutputMap
 } from '@pulumi/pulumi/automation';
 import { createSpinner } from 'nanospinner';
 
-export async function deploy(args: LocalProgramArgs): Promise<OutputMap> {
+export async function deploy(args: InlineProgramArgs): Promise<OutputMap> {
   const spinner = createSpinner('Deploying stack...').start();
   const stack = await LocalWorkspace.createOrSelectStack(args);
   await stack.setConfig('aws:region', { value: 'us-east-2' });
@@ -16,7 +16,7 @@ export async function deploy(args: LocalProgramArgs): Promise<OutputMap> {
   return up.outputs;
 }
 
-export async function destroy(args: LocalProgramArgs): Promise<DestroyResult> {
+export async function destroy(args: InlineProgramArgs): Promise<DestroyResult> {
   const spinner = createSpinner('Destroying stack...').start();
   const stack = await LocalWorkspace.createOrSelectStack(args);
   const result = await stack.destroy();
@@ -25,7 +25,7 @@ export async function destroy(args: LocalProgramArgs): Promise<DestroyResult> {
   return result;
 }
 
-export async function getOutputs(args: LocalProgramArgs): Promise<OutputMap> {
+export async function getOutputs(args: InlineProgramArgs): Promise<OutputMap> {
   const stack = await LocalWorkspace.createOrSelectStack(args);
 
   return stack.outputs();

@@ -1,0 +1,6 @@
+{
+  "name": "icb-tests",
+  "devDependencies": {
+    "@studion/infra-code-blocks": "file:.."
+  }
+}
