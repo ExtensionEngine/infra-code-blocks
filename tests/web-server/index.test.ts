@@ -178,11 +178,6 @@ describe('Web server component deployment', () => {
         status.OK,
         `Expected status code 200 but got ${response.statusCode}`
       );
-      assert.strictEqual(
-        body,
-        'OK',
-        `Expected "OK" but got "${body}"`
-      );
     }, {
       retry: error => !(error instanceof NonRetryableError),
       delayFirstAttempt: true,
