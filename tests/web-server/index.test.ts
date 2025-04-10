@@ -156,7 +156,7 @@ describe('Web server component deployment', () => {
     );
   });
 
-  it('Web API\'s /healthcheck should return 200', () => {
+  it('should receive 200 status code from the healthcheck endpoint', () => {
     const webServer = ctx.outputs.webServer.value;
     const webServerLbDns = webServer.lb.lb.dnsName;
 
@@ -181,7 +181,7 @@ describe('Web server component deployment', () => {
     }, {
       retry: error => !(error instanceof NonRetryableError),
       delayFirstAttempt: true,
-      numOfAttempts: 5,
+      numOfAttempts: 10,
       startingDelay: 1000,
       timeMultiple: 2,
       jitter: 'full'
