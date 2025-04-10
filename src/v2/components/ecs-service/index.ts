@@ -265,25 +265,10 @@ export class EcsService extends pulumi.ComponentResource {
       return this.createContainerDefinition(container)
     });
 
-    const taskDefinitionVolumes = volumes.apply(volumes => {
-      if (!volumes.length || !this.persistentStorage) return;
-
-      return volumes.map(volume => ({
-        name: pulumi.output(volume).name,
-        efsVolumeConfiguration: {
-          fileSystemId: this.persistentStorage!.fileSystem.id,
-          transitEncryption: 'ENABLED',
-          authorizationConfig: {
-            accessPointId: this.persistentStorage!.accessPoint.id,
-            iam: 'ENABLED',
-          },
-        }
-      }))
-    });
+    const taskDefinitionVolumes = this.createTaskDefinitionVolumes(volumes);
 
     return pulumi.all(containerDefinitions).apply(containerDefinitions => {
       return taskDefinitionVolumes.apply(volumes => {
-
         return new aws.ecs.TaskDefinition(`${this.name}-task-definition`, {
           family: `${this.name}-task-definition-${stack}`,
           networkMode: 'awsvpc',
@@ -297,6 +282,26 @@ export class EcsService extends pulumi.ComponentResource {
           tags: { ...commonTags, ...tags },
         }, { parent: this })
       });
+    });
+  }
+
+  private createTaskDefinitionVolumes(
+    volumes: pulumi.Output<EcsService.PersistentStorageVolume[]>
+  ) {
+    return volumes.apply(volumes => {
+      if (!volumes.length || !this.persistentStorage) return;
+
+      return volumes.map(volume => ({
+        name: pulumi.output(volume).name,
+        efsVolumeConfiguration: {
+          fileSystemId: this.persistentStorage!.fileSystem.id,
+          transitEncryption: 'ENABLED',
+          authorizationConfig: {
+            accessPointId: this.persistentStorage!.accessPoint.id,
+            iam: 'ENABLED',
+          },
+        }
+      }));
     });
   }
 
