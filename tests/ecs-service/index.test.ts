@@ -175,11 +175,11 @@ describe('EcsService component deployment', () => {
     assert.ok(taskDef.taskRoleArn, 'Task role should be defined');
 
     assert.ok(
-      taskDef.executionRoleArn.includes(`${ctx.config.minEcsName}-ecs-task-exec-role`),
+      taskDef.executionRoleArn.includes(`${ctx.config.minEcsName}-task-exec-role`),
       'Execution role should have correct name'
     );
     assert.ok(
-      taskDef.taskRoleArn.includes(`${ctx.config.minEcsName}-ecs-task-role`),
+      taskDef.taskRoleArn.includes(`${ctx.config.minEcsName}-task-role`),
       'Task role should have correct name'
     );
   });

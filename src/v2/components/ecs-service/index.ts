@@ -21,7 +21,7 @@ export namespace EcsService {
    * - Container restarts
    * - Multiple containers
    */
-  export type PersistentStorageVolume = { name: pulumi.Input<string>; };
+  export type PersistentStorageVolume = pulumi.Input<{ name: pulumi.Input<string>; }>;
 
   /**
    * Specifies how an EFS volume is mounted into a container.
@@ -153,7 +153,7 @@ const defaults = {
   size: 'small',
   environment: [],
   secrets: [],
-  volumes: [],
+  volumes: pulumi.output([]),
   enableServiceAutoDiscovery: false,
   assignPublicIp: false,
   taskExecutionRoleInlinePolicies: [],
@@ -184,13 +184,18 @@ export class EcsService extends pulumi.ComponentResource {
   ) {
     super('studion:ecs:Service', name, {}, opts);
     const argsWithDefaults = Object.assign({}, defaults, args);
-
+    const taskExecutionRoleInlinePolicies = pulumi.output(
+      args.taskExecutionRoleInlinePolicies || defaults.taskExecutionRoleInlinePolicies
+    );
+    const taskRoleInlinePolicies = pulumi.output(
+      args.taskRoleInlinePolicies || defaults.taskRoleInlinePolicies
+    );
     this.name = name;
     this.securityGroups = [];
     this.vpc = pulumi.output(argsWithDefaults.vpc);
     this.logGroup = this.createLogGroup();
-    this.taskExecutionRole = this.createTaskExecutionRole(argsWithDefaults.taskExecutionRoleInlinePolicies);
-    this.taskRole = this.createTaskRole(argsWithDefaults.taskRoleInlinePolicies)
+    this.taskExecutionRole = this.createTaskExecutionRole(taskExecutionRoleInlinePolicies);
+    this.taskRole = this.createTaskRole(taskRoleInlinePolicies)
 
     if (argsWithDefaults.volumes.length) {
       this.persistentStorage = this.createPersistentStorage(this.vpc);
@@ -198,7 +203,7 @@ export class EcsService extends pulumi.ComponentResource {
 
     this.taskDefinition = this.createTaskDefinition(
       argsWithDefaults.containers,
-      argsWithDefaults.volumes,
+      pulumi.output(argsWithDefaults.volumes),
       this.taskExecutionRole,
       this.taskRole,
       argsWithDefaults.size,
@@ -248,7 +253,7 @@ export class EcsService extends pulumi.ComponentResource {
 
   private createTaskDefinition(
     containers: EcsService.Container[],
-    volumes: EcsService.PersistentStorageVolume[],
+    volumes: pulumi.Output<EcsService.PersistentStorageVolume[]>,
     taskExecutionRole: aws.iam.Role,
     taskRole: aws.iam.Role,
     size: pulumi.Input<Size>,
@@ -260,32 +265,38 @@ export class EcsService extends pulumi.ComponentResource {
       return this.createContainerDefinition(container)
     });
 
+    const taskDefinitionVolumes = volumes.apply(volumes => {
+      if (!volumes.length || !this.persistentStorage) return;
+
+      return volumes.map(volume => ({
+        name: pulumi.output(volume).name,
+        efsVolumeConfiguration: {
+          fileSystemId: this.persistentStorage!.fileSystem.id,
+          transitEncryption: 'ENABLED',
+          authorizationConfig: {
+            accessPointId: this.persistentStorage!.accessPoint.id,
+            iam: 'ENABLED',
+          },
+        }
+      }))
+    });
+
     return pulumi.all(containerDefinitions).apply(containerDefinitions => {
-      return new aws.ecs.TaskDefinition(`${this.name}-task-definition`, {
-        family: `${this.name}-task-definition-${stack}`,
-        networkMode: 'awsvpc',
-        executionRoleArn: taskExecutionRole.arn,
-        taskRoleArn: taskRole.arn,
-        cpu,
-        memory,
-        requiresCompatibilities: ['FARGATE'],
-        containerDefinitions: JSON.stringify(containerDefinitions),
-        ...volumes.length && this.persistentStorage && {
-          volumes: volumes
-            .map(volume => ({
-              name: volume.name,
-              efsVolumeConfiguration: {
-                fileSystemId: this.persistentStorage!.fileSystem.id,
-                transitEncryption: 'ENABLED',
-                authorizationConfig: {
-                  accessPointId: this.persistentStorage!.accessPoint.id,
-                  iam: 'ENABLED',
-                },
-              }
-            }))
-        },
-        tags: { ...commonTags, ...tags },
-      }, { parent: this })
+      return taskDefinitionVolumes.apply(volumes => {
+
+        return new aws.ecs.TaskDefinition(`${this.name}-task-definition`, {
+          family: `${this.name}-task-definition-${stack}`,
+          networkMode: 'awsvpc',
+          executionRoleArn: taskExecutionRole.arn,
+          taskRoleArn: taskRole.arn,
+          cpu,
+          memory,
+          requiresCompatibilities: ['FARGATE'],
+          containerDefinitions: JSON.stringify(containerDefinitions),
+          ...(volumes?.length ? { volumes } : {}),
+          tags: { ...commonTags, ...tags },
+        }, { parent: this })
+      });
     });
   }
 
@@ -316,7 +327,7 @@ export class EcsService extends pulumi.ComponentResource {
   }
 
   private createTaskExecutionRole(
-    taskExecutionRoleInlinePolicies: Policy[]
+    inlinePolicies: pulumi.Output<Policy[]>
   ): aws.iam.Role {
     const secretManagerSecretsInlinePolicy = {
       name: `${this.name}-secret-manager-access`,
@@ -334,18 +345,18 @@ export class EcsService extends pulumi.ComponentResource {
     };
 
     const taskExecutionRole = new aws.iam.Role(
-      `${this.name}-ecs-task-exec-role`,
+      `${this.name}-task-exec-role`,
       {
-        namePrefix: `${this.name}-ecs-task-exec-role-`,
+        namePrefix: `${this.name}-task-exec-role-`,
         assumeRolePolicy,
         managedPolicyArns: [
           'arn:aws:iam::aws:policy/CloudWatchFullAccess',
           'arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess',
         ],
-        inlinePolicies: [
+        inlinePolicies: inlinePolicies.apply(policies => [
           secretManagerSecretsInlinePolicy,
-          ...taskExecutionRoleInlinePolicies,
-        ],
+          ...policies,
+        ]),
         tags: commonTags,
       },
       { parent: this },
@@ -354,9 +365,11 @@ export class EcsService extends pulumi.ComponentResource {
     return taskExecutionRole;
   }
 
-  private createTaskRole(taskRoleInlinePolicies: Policy[]): aws.iam.Role {
+  private createTaskRole(
+    inlinePolicies: pulumi.Output<Policy[]>
+  ): aws.iam.Role {
     const execCmdInlinePolicy = {
-      name: `${this.name}-ecs-exec`,
+      name: `${this.name}-exec`,
       policy: JSON.stringify({
         Version: '2012-10-17',
         Statement: [
@@ -375,19 +388,15 @@ export class EcsService extends pulumi.ComponentResource {
       }),
     };
 
-    return new aws.iam.Role(
-      `${this.name}-ecs-task-role`,
-      {
-        namePrefix: `${this.name}-ecs-task-role-`,
-        assumeRolePolicy,
-        inlinePolicies: [
-          execCmdInlinePolicy,
-          ...taskRoleInlinePolicies,
-        ],
-        tags: commonTags,
-      },
-      { parent: this },
-    );
+    return new aws.iam.Role(`${this.name}-task-role`, {
+      namePrefix: `${this.name}-task-role-`,
+      assumeRolePolicy,
+      inlinePolicies: inlinePolicies.apply(policies => [
+        execCmdInlinePolicy,
+        ...policies,
+      ]),
+      tags: commonTags,
+    }, { parent: this });
   }
 
   public addSecurityGroup(securityGroup: pulumi.Output<aws.ec2.SecurityGroup>): void {

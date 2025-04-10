@@ -23,6 +23,6 @@ const webServer = new studion.WebServer(serviceName, {
   desiredCount: 1,
   size: 'small',
   autoscaling: { enabled: false }
-});
+}).build();
 
 export { project, webServer };
