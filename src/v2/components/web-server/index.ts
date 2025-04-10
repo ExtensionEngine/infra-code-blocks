@@ -22,6 +22,7 @@ export namespace WebServer {
     EcsService.Args,
     | 'cluster'
     | 'vpc'
+    | 'volumes'
     | 'desiredCount'
     | 'autoscaling'
     | 'size'
@@ -35,7 +36,6 @@ export namespace WebServer {
     & {
       // TODO: Automatically use subnet IDs from passed `vpc`
       publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
-      volumes?: EcsService.Args['volumes'];
       /**
        * The domain which will be used to access the service.
        * The domain or subdomain must belong to the provided hostedZone.
@@ -49,26 +49,22 @@ export namespace WebServer {
        * "/healthcheck"
        */
       healthCheckPath?: pulumi.Input<string>;
+      otelCollectorConfig?: pulumi.Input<string>;
     };
 }
 
 export class WebServer extends pulumi.ComponentResource {
   name: string;
-  vpc: pulumi.Output<awsx.ec2.Vpc>;
   container: WebServer.Container;
   ecsConfig: WebServer.EcsConfig;
+  service: pulumi.Output<EcsService>;
+  serviceSecurityGroup: aws.ec2.SecurityGroup;
+  lb: WebServerLoadBalancer;
   sidecarContainers: pulumi.Output<EcsService.Container>[] = [];
-  service?: pulumi.Output<EcsService>;
-  serviceSecurityGroup?: aws.ec2.SecurityGroup;
-  lb?: WebServerLoadBalancer;
-  domain?: pulumi.Input<string>;
-  hostedZoneId?: pulumi.Input<string>;
+  initContainers: pulumi.Output<EcsService.Container>[] = [];
+  volumes: EcsService.PersistentStorageVolume[] = [];
   certificate?: AcmCertificate;
   dnsRecord?: aws.route53.Record;
-  healthCheckPath?: pulumi.Input<string>;
-
-  private _volumesInput: WebServer.Args['volumes'];
-  private _volumes: EcsService.PersistentStorageVolume[] = [];
 
   constructor(
     name: string,
@@ -76,17 +72,68 @@ export class WebServer extends pulumi.ComponentResource {
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:WebServer', name, args, opts);
-    this.vpc = pulumi.output(args.vpc);
+
+    const { vpc, domain, hostedZoneId, otelCollectorConfig } = args;
+
+    if (domain && !hostedZoneId) {
+      throw new Error(
+        'WebServer:hostedZoneId must be provided when the domain is specified',
+      );
+    }
+    const hasCustomDomain = !!domain && !!hostedZoneId;
+    if (hasCustomDomain) {
+      this.certificate = this.createTlsCertificate({ domain, hostedZoneId });
+    }
+
     this.name = name;
-    this._volumesInput = args.volumes;
-    this.container = {
-      image: args.image,
-      mountPoints: args.mountPoints,
-      environment: args.environment,
-      secrets: args.secrets,
-      port: args.port
-    };
-    this.ecsConfig = {
+    this.lb = new WebServerLoadBalancer(`${this.name}-lb`, {
+      vpc,
+      port: args.port,
+      certificate: this.certificate?.certificate,
+      healthCheckPath: args.healthCheckPath
+    });
+    this.serviceSecurityGroup = this.createSecurityGroup(vpc);
+
+    if (otelCollectorConfig) {
+      const otelCollector = pulumi.output(otelCollectorConfig)
+        .apply(config => this.createOtelCollector(config));
+      this.sidecarContainers.push(otelCollector.container);
+      this.initContainers.push(otelCollector.configContainer);
+      this.volumes.push(otelConfigVolume);
+    }
+
+    this.container = this.createWebServerContainer(args);
+    this.ecsConfig = this.createEcsConfig(args);
+    const volumes = pulumi.output(args.volumes).apply(volumes => [
+      ...volumes ?? [],
+      ...this.volumes
+    ])
+
+    this.service = pulumi.all([
+      this.sidecarContainers,
+      this.initContainers
+    ]).apply(([
+      sidecarContainers,
+      initContainers
+    ]) => {
+      return this.createEcsService(
+        this.container,
+        volumes,
+        this.lb,
+        this.ecsConfig,
+        [...sidecarContainers, ...initContainers]
+      )
+    });
+
+    if (hasCustomDomain) {
+      this.dnsRecord = this.createDnsRecord({ domain, hostedZoneId });
+    }
+
+    this.registerOutputs();
+  }
+
+  private createEcsConfig(args: WebServer.Args): WebServer.EcsConfig {
+    return {
       vpc: args.vpc,
       cluster: args.cluster,
       desiredCount: args.desiredCount,
@@ -95,82 +142,17 @@ export class WebServer extends pulumi.ComponentResource {
       taskExecutionRoleInlinePolicies: args.taskExecutionRoleInlinePolicies,
       taskRoleInlinePolicies: args.taskRoleInlinePolicies,
       tags: args.tags,
-    }
-    this.healthCheckPath = args.healthCheckPath;
+    };
   }
 
-  public get hasCustomDomain(): boolean {
-    return !!this.domain && !!this.hostedZoneId;
-  }
-
-  public get volumes(): pulumi.Output<EcsService.PersistentStorageVolume[]> {
-    const volumesInput = pulumi.output(this._volumesInput)
-    return volumesInput.apply(input => [
-      ...input ?? [],
-      ...this._volumes
-    ]);
-  }
-
-  public withCustomDomain(
-    domain: pulumi.Input<string>,
-    hostedZoneId: pulumi.Input<string>
-  ): this {
-    this.domain = domain;
-    this.hostedZoneId = hostedZoneId;
-    this.certificate = this.createTlsCertificate({
-      domain,
-      hostedZoneId
-    });
-
-    return this;
-  }
-
-  public withOtelCollector(config: pulumi.Input<string>): this {
-    this._volumes.push(otelConfigVolume);
-    const collector = pulumi.output(config)
-      .apply(config => this.createOtelCollector(config));
-    this.sidecarContainers.push(
-      ...[collector.configContainer, collector.container]
-    );
-
-    return this;
-  }
-
-  public build(): this {
-    const lb = new WebServerLoadBalancer(`${this.name}-lb`, {
-      vpc: this.vpc,
-      port: this.container.port,
-      certificate: this.certificate?.certificate,
-      healthCheckPath: this.healthCheckPath
-    });
-    this.lb = lb;
-    this.serviceSecurityGroup = this.createSecurityGroup(this.vpc, lb);
-
-    this.service = pulumi.all([
-      this.volumes,
-      this.sidecarContainers
-    ]).apply(([
-      volumes,
-      sidecarContainers
-    ]) => this.createEcsService(
-      this.container,
-      volumes,
-      lb,
-      this.ecsConfig,
-      sidecarContainers
-    ));
-
-    // Typescript doesn't recognize non-null check in the hasCustomDomain getter
-    if (this.hasCustomDomain && this.domain && this.hostedZoneId) {
-      this.dnsRecord = this.createDnsRecord(
-        this.domain,
-        this.hostedZoneId,
-        this.lb.lb
-      );
-    }
-
-    this.registerOutputs();
-    return this;
+  private createWebServerContainer(args: WebServer.Args): WebServer.Container {
+    return {
+      image: args.image,
+      mountPoints: args.mountPoints,
+      environment: args.environment,
+      secrets: args.secrets,
+      port: args.port
+    };
   }
 
   private createTlsCertificate({
@@ -184,8 +166,7 @@ export class WebServer extends pulumi.ComponentResource {
   }
 
   private createSecurityGroup(
-    vpc: pulumi.Input<awsx.ec2.Vpc>,
-    lb: WebServerLoadBalancer
+    vpc: pulumi.Input<awsx.ec2.Vpc>
   ): aws.ec2.SecurityGroup {
     const vpcId = pulumi.output(vpc).vpcId;
     return new aws.ec2.SecurityGroup(
@@ -195,7 +176,7 @@ export class WebServer extends pulumi.ComponentResource {
         fromPort: 0,
         toPort: 0,
         protocol: '-1',
-        securityGroups: [lb.securityGroup.id],
+        securityGroups: [this.lb.securityGroup.id],
       }],
       egress: [{
         fromPort: 0,
@@ -208,25 +189,25 @@ export class WebServer extends pulumi.ComponentResource {
   }
 
   private createEcsService(
-    container: WebServer.Container,
-    volumes: EcsService.PersistentStorageVolume[],
+    webServerContainer: WebServer.Container,
+    volumes: pulumi.Output<EcsService.PersistentStorageVolume[]>,
     lb: WebServerLoadBalancer,
     ecsConfig: WebServer.EcsConfig,
-    sidecarContainers: EcsService.Container[]
+    containers: EcsService.Container[]
   ): EcsService {
     return new EcsService(`${this.name}-ecs`, {
       ...ecsConfig,
       volumes,
       containers: [{
-        ...container,
+        ...webServerContainer,
         name: this.name,
-        portMappings: [EcsService.createTcpPortMapping(container.port)],
+        portMappings: [EcsService.createTcpPortMapping(webServerContainer.port)],
         essential: true
-      }, ...sidecarContainers],
+      }, ...containers],
       enableServiceAutoDiscovery: false,
       loadBalancers: [{
         containerName: this.name,
-        containerPort: container.port,
+        containerPort: webServerContainer.port,
         targetGroupArn: lb.targetGroup.arn,
       }],
       assignPublicIp: true,
@@ -237,18 +218,20 @@ export class WebServer extends pulumi.ComponentResource {
     });
   }
 
-  private createDnsRecord(
-    domain: pulumi.Input<string>,
-    hostedZoneId: pulumi.Input<string>,
-    lb: aws.lb.LoadBalancer
-  ): aws.route53.Record {
+  private createDnsRecord({
+    domain,
+    hostedZoneId,
+  }: Pick<
+    Required<WebServer.Args>,
+    'domain' | 'hostedZoneId'
+  >): aws.route53.Record {
     return new aws.route53.Record(`${this.name}-route53-record`, {
       type: 'A',
       name: domain,
       zoneId: hostedZoneId,
       aliases: [{
-        name: lb.dnsName,
-        zoneId: lb.zoneId,
+        name: this.lb.lb.dnsName,
+        zoneId: this.lb.lb.zoneId,
         evaluateTargetHealth: true,
       }],
     }, { parent: this });
