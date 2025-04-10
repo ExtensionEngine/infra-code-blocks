@@ -58,10 +58,10 @@ jobs:
       - node/install
       - core/install_dependencies
       - core/install_dependencies:
-          pkg_json_dir: './tests/web-server/infrastructure'
+          pkg_json_dir: './tests'
       - core/run_script:
           skip_install_dependencies: true
-          script: 'build && ${DEFAULT_PKG_MANAGER} test'
+          script: 'build && ${DEFAULT_PKG_MANAGER} run test'
       
 workflows:
   scan-and-test:
