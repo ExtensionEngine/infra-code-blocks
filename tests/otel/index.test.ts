@@ -307,6 +307,72 @@ describe('OtelCollectorConfigBuilder', () => {
     assert.strictEqual(result.exporters.debug.verbosity, verbosity);
   });
 
+  it('should generate default configuration', () => {
+    const yamlOutput = new OtelCollectorConfigBuilder()
+      .withDefault(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
+      .build();
+
+    const result = yaml.parse(yamlOutput);
+
+    const expected = {
+      receivers: {
+        otlp: {
+          protocols: {
+            http: { endpoint: '0.0.0.0:4318' }
+          }
+        }
+      },
+      processors: {
+        batch: {
+          send_batch_size: 8192,
+          send_batch_max_size: 10000,
+          timeout: '5s'
+        },
+        memory_limiter: {
+          check_interval: '5s',
+          limit_percentage: 80,
+          spike_limit_percentage: 25
+        }
+      },
+      exporters: {
+        prometheusremotewrite: {
+          namespace: prometheusNamespace,
+          endpoint: prometheusWriteEndpoint,
+          auth: { authenticator: 'sigv4auth' }
+        },
+        awsxray: { region: awsRegion }
+      },
+      extensions: {
+        sigv4auth: {
+          region: awsRegion,
+          service: 'aps'
+        },
+        health_check: { endpoint: '0.0.0.0:13133' }
+      },
+      service: {
+        extensions: ['sigv4auth', 'health_check'],
+        pipelines: {
+          metrics: {
+            receivers: ['otlp'],
+            processors: ['memory_limiter', 'batch'],
+            exporters: ['prometheusremotewrite']
+          },
+          traces: {
+            receivers: ['otlp'],
+            processors: ['memory_limiter', 'batch'],
+            exporters: ['awsxray']
+          }
+        },
+        telemetry: {
+          logs: { level: 'error' },
+          metrics: { level: 'basic' }
+        }
+      }
+    };
+
+    assert.deepStrictEqual(result, expected);
+  });
+
   it('should generate complete configuration', () => {
     const yamlOutput = new OtelCollectorConfigBuilder()
       .withOTLPReceiver(['http'])

@@ -268,6 +268,30 @@ export class OtelCollectorConfigBuilder {
     return this;
   }
 
+  withDefault(
+    prometheusNamespace: string,
+    prometheusWriteEndpoint: string,
+    awsRegion: string
+  ): this {
+    return this.withOTLPReceiver(['http'])
+      .withBatchProcessor()
+      .withMemoryLimiterProcessor()
+      .withAPS(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
+      .withAWSXRayExporter(awsRegion)
+      .withHealthCheckExtension()
+      .withMetricsPipeline(
+        ['otlp'],
+        ['memory_limiter', 'batch'],
+        ['prometheusremotewrite']
+      )
+      .withTracesPipeline(
+        ['otlp'],
+        ['memory_limiter', 'batch'],
+        ['awsxray']
+      )
+      .withTelemetry();
+  }
+
   build(): string {
     this.validatePipelineComponents('metrics');
     this.validatePipelineComponents('traces');
