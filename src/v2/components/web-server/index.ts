@@ -107,39 +107,13 @@ export class WebServer extends pulumi.ComponentResource {
         .apply(config => this.createOtelCollector(config));
     }
 
-    this.initContainers = pulumi.all([
-      pulumi.output(args.initContainers),
-      this.otelCollector
-    ]).apply(([passedInits, otelCollector]) => {
-      const containers = [];
-      if (passedInits) containers.push(...passedInits);
-      if (otelCollector) containers.push(otelCollector.container);
-
-      return containers.map(container => ({ ...container, essential: false }))
-    });
-
-    this.sidecarContainers = pulumi.all([
-      pulumi.output(args.sidecarContainers),
-      this.otelCollector
-    ]).apply(([passedSidecars, otelCollector]) => {
-      const containers = [];
-      if (passedSidecars) containers.push(...passedSidecars);
-      if (otelCollector) containers.push(otelCollector.container);
-
-      return containers.map(container => ({ ...container, essential: true }));
-    });
-
+    this.initContainers = this.getInitContainers(args);
+    this.sidecarContainers = this.getSidecarContainers(args);
     this.container = this.createWebServerContainer(args);
     this.ecsConfig = this.createEcsConfig(args);
-    this.volumes = pulumi.all([
-      pulumi.output(args.volumes),
-      this.otelCollector
-    ])
-      .apply(([passedVolumes, otelCollector]) => [
-        ...(passedVolumes || []),
-        ...(otelCollector ? [otelConfigVolume] : [])
-      ]);
+    this.volumes = this.getVolumes(args);
 
+    // TODO: Move output mapping to createEcsService
     this.service = pulumi.all([
       this.initContainers,
       this.sidecarContainers,
@@ -161,6 +135,42 @@ export class WebServer extends pulumi.ComponentResource {
     }
 
     this.registerOutputs();
+  }
+
+  private getVolumes(args: WebServer.Args): pulumi.Output<EcsService.PersistentStorageVolume[]> {
+    return pulumi.all([
+      pulumi.output(args.volumes),
+      this.otelCollector
+    ]).apply(([passedVolumes, otelCollector]) => [
+      ...(passedVolumes || []),
+      ...(otelCollector ? [otelConfigVolume] : [])
+    ]);
+  }
+
+  private getInitContainers(args: WebServer.Args): pulumi.Output<EcsService.Container[]> {
+    return pulumi.all([
+      pulumi.output(args.initContainers),
+      this.otelCollector
+    ]).apply(([passedInits, otelCollector]) => {
+      const containers = [];
+      if (passedInits) containers.push(...passedInits);
+      if (otelCollector) containers.push(otelCollector.configContainer);
+
+      return containers.map(container => ({ ...container, essential: false }));
+    });
+  }
+
+  private getSidecarContainers(args: WebServer.Args): pulumi.Output<EcsService.Container[]> {
+    return pulumi.all([
+      pulumi.output(args.sidecarContainers),
+      this.otelCollector
+    ]).apply(([passedSidecars, otelCollector]) => {
+      const containers = [];
+      if (passedSidecars) containers.push(...passedSidecars);
+      if (otelCollector) containers.push(otelCollector.container);
+
+      return containers.map(container => ({ ...container, essential: true }));
+    });
   }
 
   private createEcsConfig(args: WebServer.Args): WebServer.EcsConfig {
