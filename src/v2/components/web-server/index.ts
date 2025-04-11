@@ -31,6 +31,11 @@ export namespace WebServer {
     | 'tags'
   >;
 
+  export type InitContainer = Omit<EcsService.Container, 'essential'>;
+  export type SidecarContainer =
+    & Omit<EcsService.Container, 'essential' | 'healthCheck'>
+    & Required<Pick<EcsService.Container, 'healthCheck'>>;
+
   export type Args = EcsConfig
     & Container
     & {
@@ -49,6 +54,8 @@ export namespace WebServer {
        * "/healthcheck"
        */
       healthCheckPath?: pulumi.Input<string>;
+      initContainers?: pulumi.Input<pulumi.Input<WebServer.InitContainer>[]>;
+      sidecarContainers?: pulumi.Input<pulumi.Input<WebServer.SidecarContainer>[]>;
       otelCollectorConfig?: pulumi.Input<string>;
     };
 }
@@ -60,11 +67,12 @@ export class WebServer extends pulumi.ComponentResource {
   service: pulumi.Output<EcsService>;
   serviceSecurityGroup: aws.ec2.SecurityGroup;
   lb: WebServerLoadBalancer;
-  sidecarContainers: pulumi.Output<EcsService.Container>[] = [];
-  initContainers: pulumi.Output<EcsService.Container>[] = [];
-  volumes: EcsService.PersistentStorageVolume[] = [];
+  initContainers?: pulumi.Output<EcsService.Container[]>;
+  sidecarContainers?: pulumi.Output<EcsService.Container[]>;
+  volumes?: pulumi.Output<EcsService.PersistentStorageVolume[]>;
   certificate?: AcmCertificate;
   dnsRecord?: aws.route53.Record;
+  otelCollector?: pulumi.Output<OtelCollector>;
 
   constructor(
     name: string,
@@ -95,33 +103,56 @@ export class WebServer extends pulumi.ComponentResource {
     this.serviceSecurityGroup = this.createSecurityGroup(vpc);
 
     if (otelCollectorConfig) {
-      const otelCollector = pulumi.output(otelCollectorConfig)
+      this.otelCollector = pulumi.output(otelCollectorConfig)
         .apply(config => this.createOtelCollector(config));
-      this.sidecarContainers.push(otelCollector.container);
-      this.initContainers.push(otelCollector.configContainer);
-      this.volumes.push(otelConfigVolume);
     }
+
+    this.initContainers = pulumi.all([
+      pulumi.output(args.initContainers),
+      this.otelCollector
+    ]).apply(([passedInits, otelCollector]) => {
+      const containers = [];
+      if (passedInits) containers.push(...passedInits);
+      if (otelCollector) containers.push(otelCollector.container);
+
+      return containers.map(container => ({ ...container, essential: false }))
+    });
+
+    this.sidecarContainers = pulumi.all([
+      pulumi.output(args.sidecarContainers),
+      this.otelCollector
+    ]).apply(([passedSidecars, otelCollector]) => {
+      const containers = [];
+      if (passedSidecars) containers.push(...passedSidecars);
+      if (otelCollector) containers.push(otelCollector.container);
+
+      return containers.map(container => ({ ...container, essential: true }));
+    });
 
     this.container = this.createWebServerContainer(args);
     this.ecsConfig = this.createEcsConfig(args);
-    const volumes = pulumi.output(args.volumes).apply(volumes => [
-      ...volumes ?? [],
-      ...this.volumes
+    this.volumes = pulumi.all([
+      pulumi.output(args.volumes),
+      this.otelCollector
     ])
+      .apply(([passedVolumes, otelCollector]) => [
+        ...(passedVolumes || []),
+        ...(otelCollector ? [otelConfigVolume] : [])
+      ]);
 
     this.service = pulumi.all([
+      this.initContainers,
       this.sidecarContainers,
-      this.initContainers
     ]).apply(([
+      initContainers,
       sidecarContainers,
-      initContainers
     ]) => {
       return this.createEcsService(
         this.container,
-        volumes,
         this.lb,
         this.ecsConfig,
-        [...sidecarContainers, ...initContainers]
+        this.volumes,
+        [...initContainers, ...sidecarContainers]
       )
     });
 
@@ -190,10 +221,10 @@ export class WebServer extends pulumi.ComponentResource {
 
   private createEcsService(
     webServerContainer: WebServer.Container,
-    volumes: pulumi.Output<EcsService.PersistentStorageVolume[]>,
     lb: WebServerLoadBalancer,
     ecsConfig: WebServer.EcsConfig,
-    containers: EcsService.Container[]
+    volumes?: pulumi.Output<EcsService.PersistentStorageVolume[]>,
+    containers?: EcsService.Container[]
   ): EcsService {
     return new EcsService(`${this.name}-ecs`, {
       ...ecsConfig,
@@ -203,7 +234,7 @@ export class WebServer extends pulumi.ComponentResource {
         name: this.name,
         portMappings: [EcsService.createTcpPortMapping(webServerContainer.port)],
         essential: true
-      }, ...containers],
+      }, ...(containers || [])],
       enableServiceAutoDiscovery: false,
       loadBalancers: [{
         containerName: this.name,

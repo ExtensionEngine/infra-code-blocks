@@ -1,7 +1,7 @@
 import { describe, it, before, after } from 'node:test';
 import * as assert from 'node:assert';
 import { InlineProgramArgs } from '@pulumi/pulumi/automation';
-import { ECSClient } from '@aws-sdk/client-ecs';
+import { DescribeServicesCommand, DescribeTaskDefinitionCommand, ECSClient } from '@aws-sdk/client-ecs';
 import { EC2Client, DescribeSecurityGroupsCommand } from '@aws-sdk/client-ec2';
 import {
   ElasticLoadBalancingV2Client,
@@ -153,6 +153,52 @@ describe('Web server component deployment', () => {
       allowsIncomingLbTraffic,
       'Service security group should allow traffic from load balancer'
     );
+  });
+
+  it('should include init container in task definition', async () => {
+    const webServer = ctx.outputs.webServer.value;
+    const { services } = await ctx.clients.ecs.send(
+      new DescribeServicesCommand({
+        cluster: webServer.ecsConfig.cluster.name,
+        services: [webServer.service.name]
+      })
+    );
+    assert.ok(services && services.length > 0, 'Service should exist');
+    const [service] = services;
+
+    const { taskDefinition } = await ctx.clients.ecs.send(
+      new DescribeTaskDefinitionCommand({ taskDefinition: service.taskDefinition })
+    );
+    assert.ok(taskDefinition, 'Task definition should exist');
+
+    const containerDefs = taskDefinition.containerDefinitions;
+    const initContainer = containerDefs?.find(({ name }) => name === 'init');
+
+    assert.ok(initContainer, 'Init container should be in task definition');
+    assert.strictEqual(initContainer.essential, false, 'Init container should not be essential');
+  });
+
+  it('should include sidecar container in the task definition', async () => {
+    const webServer = ctx.outputs.webServer.value;
+    const { services } = await ctx.clients.ecs.send(
+      new DescribeServicesCommand({
+        cluster: webServer.ecsConfig.cluster.name,
+        services: [webServer.service.name]
+      })
+    );
+    assert.ok(services && services.length > 0, 'Service should exist');
+    const [service] = services;
+
+    const { taskDefinition } = await ctx.clients.ecs.send(
+      new DescribeTaskDefinitionCommand({ taskDefinition: service.taskDefinition })
+    );
+    assert.ok(taskDefinition, 'Task definition should exist');
+
+    const containerDefs = taskDefinition.containerDefinitions;
+    const sidecarContainer = containerDefs?.find(({ name }) => name === 'sidecar');
+
+    assert.ok(sidecarContainer, 'Sidecar container should be in the task definition');
+    assert.strictEqual(sidecarContainer.essential, true, 'Sidecar should be marked as essential');
   });
 
   it('should receive 200 status code from the healthcheck endpoint', () => {

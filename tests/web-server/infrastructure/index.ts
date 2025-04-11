@@ -6,6 +6,25 @@ const serviceName = 'web-server-test';
 const stackName = pulumi.getStack();
 const project: Project = new Project(serviceName, { services: [] });
 const tags = { Env: stackName, Project: serviceName };
+const init = {
+  name: 'init',
+  image: 'busybox:latest',
+  essential: false,
+  command: ['sh', '-c', 'echo "Init container running" && exit 0']
+};
+const sidecar = {
+  name: 'sidecar',
+  image: 'busybox:latest',
+  essential: true,
+  command: ['sh', '-c', 'echo "Sidecar running" && sleep infinity'],
+  healthCheck: {
+    command: ["CMD-SHELL", "echo healthy || exit 1"],
+    interval: 30,
+    timeout: 5,
+    retries: 3,
+    startPeriod: 10
+  }
+};
 
 const cluster = new aws.ecs.Cluster(`${serviceName}-cluster`, {
   name: `${serviceName}-cluster-${stackName}`,
@@ -20,6 +39,8 @@ const webServer = new studion.WebServerBuilder(serviceName)
     size: 'small',
     autoscaling: { enabled: false }
   })
+  .withInitContainer(init)
+  .withSidecarContainer(sidecar)
   .withVpc(project.vpc)
   .build({ parent: cluster });
 
