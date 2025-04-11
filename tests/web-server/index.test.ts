@@ -259,7 +259,6 @@ describe('Web server component deployment', () => {
         throw new NonRetryableError('Healthcheck endpoint not found');
       }
 
-      const body = await response.body.text();
       assert.strictEqual(
         response.statusCode,
         status.OK,
