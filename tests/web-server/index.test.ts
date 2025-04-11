@@ -201,6 +201,48 @@ describe('Web server component deployment', () => {
     assert.strictEqual(sidecarContainer.essential, true, 'Sidecar should be marked as essential');
   });
 
+  it('should include OpenTelemetry collector when configured', async () => {
+    const webServer = ctx.outputs.webServer.value;
+
+    const { services } = await ctx.clients.ecs.send(
+      new DescribeServicesCommand({
+        cluster: webServer.ecsConfig.cluster.name,
+        services: [webServer.service.name]
+      })
+    );
+    assert.ok(services && services.length > 0, 'Service should exist');
+    const [service] = services;
+
+    const { taskDefinition } = await ctx.clients.ecs.send(
+      new DescribeTaskDefinitionCommand({ taskDefinition: service.taskDefinition })
+    );
+    assert.ok(taskDefinition, 'Task definition should exist');
+
+    const containerDefs = taskDefinition.containerDefinitions;
+    const collectorContainerName = `${ctx.config.webServerName}-otel-collector`;
+    const collectorContainer = containerDefs?.find(containerDef => {
+      return containerDef.name === collectorContainerName
+    });
+
+    assert.ok(collectorContainer, 'OTel collector container should be in task definition');
+
+    const hasConfigVolume = collectorContainer.mountPoints?.some(mountPoint => {
+      return mountPoint.sourceVolume === 'otel-config-efs-volume'
+    });
+    assert.ok(hasConfigVolume, 'OTel collector should have config volume mounted');
+
+    const configContainer = containerDefs?.find(containerDef => {
+      return containerDef.name === webServer.otelCollector?.configContainer.name;
+    });
+    assert.ok(configContainer, 'OTel config container should be in task definition');
+    assert.strictEqual(configContainer.essential, false, 'Config container should not be essential');
+
+    const hasOtelVolume = taskDefinition.volumes?.some(
+      volume => volume.name === 'otel-config-efs-volume'
+    );
+    assert.ok(hasOtelVolume, 'Task definition should include OTel config volume');
+  });
+
   it('should receive 200 status code from the healthcheck endpoint', () => {
     const webServer = ctx.outputs.webServer.value;
     const webServerLbDns = webServer.lb.lb.dnsName;

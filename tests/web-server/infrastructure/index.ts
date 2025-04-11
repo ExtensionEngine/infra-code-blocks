@@ -25,6 +25,11 @@ const sidecar = {
     startPeriod: 10
   }
 };
+const otelCollectorConfig = new studion.openTelemetry.OtelCollectorConfigBuilder()
+  .withOTLPReceiver()
+  .withDebug()
+  .withMetricsPipeline(['otlp'], [], ['debug'])
+  .build();
 
 const cluster = new aws.ecs.Cluster(`${serviceName}-cluster`, {
   name: `${serviceName}-cluster-${stackName}`,
@@ -42,6 +47,7 @@ const webServer = new studion.WebServerBuilder(serviceName)
   .withInitContainer(init)
   .withSidecarContainer(sidecar)
   .withVpc(project.vpc)
+  .withOtelCollector(otelCollectorConfig)
   .build({ parent: cluster });
 
 export { project, webServer };
