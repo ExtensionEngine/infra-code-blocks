@@ -44,8 +44,8 @@ export namespace EcsService {
   export type Container = {
     name: pulumi.Input<string>;
     image: pulumi.Input<string>;
-    portMappings: pulumi.Input<pulumi.Input<aws.ecs.PortMapping>[]>;
-    command?: pulumi.Input<string[]>;
+    portMappings?: pulumi.Input<pulumi.Input<aws.ecs.PortMapping>[]>;
+    command?: pulumi.Input<pulumi.Input<string>[]>;
     mountPoints?: PersistentStorageMountPoint[];
     environment?: pulumi.Input<aws.ecs.KeyValuePair[]>;
     secrets?: pulumi.Input<aws.ecs.Secret[]>;
