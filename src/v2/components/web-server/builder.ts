@@ -20,7 +20,7 @@ export namespace WebServerBuilder {
 
 export class WebServerBuilder {
   private _name: string;
-  private _container: WebServer.Container;
+  private _container?: WebServer.Container;
   private _vpc?: pulumi.Output<awsx.ec2.Vpc>;
   private _ecsConfig?: WebServerBuilder.EcsConfig;
   private _domain?: pulumi.Input<string>;
@@ -29,16 +29,22 @@ export class WebServerBuilder {
   private _otelCollectorConfig?: pulumi.Input<string>;
   private _volumes: EcsService.PersistentStorageVolume[] = [];
 
-  constructor(name: string, args: WebServerBuilder.Args) {
+  constructor(name: string) {
     this._name = name;
+  }
+
+  public configureWebServer(
+    image: WebServer.Container['image'],
+    port: WebServer.Container['port'],
+    config: Omit<WebServer.Container, 'image' | 'port'> = {}
+  ): this {
     this._container = {
-      image: args.image,
-      mountPoints: args.mountPoints,
-      environment: args.environment,
-      secrets: args.secrets,
-      port: args.port
+      image,
+      port,
+      ...config
     };
-    this._healthCheckPath = args.healthCheckPath;
+
+    return this;
   }
 
   public configureEcs(config: WebServerBuilder.EcsConfig): this {
@@ -83,7 +89,14 @@ export class WebServerBuilder {
     return this;
   }
 
+  public withCustomHealthCheckPath(path: WebServer.Args['healthCheckPath']) {
+    this._healthCheckPath = path;
+  }
+
   public build(opts: pulumi.ComponentResourceOptions = {}): WebServer {
+    if (!this._container) {
+      throw new Error('Web server not configured. Make sure to call WebServerBuilder.configureWebServer().');
+    }
     if (!this._ecsConfig) {
       throw new Error('ECS not configured. Make sure to call WebServerBuilder.configureEcs().');
     }

@@ -12,10 +12,8 @@ const cluster = new aws.ecs.Cluster(`${serviceName}-cluster`, {
   tags
 });
 
-const webServer = new studion.WebServerBuilder(serviceName, {
-  image: 'nginxdemos/nginx-hello:plain-text',
-  port: 8080
-})
+const webServer = new studion.WebServerBuilder(serviceName)
+  .configureWebServer('nginxdemos/nginx-hello:plain-text', 8080)
   .configureEcs({
     cluster,
     desiredCount: 1,
