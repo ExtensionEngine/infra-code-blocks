@@ -5,23 +5,36 @@ import { commonTags } from '../../../constants';
 import { AcmCertificate } from '../../../components/acm-certificate';
 import { EcsService } from '../ecs-service';
 import { WebServerLoadBalancer } from './load-balancer';
+import { OtelCollector } from '../../otel/container';
+
+const stack = pulumi.getStack();
+const otelConfigVolume = { name: 'otel-config-efs-volume' };
 
 export namespace WebServer {
-  export type Args = Pick<
+  export type Container = Pick<
+    EcsService.Container,
+    'image' | 'environment' | 'secrets' | 'mountPoints'
+  > & {
+    port: pulumi.Input<number>;
+  };
+
+  export type EcsConfig = Pick<
     EcsService.Args,
     | 'cluster'
     | 'vpc'
+    | 'volumes'
     | 'desiredCount'
     | 'autoscaling'
     | 'size'
-    | 'volumes'
     | 'taskExecutionRoleInlinePolicies'
     | 'taskRoleInlinePolicies'
     | 'tags'
-  >
-    & Pick<EcsService.Container, 'image' | 'environment' | 'secrets' | 'mountPoints'>
+  >;
+
+  export type Args = EcsConfig
+    & Container
     & {
-      port: pulumi.Input<number>,
+      // TODO: Automatically use subnet IDs from passed `vpc`
       publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
       /**
        * The domain which will be used to access the service.
@@ -36,14 +49,20 @@ export namespace WebServer {
        * "/healthcheck"
        */
       healthCheckPath?: pulumi.Input<string>;
+      otelCollectorConfig?: pulumi.Input<string>;
     };
 }
 
 export class WebServer extends pulumi.ComponentResource {
   name: string;
-  service: EcsService;
+  container: WebServer.Container;
+  ecsConfig: WebServer.EcsConfig;
+  service: pulumi.Output<EcsService>;
   serviceSecurityGroup: aws.ec2.SecurityGroup;
   lb: WebServerLoadBalancer;
+  sidecarContainers: pulumi.Output<EcsService.Container>[] = [];
+  initContainers: pulumi.Output<EcsService.Container>[] = [];
+  volumes: EcsService.PersistentStorageVolume[] = [];
   certificate?: AcmCertificate;
   dnsRecord?: aws.route53.Record;
 
@@ -54,7 +73,7 @@ export class WebServer extends pulumi.ComponentResource {
   ) {
     super('studion:WebServer', name, args, opts);
 
-    const { vpc, domain, hostedZoneId } = args;
+    const { vpc, domain, hostedZoneId, otelCollectorConfig } = args;
 
     if (domain && !hostedZoneId) {
       throw new Error(
@@ -74,13 +93,66 @@ export class WebServer extends pulumi.ComponentResource {
       healthCheckPath: args.healthCheckPath
     });
     this.serviceSecurityGroup = this.createSecurityGroup(vpc);
-    this.service = this.createEcsService(args);
+
+    if (otelCollectorConfig) {
+      const otelCollector = pulumi.output(otelCollectorConfig)
+        .apply(config => this.createOtelCollector(config));
+      this.sidecarContainers.push(otelCollector.container);
+      this.initContainers.push(otelCollector.configContainer);
+      this.volumes.push(otelConfigVolume);
+    }
+
+    this.container = this.createWebServerContainer(args);
+    this.ecsConfig = this.createEcsConfig(args);
+    const volumes = pulumi.output(args.volumes).apply(volumes => [
+      ...volumes ?? [],
+      ...this.volumes
+    ])
+
+    this.service = pulumi.all([
+      this.sidecarContainers,
+      this.initContainers
+    ]).apply(([
+      sidecarContainers,
+      initContainers
+    ]) => {
+      return this.createEcsService(
+        this.container,
+        volumes,
+        this.lb,
+        this.ecsConfig,
+        [...sidecarContainers, ...initContainers]
+      )
+    });
 
     if (hasCustomDomain) {
       this.dnsRecord = this.createDnsRecord({ domain, hostedZoneId });
     }
 
     this.registerOutputs();
+  }
+
+  private createEcsConfig(args: WebServer.Args): WebServer.EcsConfig {
+    return {
+      vpc: args.vpc,
+      cluster: args.cluster,
+      desiredCount: args.desiredCount,
+      autoscaling: args.autoscaling,
+      size: args.size,
+      taskExecutionRoleInlinePolicies: args.taskExecutionRoleInlinePolicies,
+      taskRoleInlinePolicies: args.taskRoleInlinePolicies,
+      tags: args.tags,
+    };
+  }
+
+  private createWebServerContainer(args: WebServer.Args): WebServer.Container {
+    return {
+      image: args.image,
+      mountPoints: args.mountPoints,
+      environment: args.environment,
+      secrets: args.secrets,
+      port: args.port
+    };
   }
 
   private createTlsCertificate({
@@ -117,30 +189,32 @@ export class WebServer extends pulumi.ComponentResource {
   }
 
   private createEcsService(
-    args: WebServer.Args
+    webServerContainer: WebServer.Container,
+    volumes: pulumi.Output<EcsService.PersistentStorageVolume[]>,
+    lb: WebServerLoadBalancer,
+    ecsConfig: WebServer.EcsConfig,
+    containers: EcsService.Container[]
   ): EcsService {
-    return new EcsService(this.name, {
-      ...args,
+    return new EcsService(`${this.name}-ecs`, {
+      ...ecsConfig,
+      volumes,
       containers: [{
+        ...webServerContainer,
         name: this.name,
-        image: args.image,
-        portMappings: [EcsService.createTcpPortMapping(args.port)],
-        mountPoints: args.mountPoints,
-        environment: args.environment,
-        secrets: args.secrets,
+        portMappings: [EcsService.createTcpPortMapping(webServerContainer.port)],
         essential: true
-      }],
+      }, ...containers],
       enableServiceAutoDiscovery: false,
       loadBalancers: [{
         containerName: this.name,
-        containerPort: args.port,
-        targetGroupArn: this.lb.targetGroup.arn,
+        containerPort: webServerContainer.port,
+        targetGroupArn: lb.targetGroup.arn,
       }],
       assignPublicIp: true,
       securityGroup: this.serviceSecurityGroup,
     }, {
       parent: this,
-      dependsOn: [this.lb, this.lb.targetGroup],
+      dependsOn: [lb, lb.targetGroup],
     });
   }
 
@@ -161,5 +235,15 @@ export class WebServer extends pulumi.ComponentResource {
         evaluateTargetHealth: true,
       }],
     }, { parent: this });
+  }
+
+  private createOtelCollector(config: string) {
+    return new OtelCollector({
+      containerName: `${this.name}-otel-collector`,
+      serviceName: this.name,
+      env: stack,
+      config,
+      configVolumeName: otelConfigVolume.name,
+    });
   }
 }

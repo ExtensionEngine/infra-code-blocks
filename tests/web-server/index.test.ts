@@ -12,7 +12,6 @@ import {
 import { ACMClient } from '@aws-sdk/client-acm';
 import { Route53Client } from '@aws-sdk/client-route-53';
 import { backOff } from 'exponential-backoff';
-import * as path from 'pathe';
 import { request } from 'undici';
 import status from 'http-status';
 import * as automation from '../automation';
@@ -36,7 +35,7 @@ describe('Web server component deployment', () => {
   const ctx: WebServerTestContext = {
     outputs: {},
     config: {
-      webServerName: 'web-server-example',
+      webServerName: 'web-server-test',
       healthCheckPath: '/healthcheck'
     },
     clients: {
