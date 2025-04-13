@@ -21,7 +21,7 @@ export namespace EcsService {
    * - Container restarts
    * - Multiple containers
    */
-  export type PersistentStorageVolume = pulumi.Input<{ name: pulumi.Input<string>; }>;
+  export type PersistentStorageVolume = { name: pulumi.Input<string>; };
 
   /**
    * Specifies how an EFS volume is mounted into a container.
@@ -75,7 +75,7 @@ export namespace EcsService {
     vpc: pulumi.Input<awsx.ec2.Vpc>;
     containers: EcsService.Container[];
     loadBalancers?: pulumi.Input<LoadBalancerConfig[]>;
-    volumes?: pulumi.Input<EcsService.PersistentStorageVolume[]>;
+    volumes?: pulumi.Input<pulumi.Input<EcsService.PersistentStorageVolume>[]>;
     /**
      * Number of instances of the task definition to place and keep running.
      * @default 1
