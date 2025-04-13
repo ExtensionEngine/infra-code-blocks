@@ -1,6 +1,5 @@
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert';
-import * as yaml from 'yaml';
 import { OtelCollectorConfigBuilder } from '../../src/v2/otel/config';
 import { testOtelCollectorConfigBuilderValidation } from './validation.test';
 
@@ -23,12 +22,10 @@ describe('OtelCollectorConfigBuilder', () => {
   it(
     'should generate minimal configuration with OTLP receiver and debug exporter',
     () => {
-      const yamlOutput = new OtelCollectorConfigBuilder()
+      const result = new OtelCollectorConfigBuilder()
         .withOTLPReceiver(['http'])
         .withDebug()
         .build();
-
-      const result = yaml.parse(yamlOutput);
 
       const expected = {
         receivers: {
@@ -51,11 +48,10 @@ describe('OtelCollectorConfigBuilder', () => {
   );
 
   it('should configure batch processor', () => {
-    const yamlOutput = new OtelCollectorConfigBuilder()
+    const result = new OtelCollectorConfigBuilder()
       .withBatchProcessor()
       .build();
 
-    const result = yaml.parse(yamlOutput);
 
     const expected = {
       receivers: {},
@@ -71,11 +67,10 @@ describe('OtelCollectorConfigBuilder', () => {
   });
 
   it('should configure memory limiter processor', () => {
-    const yamlOutput = new OtelCollectorConfigBuilder()
+    const result = new OtelCollectorConfigBuilder()
       .withMemoryLimiterProcessor()
       .build();
 
-    const result = yaml.parse(yamlOutput);
 
     const expected = {
       receivers: {},
@@ -91,11 +86,10 @@ describe('OtelCollectorConfigBuilder', () => {
   });
 
   it('withBatchProcessor should use provided parameters', () => {
-    const yamlOutput = new OtelCollectorConfigBuilder()
+    const result = new OtelCollectorConfigBuilder()
       .withBatchProcessor(5000, 8000, '10s')
       .build();
 
-    const result = yaml.parse(yamlOutput);
     assert.deepStrictEqual(result.processors.batch, {
       send_batch_size: 5000,
       send_batch_max_size: 8000,
@@ -104,11 +98,10 @@ describe('OtelCollectorConfigBuilder', () => {
   });
 
   it('withMemoryLimiterProcessor should use provided parameters', () => {
-    const yamlOutput = new OtelCollectorConfigBuilder()
+    const result = new OtelCollectorConfigBuilder()
       .withMemoryLimiterProcessor('3s', 70, 15)
       .build();
 
-    const result = yaml.parse(yamlOutput);
     assert.deepStrictEqual(result.processors.memory_limiter, {
       check_interval: '3s',
       limit_percentage: 70,
@@ -117,11 +110,10 @@ describe('OtelCollectorConfigBuilder', () => {
   });
 
   it('should configure Amazon Prometheus Service (APS) exporter', () => {
-    const yamlOutput = new OtelCollectorConfigBuilder()
+    const result = new OtelCollectorConfigBuilder()
       .withAPS(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
       .build();
 
-    const result = yaml.parse(yamlOutput);
     const expected = {
       receivers: {},
       processors: {},
@@ -148,11 +140,10 @@ describe('OtelCollectorConfigBuilder', () => {
   });
 
   it('should configure AWS X-Ray exporter', () => {
-    const yamlOutput = new OtelCollectorConfigBuilder()
+    const result = new OtelCollectorConfigBuilder()
       .withAWSXRayExporter(awsRegion)
       .build();
 
-    const result = yaml.parse(yamlOutput);
     const expected = {
       receivers: {},
       processors: {},
@@ -167,11 +158,10 @@ describe('OtelCollectorConfigBuilder', () => {
   });
 
   it('should configure SigV4Auth extension', () => {
-    const yamlOutput = new OtelCollectorConfigBuilder()
+    const result = new OtelCollectorConfigBuilder()
       .withSigV4AuthExtension(awsRegion)
       .build();
 
-    const result = yaml.parse(yamlOutput);
     const expected = {
       receivers: {},
       processors: {},
@@ -192,11 +182,10 @@ describe('OtelCollectorConfigBuilder', () => {
   });
 
   it('should configure health check extension', () => {
-    const yamlOutput = new OtelCollectorConfigBuilder()
+    const result = new OtelCollectorConfigBuilder()
       .withHealthCheckExtension()
       .build();
 
-    const result = yaml.parse(yamlOutput);
     const expected = {
       receivers: {},
       processors: {},
@@ -214,11 +203,10 @@ describe('OtelCollectorConfigBuilder', () => {
   });
 
   it('should configure pprof extension', () => {
-    const yamlOutput = new OtelCollectorConfigBuilder()
+    const result = new OtelCollectorConfigBuilder()
       .withPprofExtension()
       .build();
 
-    const result = yaml.parse(yamlOutput);
     const expected = {
       receivers: {},
       processors: {},
@@ -236,7 +224,7 @@ describe('OtelCollectorConfigBuilder', () => {
   });
 
   it('should configure pipelines', () => {
-    const yamlOutput = new OtelCollectorConfigBuilder()
+    const result = new OtelCollectorConfigBuilder()
       .withOTLPReceiver(['http'])
       .withBatchProcessor()
       .withMemoryLimiterProcessor()
@@ -254,7 +242,6 @@ describe('OtelCollectorConfigBuilder', () => {
       )
       .build();
 
-    const result = yaml.parse(yamlOutput);
     const expected = {
       receivers: {
         otlp: {
@@ -294,20 +281,18 @@ describe('OtelCollectorConfigBuilder', () => {
   it('withDebug should use provided verbosity', () => {
     const verbosity = 'basic';
 
-    const yamlOutput = new OtelCollectorConfigBuilder()
+    const result = new OtelCollectorConfigBuilder()
       .withDebug(verbosity)
       .build();
 
-    const result = yaml.parse(yamlOutput);
-    assert.strictEqual(result.exporters.debug.verbosity, verbosity);
+    assert.strictEqual(result.exporters.debug?.verbosity, verbosity);
   });
 
   it('should generate default configuration', () => {
-    const yamlOutput = new OtelCollectorConfigBuilder()
+    const result = new OtelCollectorConfigBuilder()
       .withDefault(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
       .build();
 
-    const result = yaml.parse(yamlOutput);
 
     const expected = {
       receivers: {
@@ -361,7 +346,7 @@ describe('OtelCollectorConfigBuilder', () => {
   });
 
   it('should generate complete configuration', () => {
-    const yamlOutput = new OtelCollectorConfigBuilder()
+    const result = new OtelCollectorConfigBuilder()
       .withOTLPReceiver(['http'])
       .withBatchProcessor()
       .withMemoryLimiterProcessor()
@@ -383,7 +368,6 @@ describe('OtelCollectorConfigBuilder', () => {
       )
       .build();
 
-    const result = yaml.parse(yamlOutput);
 
     const expected = {
       receivers: {

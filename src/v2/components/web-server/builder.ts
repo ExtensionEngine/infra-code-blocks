@@ -2,6 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import * as awsx from '@pulumi/awsx';
 import { EcsService } from '../ecs-service';
 import { WebServer } from '.';
+import { OtelCollector } from '../../otel';
 
 export namespace WebServerBuilder {
   export type EcsConfig = Omit<WebServer.EcsConfig, 'vpc' | 'volumes'>;
@@ -26,7 +27,7 @@ export class WebServerBuilder {
   private _domain?: pulumi.Input<string>;
   private _hostedZoneId?: pulumi.Input<string>;
   private _healthCheckPath?: pulumi.Input<string>;
-  private _otelCollectorConfig?: pulumi.Input<string>;
+  private _otelCollectorConfig?: pulumi.Input<OtelCollector.Config>;
   private _initContainers: pulumi.Input<WebServer.InitContainer>[] = [];
   private _sidecarContainers: pulumi.Input<WebServer.SidecarContainer>[] = [];
   private _volumes: EcsService.PersistentStorageVolume[] = [];
@@ -97,7 +98,7 @@ export class WebServerBuilder {
     return this;
   }
 
-  public withOtelCollector(config: pulumi.Input<string>): this {
+  public withOtelCollector(config: pulumi.Input<OtelCollector.Config>): this {
     this._otelCollectorConfig = config;
 
     return this;
