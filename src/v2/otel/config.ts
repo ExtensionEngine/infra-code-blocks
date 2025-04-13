@@ -152,9 +152,9 @@ export class OtelCollectorConfigBuilder {
   }
 
   withMemoryLimiterProcessor(
-    checkInterval = '5s',
+    checkInterval = '1s',
     limitPercentage = 80,
-    spikeLimitPercentage = 25
+    spikeLimitPercentage = 15
   ): this {
     this._processors.memory_limiter = {
       check_interval: checkInterval,

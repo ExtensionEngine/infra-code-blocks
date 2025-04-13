@@ -8,6 +8,17 @@ const awsRegion = 'us-west-2';
 const prometheusNamespace = 'test-namespace';
 const prometheusWriteEndpoint = 'https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-12345/api/v1/remote_write';
 
+const defaultMemoryLimiterConfig = {
+  check_interval: '1s',
+  limit_percentage: 80,
+  spike_limit_percentage: 15
+};
+const defaultBatchConfig = {
+  send_batch_size: 8192,
+  send_batch_max_size: 10000,
+  timeout: '5s'
+};
+
 describe('OtelCollectorConfigBuilder', () => {
   it(
     'should generate minimal configuration with OTLP receiver and debug exporter',
@@ -49,11 +60,7 @@ describe('OtelCollectorConfigBuilder', () => {
     const expected = {
       receivers: {},
       processors: {
-        batch: {
-          send_batch_size: 8192,
-          send_batch_max_size: 10000,
-          timeout: '5s'
-        }
+        batch: defaultBatchConfig
       },
       exporters: {},
       extensions: {},
@@ -73,11 +80,7 @@ describe('OtelCollectorConfigBuilder', () => {
     const expected = {
       receivers: {},
       processors: {
-        memory_limiter: {
-          check_interval: '5s',
-          limit_percentage: 80,
-          spike_limit_percentage: 25
-        }
+        memory_limiter: defaultMemoryLimiterConfig
       },
       exporters: {},
       extensions: {},
@@ -261,16 +264,8 @@ describe('OtelCollectorConfigBuilder', () => {
         }
       },
       processors: {
-        batch: {
-          send_batch_size: 8192,
-          send_batch_max_size: 10000,
-          timeout: '5s'
-        },
-        memory_limiter: {
-          check_interval: '5s',
-          limit_percentage: 80,
-          spike_limit_percentage: 25
-        }
+        batch: defaultBatchConfig,
+        memory_limiter: defaultMemoryLimiterConfig
       },
       exporters: {
         awsxray: { region: awsRegion },
@@ -323,16 +318,8 @@ describe('OtelCollectorConfigBuilder', () => {
         }
       },
       processors: {
-        batch: {
-          send_batch_size: 8192,
-          send_batch_max_size: 10000,
-          timeout: '5s'
-        },
-        memory_limiter: {
-          check_interval: '5s',
-          limit_percentage: 80,
-          spike_limit_percentage: 25
-        }
+        batch: defaultBatchConfig,
+        memory_limiter: defaultMemoryLimiterConfig
       },
       exporters: {
         prometheusremotewrite: {
@@ -407,16 +394,8 @@ describe('OtelCollectorConfigBuilder', () => {
         }
       },
       processors: {
-        batch: {
-          send_batch_size: 8192,
-          send_batch_max_size: 10000,
-          timeout: '5s'
-        },
-        memory_limiter: {
-          check_interval: '5s',
-          limit_percentage: 80,
-          spike_limit_percentage: 25
-        }
+        batch: defaultBatchConfig,
+        memory_limiter: defaultMemoryLimiterConfig
       },
       exporters: {
         prometheusremotewrite: {
