@@ -211,9 +211,10 @@ export class OtelCollector {
       name: 'otel-config-writer',
       image: 'amazonlinux:latest',
       essential: false,
-      command: [
+      command: config.apply(config => [
         'sh', '-c',
-        pulumi.interpolate`echo '${yaml.stringify(config)}' > /etc/otelcol-contrib/config.yaml`],
+        `echo '${yaml.stringify(config)}' > /etc/otelcol-contrib/config.yaml`
+      ]),
       mountPoints: [{
         sourceVolume: volume,
         containerPath: '/etc/otelcol-contrib',
