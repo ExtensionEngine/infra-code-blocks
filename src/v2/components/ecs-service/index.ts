@@ -153,7 +153,7 @@ const defaults = {
   size: 'small',
   environment: [],
   secrets: [],
-  volumes: pulumi.output([]),
+  volumes: [],
   enableServiceAutoDiscovery: false,
   assignPublicIp: false,
   taskExecutionRoleInlinePolicies: [],
