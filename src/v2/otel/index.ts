@@ -89,6 +89,9 @@ export namespace OtelCollector {
   export type Opts = {
     containerName?: pulumi.Input<string>;
     configVolumeName?: pulumi.Input<string>;
+    taskRoleInlinePolicies?: pulumi.Input<
+      pulumi.Input<EcsService.RoleInlinePolicy>[]
+    >;
   };
 }
 
@@ -97,6 +100,7 @@ export class OtelCollector {
   configVolume: pulumi.Output<string>;
   container: pulumi.Output<EcsService.Container>;
   configContainer: EcsService.Container;
+  taskRoleInlinePolicies: OtelCollector.Opts['taskRoleInlinePolicies'];
 
   constructor(
     serviceName: pulumi.Input<string>,
@@ -109,6 +113,7 @@ export class OtelCollector {
     const configVolumeName = opts.configVolumeName ||
       'otel-collector-config-volume';
     this.configVolume = pulumi.output(configVolumeName);
+    this.taskRoleInlinePolicies = opts.taskRoleInlinePolicies || [];
 
     this.config = pulumi.output(config);
     this.configContainer = this.createConfigContainer(

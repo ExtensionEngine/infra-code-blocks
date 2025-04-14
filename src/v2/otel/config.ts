@@ -60,30 +60,8 @@ export class OtelCollectorConfigBuilder {
     return this;
   }
 
-  withPrometheusRemoteWriteExporter(
-    namespace: string,
-    endpoint: string
-  ): this {
-    this._exporters.prometheusremotewrite = {
-      namespace,
-      endpoint,
-      auth: { authenticator: 'sigv4auth' }
-    };
-
-    return this;
-  }
-
   withAWSXRayExporter(region: string): this {
     this._exporters.awsxray = { region };
-
-    return this;
-  }
-
-  withSigV4AuthExtension(region: string): this {
-    this._extensions.sigv4auth = {
-      region,
-      service: 'aps'
-    };
 
     return this;
   }
@@ -100,7 +78,11 @@ export class OtelCollectorConfigBuilder {
     return this;
   }
 
-  withAPS(namespace: string, endpoint: string, region: string): this {
+  withAPS(
+    namespace: pulumi.Input<string>,
+    endpoint: pulumi.Input<string>,
+    region: string
+  ): this {
     this._exporters.prometheusremotewrite = {
       endpoint,
       namespace,
@@ -164,8 +146,8 @@ export class OtelCollectorConfigBuilder {
   }
 
   withDefault(
-    prometheusNamespace: string,
-    prometheusWriteEndpoint: string,
+    prometheusNamespace: pulumi.Input<string>,
+    prometheusWriteEndpoint: pulumi.Input<string>,
     awsRegion: string
   ): this {
     return this.withOTLPReceiver(['http'])

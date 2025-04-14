@@ -157,30 +157,6 @@ describe('OtelCollectorConfigBuilder', () => {
     assert.deepStrictEqual(result, expected);
   });
 
-  it('should configure SigV4Auth extension', () => {
-    const result = new OtelCollectorConfigBuilder()
-      .withSigV4AuthExtension(awsRegion)
-      .build();
-
-    const expected = {
-      receivers: {},
-      processors: {},
-      exporters: {},
-      extensions: {
-        sigv4auth: {
-          region: awsRegion,
-          service: 'aps'
-        }
-      },
-      service: {
-        extensions: ['sigv4auth'],
-        pipelines: {}
-      }
-    };
-
-    assert.deepStrictEqual(result, expected);
-  });
-
   it('should configure health check extension', () => {
     const result = new OtelCollectorConfigBuilder()
       .withHealthCheckExtension()

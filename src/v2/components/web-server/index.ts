@@ -167,6 +167,24 @@ export class WebServer extends pulumi.ComponentResource {
     });
   }
 
+  private getTaskRoleInlinePolicies(
+    args: WebServer.Args
+  ): pulumi.Output<EcsService.RoleInlinePolicy[]> {
+    return pulumi.all([
+      pulumi.output(args.taskExecutionRoleInlinePolicies),
+      args.otelCollector
+    ]).apply(([passedTaskRoleInlinePolicies, otelCollector]) => {
+      const inlinePolicies = [];
+      if (passedTaskRoleInlinePolicies) inlinePolicies.push(...passedTaskRoleInlinePolicies);
+      if (otelCollector && otelCollector.taskRoleInlinePolicies) {
+        inlinePolicies.push(...otelCollector.taskRoleInlinePolicies);
+      }
+
+      return inlinePolicies;
+    });
+  }
+
+
   private createEcsConfig(args: WebServer.Args): WebServer.EcsConfig {
     return {
       vpc: args.vpc,
@@ -175,7 +193,7 @@ export class WebServer extends pulumi.ComponentResource {
       autoscaling: args.autoscaling,
       size: args.size,
       taskExecutionRoleInlinePolicies: args.taskExecutionRoleInlinePolicies,
-      taskRoleInlinePolicies: args.taskRoleInlinePolicies,
+      taskRoleInlinePolicies: this.getTaskRoleInlinePolicies(args),
       tags: args.tags,
     };
   }
