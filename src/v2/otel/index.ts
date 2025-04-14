@@ -86,34 +86,38 @@ export namespace OtelCollector {
     service: Service;
   }
 
-  export type Args = {
-    containerName: pulumi.Input<string>;
-    serviceName: pulumi.Input<string>;
-    env: pulumi.Input<string>;
-    config: pulumi.Input<OtelCollector.Config>;
-    configVolumeName: pulumi.Input<string>;
+  export type Opts = {
+    containerName?: pulumi.Input<string>;
+    configVolumeName?: pulumi.Input<string>;
   };
 }
 
 export class OtelCollector {
+  config: pulumi.Output<OtelCollector.Config>;
+  configVolume: pulumi.Output<string>;
   container: pulumi.Output<EcsService.Container>;
   configContainer: EcsService.Container;
 
-  constructor({
-    containerName,
-    serviceName,
-    env,
-    config,
-    configVolumeName,
-  }: OtelCollector.Args) {
+  constructor(
+    serviceName: pulumi.Input<string>,
+    env: pulumi.Input<string>,
+    config: pulumi.Input<OtelCollector.Config>,
+    opts: OtelCollector.Opts = {}
+  ) {
+    const containerName = opts.containerName ||
+      pulumi.interpolate`${serviceName}-otel-collector`;
+    const configVolumeName = opts.configVolumeName ||
+      'otel-collector-config-volume';
+    this.configVolume = pulumi.output(configVolumeName);
+
+    this.config = pulumi.output(config);
     this.configContainer = this.createConfigContainer(
-      pulumi.output(config),
+      this.config,
       configVolumeName
     );
-
     this.container = this.createContainer(
       containerName,
-      pulumi.output(config),
+      this.config,
       configVolumeName,
       serviceName,
       env
@@ -122,7 +126,7 @@ export class OtelCollector {
 
   private createContainer(
     containerName: pulumi.Input<string>,
-    config: pulumi.Input<OtelCollector.Config>,
+    config: pulumi.Output<OtelCollector.Config>,
     configVolumeName: pulumi.Input<string>,
     serviceName: pulumi.Input<string>,
     env: pulumi.Input<string>
@@ -163,7 +167,7 @@ export class OtelCollector {
     return [{
       name: 'OTEL_RESOURCE_ATTRIBUTES',
       value: `service.name=${serviceName},env=${env}`
-    },];
+    }];
   }
 
   private getCollectorPortMappings(

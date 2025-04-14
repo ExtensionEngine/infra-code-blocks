@@ -7,9 +7,6 @@ import { EcsService } from '../ecs-service';
 import { WebServerLoadBalancer } from './load-balancer';
 import { OtelCollector } from '../../otel';
 
-const stack = pulumi.getStack();
-const otelConfigVolume = { name: 'otel-config-efs-volume' };
-
 export namespace WebServer {
   export type Container = Pick<
     EcsService.Container,
@@ -56,7 +53,7 @@ export namespace WebServer {
       healthCheckPath?: pulumi.Input<string>;
       initContainers?: pulumi.Input<pulumi.Input<WebServer.InitContainer>[]>;
       sidecarContainers?: pulumi.Input<pulumi.Input<WebServer.SidecarContainer>[]>;
-      otelCollectorConfig?: pulumi.Input<OtelCollector.Config>;
+      otelCollector?: pulumi.Input<OtelCollector>;
     };
 }
 
@@ -72,7 +69,6 @@ export class WebServer extends pulumi.ComponentResource {
   volumes?: pulumi.Output<EcsService.PersistentStorageVolume[]>;
   certificate?: AcmCertificate;
   dnsRecord?: aws.route53.Record;
-  otelCollector?: pulumi.Output<OtelCollector>;
 
   constructor(
     name: string,
@@ -81,7 +77,7 @@ export class WebServer extends pulumi.ComponentResource {
   ) {
     super('studion:WebServer', name, args, opts);
 
-    const { vpc, domain, hostedZoneId, otelCollectorConfig } = args;
+    const { vpc, domain, hostedZoneId } = args;
 
     if (domain && !hostedZoneId) {
       throw new Error(
@@ -101,11 +97,6 @@ export class WebServer extends pulumi.ComponentResource {
       healthCheckPath: args.healthCheckPath
     });
     this.serviceSecurityGroup = this.createSecurityGroup(vpc);
-
-    if (otelCollectorConfig) {
-      this.otelCollector = pulumi.output(otelCollectorConfig)
-        .apply(config => this.createOtelCollector(config));
-    }
 
     this.initContainers = this.getInitContainers(args);
     this.sidecarContainers = this.getSidecarContainers(args);
@@ -140,17 +131,20 @@ export class WebServer extends pulumi.ComponentResource {
   private getVolumes(args: WebServer.Args): pulumi.Output<EcsService.PersistentStorageVolume[]> {
     return pulumi.all([
       pulumi.output(args.volumes),
-      this.otelCollector
-    ]).apply(([passedVolumes, otelCollector]) => [
-      ...(passedVolumes || []),
-      ...(otelCollector ? [otelConfigVolume] : [])
-    ]);
+      args.otelCollector
+    ]).apply(([passedVolumes, otelCollector]) => {
+      const volumes = [];
+      if (passedVolumes) volumes.push(...passedVolumes);
+      if (otelCollector) volumes.push({ name: otelCollector.configVolume });
+
+      return volumes;
+    });
   }
 
   private getInitContainers(args: WebServer.Args): pulumi.Output<EcsService.Container[]> {
     return pulumi.all([
       pulumi.output(args.initContainers),
-      this.otelCollector
+      args.otelCollector
     ]).apply(([passedInits, otelCollector]) => {
       const containers = [];
       if (passedInits) containers.push(...passedInits);
@@ -163,7 +157,7 @@ export class WebServer extends pulumi.ComponentResource {
   private getSidecarContainers(args: WebServer.Args): pulumi.Output<EcsService.Container[]> {
     return pulumi.all([
       pulumi.output(args.sidecarContainers),
-      this.otelCollector
+      args.otelCollector
     ]).apply(([passedSidecars, otelCollector]) => {
       const containers = [];
       if (passedSidecars) containers.push(...passedSidecars);
@@ -276,15 +270,5 @@ export class WebServer extends pulumi.ComponentResource {
         evaluateTargetHealth: true,
       }],
     }, { parent: this });
-  }
-
-  private createOtelCollector(config: OtelCollector.Config) {
-    return new OtelCollector({
-      containerName: `${this.name}-otel-collector`,
-      serviceName: this.name,
-      env: stack,
-      config,
-      configVolumeName: otelConfigVolume.name,
-    });
   }
 }

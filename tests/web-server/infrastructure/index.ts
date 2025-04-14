@@ -25,7 +25,7 @@ const sidecar = {
     startPeriod: 10
   }
 };
-const otelCollectorConfig = new studion.openTelemetry.OtelCollectorConfigBuilder()
+const otelCollector = new studion.openTelemetry.OtelCollectorBuilder(serviceName, stackName)
   .withOTLPReceiver()
   .withDebug()
   .withMetricsPipeline(['otlp'], [], ['debug'])
@@ -47,7 +47,7 @@ const webServer = new studion.WebServerBuilder(serviceName)
   .withInitContainer(init)
   .withSidecarContainer(sidecar)
   .withVpc(project.vpc)
-  .withOtelCollector(otelCollectorConfig)
+  .withOtelCollector(otelCollector)
   .build({ parent: cluster });
 
 export { project, webServer };
