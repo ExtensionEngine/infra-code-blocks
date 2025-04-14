@@ -1,13 +1,6 @@
-import type { OtelCollector } from './index';
-
-const OTLPReceiverProtocols = {
-  grpc: {
-    endpoint: '0.0.0.0:4317'
-  },
-  http: {
-    endpoint: '0.0.0.0:4318'
-  }
-};
+import * as pulumi from '@pulumi/pulumi';
+import { OTLPReceiver, Protocol } from './otlp-receiver';
+import type { OtelCollector } from '.';
 
 export class OtelCollectorConfigBuilder {
   private readonly _receivers: OtelCollector.Receiver = {};
@@ -19,14 +12,14 @@ export class OtelCollectorConfigBuilder {
   };
 
   withOTLPReceiver(
-    protocols: OtelCollector.ReceiverProtocol[] = ['http']
+    protocols: OTLPReceiver.Protocol[] = ['http']
   ): this {
     if (!protocols.length) {
       throw new Error('At least one OTLP receiver protocol should be provided');
     }
 
     const protocolsConfig = protocols.reduce((all, current) => {
-      const protocolConfig = OTLPReceiverProtocols[current];
+      const protocolConfig = Protocol[current];
       if (!protocolConfig) {
         throw new Error(`OTLP receiver protocol ${current} is not supported`);
       }

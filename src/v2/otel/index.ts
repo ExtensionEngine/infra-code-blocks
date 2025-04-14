@@ -2,45 +2,22 @@ import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as yaml from 'yaml';
 import { EcsService } from '../components/ecs-service';
+import { OTLPReceiver } from './otlp-receiver';
+import { BatchProcessor } from './batch-processor';
+import { MemoryLimiterProcessor } from './memory-limiter-processor';
+import { PrometheusRemoteWriteExporter } from './prometheus-remote-write-exporter';
 
 export namespace OtelCollector {
-  export type ReceiverType = 'otlp';
-  export type ReceiverProtocol = 'http' | 'grpc';
-  export type ReceiverConfig = {
-    protocols: {
-      [K in ReceiverProtocol]?: {
-        endpoint: string;
-      };
-    };
-  };
   export type Receiver = {
-    [K in ReceiverType]?: ReceiverConfig;
+    otlp?: OTLPReceiver.Config;
   };
+  export type ReceiverType = keyof Receiver;
 
-  export type ProcessorType = 'batch' | 'memory_limiter';
-  export type BatchProcessorConfig = {
-    send_batch_size: number;
-    send_batch_max_size: number;
-    timeout: string;
-  };
-  export type MemoryLimiterProcessorConfig = {
-    check_interval: string;
-    limit_percentage: number;
-    spike_limit_percentage: number;
-  };
   export type Processor = {
-    batch?: BatchProcessorConfig;
-    memory_limiter?: MemoryLimiterProcessorConfig;
+    batch?: BatchProcessor.Config;
+    memory_limiter?: MemoryLimiterProcessor.Config;
   };
-
-  export type ExporterType = 'prometheusremotewrite' | 'awsxray' | 'debug';
-  export type PrometheusRemoteWriteExporterConfig = {
-    namespace: string;
-    endpoint: string;
-    auth?: {
-      authenticator: string;
-    };
-  };
+  export type ProcessorType = keyof Processor;
 
   export type AwsXRayExporterConfig = {
     region: string;
@@ -51,12 +28,12 @@ export namespace OtelCollector {
   };
 
   export type Exporter = {
-    prometheusremotewrite?: PrometheusRemoteWriteExporterConfig;
+    prometheusremotewrite?: PrometheusRemoteWriteExporter.Config;
     awsxray?: AwsXRayExporterConfig;
     debug?: DebugExportedConfig;
   };
+  export type ExporterType = keyof Exporter;
 
-  export type ExtensionType = 'sigv4auth' | 'health_check' | 'pprof';
   export type SigV4AuthExtensionConfig = {
     region: string;
     service: string;
@@ -75,6 +52,7 @@ export namespace OtelCollector {
     health_check?: HealthCheckExtensionConfig;
     pprof?: PprofExtensionConfig;
   };
+  export type ExtensionType = keyof Extension;
 
   export type PipelineConfig = {
     receivers: ReceiverType[];
