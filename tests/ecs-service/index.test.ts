@@ -12,7 +12,6 @@ import { ElasticLoadBalancingV2Client } from '@aws-sdk/client-elastic-load-balan
 import { ServiceDiscoveryClient } from '@aws-sdk/client-servicediscovery';
 import { ApplicationAutoScalingClient } from '@aws-sdk/client-application-auto-scaling';
 import { EFSClient } from '@aws-sdk/client-efs';
-import * as path from 'pathe';
 import { backOff } from 'exponential-backoff';
 import * as automation from '../automation';
 import { EcsTestContext } from './test-context';
@@ -175,11 +174,11 @@ describe('EcsService component deployment', () => {
     assert.ok(taskDef.taskRoleArn, 'Task role should be defined');
 
     assert.ok(
-      taskDef.executionRoleArn.includes(`${ctx.config.minEcsName}-ecs-task-exec-role`),
+      taskDef.executionRoleArn.includes(`${ctx.config.minEcsName}-task-exec-role`),
       'Execution role should have correct name'
     );
     assert.ok(
-      taskDef.taskRoleArn.includes(`${ctx.config.minEcsName}-ecs-task-role`),
+      taskDef.taskRoleArn.includes(`${ctx.config.minEcsName}-task-role`),
       'Task role should have correct name'
     );
   });

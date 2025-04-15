@@ -1,7 +1,7 @@
 import { describe, it, before, after } from 'node:test';
 import * as assert from 'node:assert';
 import { InlineProgramArgs } from '@pulumi/pulumi/automation';
-import { ECSClient } from '@aws-sdk/client-ecs';
+import { DescribeServicesCommand, DescribeTaskDefinitionCommand, ECSClient } from '@aws-sdk/client-ecs';
 import { EC2Client, DescribeSecurityGroupsCommand } from '@aws-sdk/client-ec2';
 import {
   ElasticLoadBalancingV2Client,
@@ -12,7 +12,6 @@ import {
 import { ACMClient } from '@aws-sdk/client-acm';
 import { Route53Client } from '@aws-sdk/client-route-53';
 import { backOff } from 'exponential-backoff';
-import * as path from 'pathe';
 import { request } from 'undici';
 import status from 'http-status';
 import * as automation from '../automation';
@@ -36,7 +35,7 @@ describe('Web server component deployment', () => {
   const ctx: WebServerTestContext = {
     outputs: {},
     config: {
-      webServerName: 'web-server-example',
+      webServerName: 'web-server-test',
       healthCheckPath: '/healthcheck'
     },
     clients: {
@@ -156,6 +155,94 @@ describe('Web server component deployment', () => {
     );
   });
 
+  it('should include init container in task definition', async () => {
+    const webServer = ctx.outputs.webServer.value;
+    const { services } = await ctx.clients.ecs.send(
+      new DescribeServicesCommand({
+        cluster: webServer.ecsConfig.cluster.name,
+        services: [webServer.service.name]
+      })
+    );
+    assert.ok(services && services.length > 0, 'Service should exist');
+    const [service] = services;
+
+    const { taskDefinition } = await ctx.clients.ecs.send(
+      new DescribeTaskDefinitionCommand({ taskDefinition: service.taskDefinition })
+    );
+    assert.ok(taskDefinition, 'Task definition should exist');
+
+    const containerDefs = taskDefinition.containerDefinitions;
+    const initContainer = containerDefs?.find(({ name }) => name === 'init');
+
+    assert.ok(initContainer, 'Init container should be in task definition');
+    assert.strictEqual(initContainer.essential, false, 'Init container should not be essential');
+  });
+
+  it('should include sidecar container in the task definition', async () => {
+    const webServer = ctx.outputs.webServer.value;
+    const { services } = await ctx.clients.ecs.send(
+      new DescribeServicesCommand({
+        cluster: webServer.ecsConfig.cluster.name,
+        services: [webServer.service.name]
+      })
+    );
+    assert.ok(services && services.length > 0, 'Service should exist');
+    const [service] = services;
+
+    const { taskDefinition } = await ctx.clients.ecs.send(
+      new DescribeTaskDefinitionCommand({ taskDefinition: service.taskDefinition })
+    );
+    assert.ok(taskDefinition, 'Task definition should exist');
+
+    const containerDefs = taskDefinition.containerDefinitions;
+    const sidecarContainer = containerDefs?.find(({ name }) => name === 'sidecar');
+
+    assert.ok(sidecarContainer, 'Sidecar container should be in the task definition');
+    assert.strictEqual(sidecarContainer.essential, true, 'Sidecar should be marked as essential');
+  });
+
+  it('should include OpenTelemetry collector when configured', async () => {
+    const webServer = ctx.outputs.webServer.value;
+
+    const { services } = await ctx.clients.ecs.send(
+      new DescribeServicesCommand({
+        cluster: webServer.ecsConfig.cluster.name,
+        services: [webServer.service.name]
+      })
+    );
+    assert.ok(services && services.length > 0, 'Service should exist');
+    const [service] = services;
+
+    const { taskDefinition } = await ctx.clients.ecs.send(
+      new DescribeTaskDefinitionCommand({ taskDefinition: service.taskDefinition })
+    );
+    assert.ok(taskDefinition, 'Task definition should exist');
+
+    const containerDefs = taskDefinition.containerDefinitions;
+    const collectorContainerName = `${ctx.config.webServerName}-otel-collector`;
+    const collectorContainer = containerDefs?.find(containerDef => {
+      return containerDef.name === collectorContainerName
+    });
+
+    assert.ok(collectorContainer, 'OTel collector container should be in task definition');
+
+    const hasConfigVolume = collectorContainer.mountPoints?.some(mountPoint => {
+      return mountPoint.sourceVolume === 'otel-config-efs-volume'
+    });
+    assert.ok(hasConfigVolume, 'OTel collector should have config volume mounted');
+
+    const configContainer = containerDefs?.find(containerDef => {
+      return containerDef.name === webServer.otelCollector?.configContainer.name;
+    });
+    assert.ok(configContainer, 'OTel config container should be in task definition');
+    assert.strictEqual(configContainer.essential, false, 'Config container should not be essential');
+
+    const hasOtelVolume = taskDefinition.volumes?.some(
+      volume => volume.name === 'otel-config-efs-volume'
+    );
+    assert.ok(hasOtelVolume, 'Task definition should include OTel config volume');
+  });
+
   it('should receive 200 status code from the healthcheck endpoint', () => {
     const webServer = ctx.outputs.webServer.value;
     const webServerLbDns = webServer.lb.lb.dnsName;
@@ -172,7 +259,6 @@ describe('Web server component deployment', () => {
         throw new NonRetryableError('Healthcheck endpoint not found');
       }
 
-      const body = await response.body.text();
       assert.strictEqual(
         response.statusCode,
         status.OK,
