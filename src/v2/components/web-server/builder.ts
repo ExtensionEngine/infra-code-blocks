@@ -104,8 +104,12 @@ export class WebServerBuilder {
     return this;
   }
 
-  public withCustomHealthCheckPath(path: WebServer.Args['healthCheckPath']) {
+  public withCustomHealthCheckPath(
+    path: WebServer.Args['healthCheckPath']
+  ): this {
     this._healthCheckPath = path;
+
+    return this;
   }
 
   public build(opts: pulumi.ComponentResourceOptions = {}): WebServer {

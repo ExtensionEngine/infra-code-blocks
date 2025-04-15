@@ -16,6 +16,7 @@ import { request } from 'undici';
 import status from 'http-status';
 import * as automation from '../automation';
 import { WebServerTestContext } from './test-context';
+import * as config from './infrastructure/config';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -34,10 +35,7 @@ describe('Web server component deployment', () => {
   const region = process.env.AWS_REGION || 'us-east-2';
   const ctx: WebServerTestContext = {
     outputs: {},
-    config: {
-      webServerName: 'web-server-test',
-      healthCheckPath: '/healthcheck'
-    },
+    config,
     clients: {
       ecs: new ECSClient({ region }),
       ec2: new EC2Client({ region }),
@@ -203,6 +201,7 @@ describe('Web server component deployment', () => {
 
   it('should include OpenTelemetry collector when configured', async () => {
     const webServer = ctx.outputs.webServer.value;
+    const otelCollector = ctx.outputs.otelCollector.value;
 
     const { services } = await ctx.clients.ecs.send(
       new DescribeServicesCommand({
@@ -219,26 +218,26 @@ describe('Web server component deployment', () => {
     assert.ok(taskDefinition, 'Task definition should exist');
 
     const containerDefs = taskDefinition.containerDefinitions;
-    const collectorContainerName = `${ctx.config.webServerName}-otel-collector`;
     const collectorContainer = containerDefs?.find(containerDef => {
-      return containerDef.name === collectorContainerName
+      return containerDef.name === otelCollector.container.name;
     });
 
     assert.ok(collectorContainer, 'OTel collector container should be in task definition');
 
     const hasConfigVolume = collectorContainer.mountPoints?.some(mountPoint => {
-      return mountPoint.sourceVolume === 'otel-config-efs-volume'
+      return mountPoint.sourceVolume === otelCollector.configVolume;
     });
     assert.ok(hasConfigVolume, 'OTel collector should have config volume mounted');
 
     const configContainer = containerDefs?.find(containerDef => {
-      return containerDef.name === webServer.otelCollector?.configContainer.name;
+      return containerDef.name === otelCollector.configContainer.name
     });
+
     assert.ok(configContainer, 'OTel config container should be in task definition');
     assert.strictEqual(configContainer.essential, false, 'Config container should not be essential');
 
     const hasOtelVolume = taskDefinition.volumes?.some(
-      volume => volume.name === 'otel-config-efs-volume'
+      volume => volume.name === otelCollector.configVolume
     );
     assert.ok(hasOtelVolume, 'Task definition should include OTel config volume');
   });
