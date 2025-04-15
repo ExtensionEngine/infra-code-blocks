@@ -10,6 +10,9 @@ export async function deploy(args: InlineProgramArgs): Promise<OutputMap> {
   const spinner = createSpinner('Deploying stack...').start();
   const stack = await LocalWorkspace.createOrSelectStack(args);
   await stack.setConfig('aws:region', { value: 'us-east-2' });
+  await stack.setConfig('aws:skipCredentialsValidation', { value: 'true' });
+  await stack.setConfig('aws:skipRequestingAccountId', { value: 'true ' });
+  await stack.setConfig('aws:s3UsePathStyle', { value: 'true' });
   const up = await stack.up({ logToStdErr: true });
   spinner.success({ text: 'Stack deployed' });
 

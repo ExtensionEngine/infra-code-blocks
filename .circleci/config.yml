@@ -5,7 +5,8 @@ orbs:
   security: studion/security@2.0.0
   aws-cli: circleci/aws-cli@5.2.0
   node: circleci/node@7.1.0
-  
+  localstack: localstack/platform@2.2.0
+
 change-filters: &change-filters
   branches:
     ignore: master
@@ -15,7 +16,22 @@ trunk-filters: &trunk-filters
     only: master
 
 commands:
+  setup-local-aws:
+    steps:
+      - aws-cli/install
+      - run:
+          name: 'Setup localstack profile'
+          command: |
+            aws configure set aws_access_key_id test --profile localstack
+            aws configure set aws_secret_access_key test --profile localstack
+            aws configure set ignore_configure_endpoint_urls true --profile localstack
+            aws configure set endpoint_url http://localhost:4566 --profile localstack
   setup-pulumi:
+    parameters:
+      local:
+        type: boolean
+        description: Whether to use the local backend.
+        default: false
     steps:
       - run:
           name: Install Pulumi
@@ -23,12 +39,21 @@ commands:
             curl -sSL https://get.pulumi.com/ | bash -s
             echo 'export PATH=${HOME}/.pulumi/bin:$PATH' >> $BASH_ENV
             source $BASH_ENV
-      - run:
-          name: Login into Pulumi Cloud
-          command: pulumi login
-      - run:
-          name: Set default Pulumi Organization
-          command: pulumi org set-default extensionengine
+      - when:
+          condition: <<parameters.local>>
+          steps:
+            - run:
+                name: Login into local backend
+                command: pulumi login --local
+      - unless:
+          condition: <<parameters.local>>
+          steps:
+            - run:
+                name: Login into Pulumi Cloud
+                command: pulumi login
+            - run:
+                name: Set default Pulumi Organization
+                command: pulumi org set-default extensionengine
 
 jobs:
   detect-leaks:
@@ -62,7 +87,28 @@ jobs:
       - core/run_script:
           skip_install_dependencies: true
           script: 'build && ${DEFAULT_PKG_MANAGER} run test'
-      
+  test-components-local:
+    machine:
+      image: ubuntu-2204:current
+    environment:
+      AWS_PROFILE: localstack
+      PULUMI_CONFIG_PASSPHRASE: test
+    steps:
+      - checkout
+      - setup-local-aws
+      - localstack/start:
+          install-awslocal: false
+      - setup-pulumi:
+          local: true
+      - node/install
+      - core/install_dependencies
+      - core/install_dependencies:
+          pkg_json_dir: './tests'
+      - localstack/wait
+      - core/run_script:
+          skip_install_dependencies: true
+          script: 'build && ${DEFAULT_PKG_MANAGER} run test'
+
 workflows:
   scan-and-test:
     jobs:
@@ -75,3 +121,5 @@ workflows:
           filters: *trunk-filters
       - test-components:
           filters: *trunk-filters
+      - test-components-local:
+          filters: *change-filters
