@@ -129,13 +129,13 @@ export class OtelCollector {
     configVolumeName,
   }: OtelCollector.Args) {
     this.configContainer = this.createConfigContainer(
-      config,
+      pulumi.output(config),
       configVolumeName
     );
 
     this.container = this.createContainer(
       containerName,
-      config,
+      pulumi.output(config),
       configVolumeName,
       serviceName,
       env
@@ -204,7 +204,7 @@ export class OtelCollector {
   }
 
   private createConfigContainer(
-    config: pulumi.Input<OtelCollector.Config>,
+    config: pulumi.Output<OtelCollector.Config>,
     volume: pulumi.Input<string>
   ): EcsService.Container {
     return {
