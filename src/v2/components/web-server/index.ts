@@ -5,7 +5,7 @@ import { commonTags } from '../../../constants';
 import { AcmCertificate } from '../../../components/acm-certificate';
 import { EcsService } from '../ecs-service';
 import { WebServerLoadBalancer } from './load-balancer';
-import { OtelCollector } from '../../otel/container';
+import { OtelCollector } from '../../otel';
 
 const stack = pulumi.getStack();
 const otelConfigVolume = { name: 'otel-config-efs-volume' };
@@ -56,7 +56,7 @@ export namespace WebServer {
       healthCheckPath?: pulumi.Input<string>;
       initContainers?: pulumi.Input<pulumi.Input<WebServer.InitContainer>[]>;
       sidecarContainers?: pulumi.Input<pulumi.Input<WebServer.SidecarContainer>[]>;
-      otelCollectorConfig?: pulumi.Input<string>;
+      otelCollectorConfig?: pulumi.Input<OtelCollector.Config>;
     };
 }
 
@@ -278,7 +278,7 @@ export class WebServer extends pulumi.ComponentResource {
     }, { parent: this });
   }
 
-  private createOtelCollector(config: string) {
+  private createOtelCollector(config: OtelCollector.Config) {
     return new OtelCollector({
       containerName: `${this.name}-otel-collector`,
       serviceName: this.name,

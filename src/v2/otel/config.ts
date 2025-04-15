@@ -1,105 +1,7 @@
-import * as yaml from 'yaml';
-
-export namespace OtelCollectorConfigBuilder {
-  export type ReceiverType = 'otlp';
-  export type ReceiverProtocol = 'http' | 'rpc';
-  export type ReceiverConfig = {
-    protocols: {
-      [K in ReceiverProtocol]?: {
-        endpoint: string;
-      };
-    };
-  };
-  export type Receiver = {
-    [K in ReceiverType]?: ReceiverConfig;
-  };
-
-  export type ProcessorType = 'batch' | 'memory_limiter';
-  export type BatchProcessorConfig = {
-    send_batch_size: number;
-    send_batch_max_size: number;
-    timeout: string;
-  };
-  export type MemoryLimiterProcessorConfig = {
-    check_interval: string;
-    limit_percentage: number;
-    spike_limit_percentage: number;
-  };
-  export type Processor = {
-    batch?: BatchProcessorConfig;
-    memory_limiter?: MemoryLimiterProcessorConfig;
-  };
-
-  export type ExporterType = 'prometheusremotewrite' | 'awsxray' | 'debug';
-  export type PrometheusRemoteWriteExporterConfig = {
-    namespace: string;
-    endpoint: string;
-    auth?: {
-      authenticator: string;
-    };
-  };
-
-  export type AwsXRayExporterConfig = {
-    region: string;
-  };
-
-  export type DebugExportedConfig = {
-    verbosity: string;
-  };
-
-  export type Exporter = {
-    prometheusremotewrite?: PrometheusRemoteWriteExporterConfig;
-    awsxray?: AwsXRayExporterConfig;
-    debug?: DebugExportedConfig;
-  };
-
-  export type ExtensionType = 'sigv4auth' | 'health_check' | 'pprof';
-  export type SigV4AuthExtensionConfig = {
-    region: string;
-    service: string;
-  };
-
-  export type HealthCheckExtensionConfig = {
-    endpoint: string;
-  };
-
-  export type PprofExtensionConfig = {
-    endpoint: string;
-  };
-
-  export type Extension = {
-    sigv4auth?: SigV4AuthExtensionConfig;
-    health_check?: HealthCheckExtensionConfig;
-    pprof?: PprofExtensionConfig;
-  };
-
-  export type PipelineConfig = {
-    receivers: ReceiverType[];
-    processors: ProcessorType[];
-    exporters: ExporterType[];
-  };
-
-  export type TelemetryConfig = {
-    logs?: {
-      level: string;
-    };
-    metrics?: {
-      level: string;
-    };
-  };
-
-  export type Service = {
-    pipelines: {
-      metrics?: PipelineConfig;
-      traces?: PipelineConfig;
-    };
-    extensions?: ExtensionType[];
-    telemetry?: TelemetryConfig;
-  };
-}
+import type { OtelCollector } from './index';
 
 const OTLPReceiverProtocols = {
-  rpc: {
+  grpc: {
     endpoint: '0.0.0.0:4317'
   },
   http: {
@@ -108,16 +10,16 @@ const OTLPReceiverProtocols = {
 };
 
 export class OtelCollectorConfigBuilder {
-  private readonly _receivers: OtelCollectorConfigBuilder.Receiver = {};
-  private readonly _processors: OtelCollectorConfigBuilder.Processor = {};
-  private readonly _exporters: OtelCollectorConfigBuilder.Exporter = {};
-  private readonly _extensions: OtelCollectorConfigBuilder.Extension = {};
-  private readonly _service: OtelCollectorConfigBuilder.Service = {
+  private readonly _receivers: OtelCollector.Receiver = {};
+  private readonly _processors: OtelCollector.Processor = {};
+  private readonly _exporters: OtelCollector.Exporter = {};
+  private readonly _extensions: OtelCollector.Extension = {};
+  private readonly _service: OtelCollector.Service = {
     pipelines: {}
   };
 
   withOTLPReceiver(
-    protocols: OtelCollectorConfigBuilder.ReceiverProtocol[] = ['http']
+    protocols: OtelCollector.ReceiverProtocol[] = ['http']
   ): this {
     if (!protocols.length) {
       throw new Error('At least one OTLP receiver protocol should be provided');
@@ -152,9 +54,9 @@ export class OtelCollectorConfigBuilder {
   }
 
   withMemoryLimiterProcessor(
-    checkInterval = '5s',
+    checkInterval = '1s',
     limitPercentage = 80,
-    spikeLimitPercentage = 25
+    spikeLimitPercentage = 15
   ): this {
     this._processors.memory_limiter = {
       check_interval: checkInterval,
@@ -241,9 +143,9 @@ export class OtelCollectorConfigBuilder {
   }
 
   withMetricsPipeline(
-    receivers: OtelCollectorConfigBuilder.ReceiverType[],
-    processors: OtelCollectorConfigBuilder.ProcessorType[],
-    exporters: OtelCollectorConfigBuilder.ExporterType[],
+    receivers: OtelCollector.ReceiverType[],
+    processors: OtelCollector.ProcessorType[],
+    exporters: OtelCollector.ExporterType[],
   ): this {
     this._service.pipelines.metrics = {
       receivers,
@@ -255,9 +157,9 @@ export class OtelCollectorConfigBuilder {
   }
 
   withTracesPipeline(
-    receivers: OtelCollectorConfigBuilder.ReceiverType[],
-    processors: OtelCollectorConfigBuilder.ProcessorType[],
-    exporters: OtelCollectorConfigBuilder.ExporterType[],
+    receivers: OtelCollector.ReceiverType[],
+    processors: OtelCollector.ProcessorType[],
+    exporters: OtelCollector.ExporterType[],
   ): this {
     this._service.pipelines.traces = {
       receivers,
@@ -274,8 +176,8 @@ export class OtelCollectorConfigBuilder {
     awsRegion: string
   ): this {
     return this.withOTLPReceiver(['http'])
-      .withBatchProcessor()
       .withMemoryLimiterProcessor()
+      .withBatchProcessor()
       .withAPS(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
       .withAWSXRayExporter(awsRegion)
       .withHealthCheckExtension()
@@ -292,26 +194,40 @@ export class OtelCollectorConfigBuilder {
       .withTelemetry();
   }
 
-  build(): string {
+  build(): OtelCollector.Config {
     this.validatePipelineComponents('metrics');
     this.validatePipelineComponents('traces');
+    this.validatePipelineProcessorOrder('metrics');
+    this.validatePipelineProcessorOrder('traces');
 
     // FIX: Fix type inference
     const extensions = Object.keys(
       this._extensions
-    ) as OtelCollectorConfigBuilder.ExtensionType[];
+    ) as OtelCollector.ExtensionType[];
     if (extensions.length) {
       this._service.extensions = extensions;
     }
 
     // TODO: Add schema validation (non-empty receivers, non-empty receiver protocols)
-    return yaml.stringify({
+    return {
       receivers: this._receivers,
       processors: this._processors,
       exporters: this._exporters,
       extensions: this._extensions,
       service: this._service
-    });
+    };
+  }
+
+  private validatePipelineProcessorOrder(pipelineType: 'metrics' | 'traces'): void {
+    const pipeline = this._service.pipelines[pipelineType];
+    if (!pipeline) return;
+
+    const { processors } = pipeline;
+    const memoryLimiterIndex = processors
+      .findIndex(processor => processor === 'memory_limiter');
+    if (memoryLimiterIndex > 0) {
+      throw new Error(`memory_limiter processor is not the first processor in the ${pipelineType} pipeline.`);
+    }
   }
 
   private validatePipelineComponents(pipelineType: 'metrics' | 'traces'): void {

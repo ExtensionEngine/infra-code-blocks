@@ -4,5 +4,5 @@ export { WebServerBuilder } from './components/web-server/builder';
 export { WebServerLoadBalancer } from './components/web-server/load-balancer';
 
 import { OtelCollectorConfigBuilder } from './otel/config';
-import { OtelCollector } from './otel/container';
+import { OtelCollector } from './otel';
 export const openTelemetry = { OtelCollector, OtelCollectorConfigBuilder };

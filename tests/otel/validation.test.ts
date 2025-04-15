@@ -97,4 +97,34 @@ export function testOtelCollectorConfigBuilderValidation() {
       message: "Exporter 'awsxray' is used in traces pipeline but not defined"
     });
   });
+
+  it('should throw error when memory_limiter is not the first processor in traces pipeline ', () => {
+    const createInvalidConfig = () => new OtelCollectorConfigBuilder()
+      .withOTLPReceiver(['http'])
+      .withMemoryLimiterProcessor()
+      .withBatchProcessor()
+      .withDebug()
+      .withTracesPipeline(['otlp'], ['batch', 'memory_limiter'], ['debug'])
+      .build();
+
+    assert.throws(createInvalidConfig, {
+      name: 'Error',
+      message: 'memory_limiter processor is not the first processor in the traces pipeline.'
+    });
+  });
+
+  it('should throw error when memory_limiter is not the first processor in metrics pipeline ', () => {
+    const createInvalidConfig = () => new OtelCollectorConfigBuilder()
+      .withOTLPReceiver(['http'])
+      .withMemoryLimiterProcessor()
+      .withBatchProcessor()
+      .withDebug()
+      .withMetricsPipeline(['otlp'], ['batch', 'memory_limiter'], ['debug'])
+      .build();
+
+    assert.throws(createInvalidConfig, {
+      name: 'Error',
+      message: 'memory_limiter processor is not the first processor in the metrics pipeline.'
+    });
+  });
 }
