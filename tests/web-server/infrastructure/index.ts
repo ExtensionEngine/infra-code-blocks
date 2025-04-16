@@ -1,11 +1,11 @@
 import { Project, next as studion } from '@studion/infra-code-blocks';
 import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
+import { webServerName, healthCheckPath } from './config';
 
-const serviceName = 'web-server-test';
 const stackName = pulumi.getStack();
-const project: Project = new Project(serviceName, { services: [] });
-const tags = { Env: stackName, Project: serviceName };
+const project: Project = new Project(webServerName, { services: [] });
+const tags = { Env: stackName, Project: webServerName };
 const init = {
   name: 'init',
   image: 'busybox:latest',
@@ -25,18 +25,18 @@ const sidecar = {
     startPeriod: 10
   }
 };
-const otelCollectorConfig = new studion.openTelemetry.OtelCollectorConfigBuilder()
+const otelCollector = new studion.openTelemetry.OtelCollectorBuilder(webServerName, stackName)
   .withOTLPReceiver()
   .withDebug()
   .withMetricsPipeline(['otlp'], [], ['debug'])
   .build();
 
-const cluster = new aws.ecs.Cluster(`${serviceName}-cluster`, {
-  name: `${serviceName}-cluster-${stackName}`,
+const cluster = new aws.ecs.Cluster(`${webServerName}-cluster`, {
+  name: `${webServerName}-cluster-${stackName}`,
   tags
 });
 
-const webServer = new studion.WebServerBuilder(serviceName)
+const webServer = new studion.WebServerBuilder(webServerName)
   .configureWebServer('nginxdemos/nginx-hello:plain-text', 8080)
   .configureEcs({
     cluster,
@@ -47,7 +47,8 @@ const webServer = new studion.WebServerBuilder(serviceName)
   .withInitContainer(init)
   .withSidecarContainer(sidecar)
   .withVpc(project.vpc)
-  .withOtelCollector(otelCollectorConfig)
+  .withOtelCollector(otelCollector)
+  .withCustomHealthCheckPath(healthCheckPath)
   .build({ parent: cluster });
 
-export { project, webServer };
+export { project, webServer, otelCollector };

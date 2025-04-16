@@ -3,6 +3,6 @@ export { WebServer } from './components/web-server';
 export { WebServerBuilder } from './components/web-server/builder';
 export { WebServerLoadBalancer } from './components/web-server/load-balancer';
 
-import { OtelCollectorConfigBuilder } from './otel/config';
+import { OtelCollectorBuilder } from './otel/builder';
 import { OtelCollector } from './otel';
-export const openTelemetry = { OtelCollector, OtelCollectorConfigBuilder };
+export const openTelemetry = { OtelCollector, OtelCollectorBuilder };

@@ -27,7 +27,7 @@ export class WebServerBuilder {
   private _domain?: pulumi.Input<string>;
   private _hostedZoneId?: pulumi.Input<string>;
   private _healthCheckPath?: pulumi.Input<string>;
-  private _otelCollectorConfig?: pulumi.Input<OtelCollector.Config>;
+  private _otelCollector?: pulumi.Input<OtelCollector>;
   private _initContainers: pulumi.Input<WebServer.InitContainer>[] = [];
   private _sidecarContainers: pulumi.Input<WebServer.SidecarContainer>[] = [];
   private _volumes: EcsService.PersistentStorageVolume[] = [];
@@ -98,14 +98,18 @@ export class WebServerBuilder {
     return this;
   }
 
-  public withOtelCollector(config: pulumi.Input<OtelCollector.Config>): this {
-    this._otelCollectorConfig = config;
+  public withOtelCollector(collector: OtelCollector): this {
+    this._otelCollector = collector;
 
     return this;
   }
 
-  public withCustomHealthCheckPath(path: WebServer.Args['healthCheckPath']) {
+  public withCustomHealthCheckPath(
+    path: WebServer.Args['healthCheckPath']
+  ): this {
     this._healthCheckPath = path;
+
+    return this;
   }
 
   public build(opts: pulumi.ComponentResourceOptions = {}): WebServer {
@@ -128,7 +132,7 @@ export class WebServerBuilder {
       domain: this._domain,
       hostedZoneId: this._hostedZoneId,
       healthCheckPath: this._healthCheckPath,
-      otelCollectorConfig: this._otelCollectorConfig,
+      otelCollector: this._otelCollector,
       initContainers: this._initContainers,
       sidecarContainers: this._sidecarContainers
     }, opts)

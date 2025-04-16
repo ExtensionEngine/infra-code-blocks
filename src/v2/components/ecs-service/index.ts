@@ -1,7 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
-import { Policy } from '@pulumi/aws/iam/policy';
 import { CustomSize, Size } from '../../../types/size';
 import { PredefinedSize, commonTags } from '../../../constants';
 import { assumeRolePolicy } from './policies';
@@ -70,6 +69,8 @@ export namespace EcsService {
     targetGroupArn: aws.lb.TargetGroup['arn'];
   };
 
+  export type RoleInlinePolicy = aws.types.input.iam.RoleInlinePolicy;
+
   export type Args = {
     cluster: pulumi.Input<aws.ecs.Cluster>;
     vpc: pulumi.Input<awsx.ec2.Vpc>;
@@ -98,8 +99,12 @@ export namespace EcsService {
      */
     securityGroup?: pulumi.Input<aws.ec2.SecurityGroup>;
     assignPublicIp?: pulumi.Input<boolean>;
-    taskExecutionRoleInlinePolicies?: pulumi.Input<pulumi.Input<Policy>[]>;
-    taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<Policy>[]>;
+    taskExecutionRoleInlinePolicies?: pulumi.Input<
+      pulumi.Input<RoleInlinePolicy>[]
+    >;
+    taskRoleInlinePolicies?: pulumi.Input<
+      pulumi.Input<RoleInlinePolicy>[]
+    >;
     /**
      * Registers tasks with AWS Cloud Map and creates discoverable DNS entries for each task.
      * Simplifies service-to-service communication by enabling service finding based on DNS records such as `http://serviceName.local`.
@@ -332,7 +337,7 @@ export class EcsService extends pulumi.ComponentResource {
   }
 
   private createTaskExecutionRole(
-    inlinePolicies: pulumi.Output<Policy[]>
+    inlinePolicies: pulumi.Output<EcsService.RoleInlinePolicy[]>
   ): aws.iam.Role {
     const secretManagerSecretsInlinePolicy = {
       name: `${this.name}-secret-manager-access`,
@@ -371,7 +376,7 @@ export class EcsService extends pulumi.ComponentResource {
   }
 
   private createTaskRole(
-    inlinePolicies: pulumi.Output<Policy[]>
+    inlinePolicies: pulumi.Output<EcsService.RoleInlinePolicy[]>
   ): aws.iam.Role {
     const execCmdInlinePolicy = {
       name: `${this.name}-exec`,

@@ -1,13 +1,6 @@
-import type { OtelCollector } from './index';
-
-const OTLPReceiverProtocols = {
-  grpc: {
-    endpoint: '0.0.0.0:4317'
-  },
-  http: {
-    endpoint: '0.0.0.0:4318'
-  }
-};
+import * as pulumi from '@pulumi/pulumi';
+import { OTLPReceiver, Protocol } from './otlp-receiver';
+import type { OtelCollector } from '.';
 
 export class OtelCollectorConfigBuilder {
   private readonly _receivers: OtelCollector.Receiver = {};
@@ -19,14 +12,14 @@ export class OtelCollectorConfigBuilder {
   };
 
   withOTLPReceiver(
-    protocols: OtelCollector.ReceiverProtocol[] = ['http']
+    protocols: OTLPReceiver.Protocol[] = ['http']
   ): this {
     if (!protocols.length) {
       throw new Error('At least one OTLP receiver protocol should be provided');
     }
 
     const protocolsConfig = protocols.reduce((all, current) => {
-      const protocolConfig = OTLPReceiverProtocols[current];
+      const protocolConfig = Protocol[current];
       if (!protocolConfig) {
         throw new Error(`OTLP receiver protocol ${current} is not supported`);
       }
@@ -67,30 +60,8 @@ export class OtelCollectorConfigBuilder {
     return this;
   }
 
-  withPrometheusRemoteWriteExporter(
-    namespace: string,
-    endpoint: string
-  ): this {
-    this._exporters.prometheusremotewrite = {
-      namespace,
-      endpoint,
-      auth: { authenticator: 'sigv4auth' }
-    };
-
-    return this;
-  }
-
   withAWSXRayExporter(region: string): this {
     this._exporters.awsxray = { region };
-
-    return this;
-  }
-
-  withSigV4AuthExtension(region: string): this {
-    this._extensions.sigv4auth = {
-      region,
-      service: 'aps'
-    };
 
     return this;
   }
@@ -107,7 +78,11 @@ export class OtelCollectorConfigBuilder {
     return this;
   }
 
-  withAPS(namespace: string, endpoint: string, region: string): this {
+  withAPS(
+    namespace: pulumi.Input<string>,
+    endpoint: pulumi.Input<string>,
+    region: string
+  ): this {
     this._exporters.prometheusremotewrite = {
       endpoint,
       namespace,
@@ -171,8 +146,8 @@ export class OtelCollectorConfigBuilder {
   }
 
   withDefault(
-    prometheusNamespace: string,
-    prometheusWriteEndpoint: string,
+    prometheusNamespace: pulumi.Input<string>,
+    prometheusWriteEndpoint: pulumi.Input<string>,
     awsRegion: string
   ): this {
     return this.withOTLPReceiver(['http'])
