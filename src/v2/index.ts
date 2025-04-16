@@ -6,3 +6,5 @@ export { WebServerLoadBalancer } from './components/web-server/load-balancer';
 import { OtelCollectorBuilder } from './otel/builder';
 import { OtelCollector } from './otel';
 export const openTelemetry = { OtelCollector, OtelCollectorBuilder };
+
+export * as grafana from './components/grafana';
