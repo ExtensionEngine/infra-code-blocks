@@ -8,3 +8,4 @@ import { OtelCollector } from './otel';
 export const openTelemetry = { OtelCollector, OtelCollectorBuilder };
 
 export * as grafana from './components/grafana';
+export * as prometheus from './components/prometheus';
