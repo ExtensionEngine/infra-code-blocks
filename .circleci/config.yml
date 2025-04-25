@@ -5,7 +5,7 @@ orbs:
   security: studion/security@2.0.0
   aws-cli: circleci/aws-cli@5.2.0
   node: circleci/node@7.1.0
-  
+
 change-filters: &change-filters
   branches:
     ignore: master
@@ -56,13 +56,9 @@ jobs:
           role_arn: ${AWS_ROLE_ARN}
       - setup-pulumi
       - node/install
-      - core/install_dependencies
-      - core/install_dependencies:
-          pkg_json_dir: './tests'
       - core/run_script:
-          skip_install_dependencies: true
-          script: 'build && ${DEFAULT_PKG_MANAGER} run test'
-      
+          script: 'test'
+
 workflows:
   scan-and-test:
     jobs:

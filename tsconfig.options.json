@@ -1,17 +1,22 @@
 {
   "compilerOptions": {
-    "strict": true,
-    "outDir": "dist",
+    "pretty": true,
     "target": "ES2016",
     "module": "commonjs",
     "moduleResolution": "node",
+
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "noEmitOnError": true,
     "sourceMap": false,
+
+    "strict": true,
     "experimentalDecorators": true,
-    "pretty": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "forceConsistentCasingInFileNames": true,
-    "declaration": true,
+
     "skipLibCheck": true
   }
 }

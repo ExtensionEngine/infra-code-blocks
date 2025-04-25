@@ -1,4 +1,12 @@
 {
-  "extends": "./tsconfig.base.json",
-  "files": ["src/index.ts"]
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "./src"
+    },
+    {
+      "path": "./tests"
+    }
+  ]
 }
