@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.options.json",
+  "files": [],
+  "include": ["**/*"],
+  "exclude": ["**/app"],
+  "references": [{ "path": "../src" }],
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": {
+      "@studion/infra-code-blocks": ["../src/index.ts"]
+    }
+  },
+  "ts-node": {
+    "transpileOnly": true,
+    "require": ["tsconfig-paths/register"]
+  }
+}
