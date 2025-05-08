@@ -1,0 +1,10 @@
+{
+  "include": ["**/*"],
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "paths": {
+      "@studion/infra-code-blocks": ["../../dist/index"]
+    }
+  }
+}

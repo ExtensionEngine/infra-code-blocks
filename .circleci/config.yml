@@ -47,6 +47,12 @@ jobs:
       - checkout
       - security/scan_dependencies:
           pkg_json_dir: <<parameters.pkg_json_dir>>
+  test-build:
+    executor: core/node
+    steps:
+      - checkout
+      - core/run_script:
+          script: 'test:build'
   test-components:
     machine:
       image: ubuntu-2204:current
@@ -69,5 +75,7 @@ workflows:
       - security/detect_secrets_dir:
           name: detect-secrets
           filters: *trunk-filters
+      - test-build:
+          filters: *change-filters
       - test-components:
           filters: *trunk-filters
