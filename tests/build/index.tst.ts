@@ -1,6 +1,6 @@
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
-import { describe, expect, test as it } from 'tstyche';
+import { describe, expect, it } from 'tstyche';
 import { next as studion } from '@studion/infra-code-blocks';
 import { OtelCollector } from '../../dist/v2/otel';
 import { OtelCollectorBuilder } from '../../dist/v2/otel/builder';
