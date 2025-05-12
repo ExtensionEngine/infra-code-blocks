@@ -5,6 +5,13 @@ const countPostfix = 'count';
 const bucketPostfix = 'bucket';
 const httpStatusCodeLabel = 'http_status_code';
 
+export function getBurnRateQuery(
+  metricQuery: string,
+  target: number
+): string {
+  return `(1 - ${metricQuery}) / ${(1 - target).toFixed(5)}`
+}
+
 export function getAvailabilityQuery(
   namespace: string,
   timeRange: TimeRange
@@ -20,7 +27,14 @@ export function getAvailabilityQuery(
     timeRange
   );
 
-  return `(${successfulRequestsQuery}) / (${totalRequestsQuery}) * 100`;
+  return `${successfulRequestsQuery} / ${totalRequestsQuery}`;
+}
+
+export function getAvailabilityPercentageQuery(
+  namespace: string,
+  timeRange: TimeRange
+): string {
+  return `${getAvailabilityQuery(namespace, timeRange)} * 100`;
 }
 
 export function getSuccessRateQuery(
@@ -42,7 +56,15 @@ export function getSuccessRateQuery(
     totalFilter
   );
 
-  return `(${successfulRequestsQuery}) / (${totalRequestsQuery}) * 100`;
+  return `${successfulRequestsQuery} / ${totalRequestsQuery}`;
+}
+
+export function getSuccessPercentageQuery(
+  namespace: string,
+  timeRange: TimeRange,
+  filter: string
+): string {
+  return `${getSuccessRateQuery(namespace, timeRange, filter)} * 100`;
 }
 
 export function getPercentileLatencyQuery(
@@ -57,7 +79,7 @@ export function getPercentileLatencyQuery(
   return `histogram_quantile(${percentile}, ${bucketRate})`;
 }
 
-export function getLatencyPercentageQuery(
+export function getLatencyRateQuery(
   namespace: string,
   timeRange: TimeRange,
   threshold: number,
@@ -72,7 +94,16 @@ export function getLatencyPercentageQuery(
   );
   const totalRequests = getCountRate(namespace, timeRange, filter);
 
-  return `(${requestsUnderThreshold}) / (${totalRequests}) * 100`;
+  return `${requestsUnderThreshold} / ${totalRequests}`;
+}
+
+export function getLatencyPercentageQuery(
+  namespace: string,
+  timeRange: TimeRange,
+  threshold: number,
+  filter?: string
+): string {
+  return `${getLatencyRateQuery(namespace, timeRange, threshold, filter)} * 100`;
 }
 
 function getCountRate(

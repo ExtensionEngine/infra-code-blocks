@@ -85,3 +85,44 @@ export function createTimeSeriesPanel(
     }
   };
 }
+
+export function createBurnRatePanel(
+  title: string,
+  position: MonitoringDashboard.Panel.Position,
+  dataSource: string,
+  metric: MonitoringDashboard.Metric
+): MonitoringDashboard.Panel {
+  return {
+    type: 'stat',
+    title,
+    gridPos: position,
+    datasource: dataSource,
+    targets: [{
+      expr: metric.query,
+      legendFormat: metric.label
+    }],
+    options: {
+      reduceOptions: {
+        calcs: ['last'],
+        fields: '',
+        values: false
+      },
+      colorMode: 'value',
+      graphMode: 'none',
+      textMode: 'value'
+    },
+    fieldConfig: {
+      defaults: {
+        unit: 'none',
+        thresholds: {
+          mode: 'absolute',
+          steps: [
+            { color: 'green', value: null },
+            { color: 'orange', value: 1 },
+            { color: 'red', value: 2 }
+          ]
+        }
+      }
+    },
+  }
+}
