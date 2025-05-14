@@ -2,12 +2,12 @@ import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
 
 // TODO: Should we prefix all namespaces with `Studion`
-export namespace MonitoringDashboard {
+export namespace Grafana {
   // TODO: Create SLO abstraction that enables configuring:
   // - panels (long-window SLI, long-window error budget)
   // - alerts (long-window burn, short-window burn)
   export type Threshold = {
-    value: number;
+    value: number | null;
     color: string;
   };
   export type Metric = {
@@ -18,8 +18,6 @@ export namespace MonitoringDashboard {
 
   export type Args = {
     title: pulumi.Input<string>;
-    panels: pulumi.Input<MonitoringDashboard.Panel[]>;
-    dataSource: pulumi.Input<string>;
     provider: pulumi.Input<grafana.Provider>;
     tags: pulumi.Input<pulumi.Input<string>[]>;
   };
@@ -59,6 +57,7 @@ export namespace MonitoringDashboard {
       reduceOptions?: {
         calcs?: string[];
         fields?: string;
+        values?: boolean;
       };
     };
   }
