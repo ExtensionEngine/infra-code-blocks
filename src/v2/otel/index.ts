@@ -16,11 +16,14 @@ export namespace OtelCollector {
   export type Processor = {
     batch?: BatchProcessor.Config;
     memory_limiter?: MemoryLimiterProcessor.Config;
+  } & {
+    [name: string]: BatchProcessor.Config,
   };
   export type ProcessorType = keyof Processor;
 
   export type AwsXRayExporterConfig = {
     region: string;
+    endpoint: string;
   };
 
   export type DebugExportedConfig = {
