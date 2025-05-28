@@ -33,11 +33,12 @@ export class OtelCollectorConfigBuilder {
   }
 
   withBatchProcessor(
+    name = 'batch',
     size = 8192,
     maxSize = 10000,
     timeout = '5s'
   ): this {
-    this._processors.batch = {
+    this._processors[name] = {
       'send_batch_size': size,
       'send_batch_max_size': maxSize,
       timeout
@@ -152,18 +153,18 @@ export class OtelCollectorConfigBuilder {
   ): this {
     return this.withOTLPReceiver(['http'])
       .withMemoryLimiterProcessor()
-      .withBatchProcessor()
-      .withAPS(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
+      .withBatchProcessor('batch/metrics')
+      .withBatchProcessor('batch/traces', 2000, 5000, '2s')
       .withAWSXRayExporter(awsRegion)
       .withHealthCheckExtension()
       .withMetricsPipeline(
         ['otlp'],
-        ['memory_limiter', 'batch'],
+        ['memory_limiter', 'batch/metrics'],
         ['prometheusremotewrite']
       )
       .withTracesPipeline(
         ['otlp'],
-        ['memory_limiter', 'batch'],
+        ['memory_limiter', 'batch/traces'],
         ['awsxray']
       )
       .withTelemetry();
