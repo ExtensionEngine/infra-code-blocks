@@ -142,6 +142,7 @@ export class OtelCollectorBuilder {
       awsRegion
     );
     this.createAPSInlinePolicy(prometheusWorkspace);
+    this.createAWSXRayPolicy();
 
     return this;
   }
