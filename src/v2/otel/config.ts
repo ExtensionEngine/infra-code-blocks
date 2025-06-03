@@ -155,6 +155,7 @@ export class OtelCollectorConfigBuilder {
       .withMemoryLimiterProcessor()
       .withBatchProcessor('batch/metrics')
       .withBatchProcessor('batch/traces', 2000, 5000, '2s')
+      .withAPS(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
       .withAWSXRayExporter(awsRegion)
       .withHealthCheckExtension()
       .withMetricsPipeline(
