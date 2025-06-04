@@ -62,7 +62,7 @@ export class OtelCollectorConfigBuilder {
   }
 
   withAWSXRayExporter(region: string): this {
-    this._exporters.awsxray = { region, endpoint: 'https://xray.us-east-2.amazonaws.com/TraceSegments' };
+    this._exporters.awsxray = { region };
 
     return this;
   }

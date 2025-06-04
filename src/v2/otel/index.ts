@@ -153,7 +153,7 @@ export class OtelCollector {
       env
     ]) => ({
       name: containerName,
-      image: 'otel/opentelemetry-collector-contrib:latest',
+      image: 'otel/opentelemetry-collector-contrib:0.123.0',
       portMappings: this.getCollectorPortMappings(config),
       mountPoints: [{
         sourceVolume: configVolumeName,
