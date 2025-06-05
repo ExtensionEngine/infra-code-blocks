@@ -31,11 +31,12 @@ export class OtelCollectorBuilder {
   }
 
   withBatchProcessor(
+    name = batchProcessor.defaults.name,
     size = batchProcessor.defaults.size,
     maxSize = batchProcessor.defaults.maxSize,
     timeout = batchProcessor.defaults.timeout
   ): this {
-    this._configBuilder.withBatchProcessor(size, maxSize, timeout);
+    this._configBuilder.withBatchProcessor(name, size, maxSize, timeout);
 
     return this;
   }
@@ -142,6 +143,7 @@ export class OtelCollectorBuilder {
       awsRegion
     );
     this.createAPSInlinePolicy(prometheusWorkspace);
+    this.createAWSXRayPolicy();
 
     return this;
   }
