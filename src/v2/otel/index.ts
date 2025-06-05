@@ -17,13 +17,13 @@ export namespace OtelCollector {
     batch?: BatchProcessor.Config;
     memory_limiter?: MemoryLimiterProcessor.Config;
   } & {
-    [name: string]: BatchProcessor.Config,
+    [name: string]: BatchProcessor.Config;
   };
   export type ProcessorType = keyof Processor;
 
   export type AwsXRayExporterConfig = {
     region: string;
-    endpoint: string;
+    endpoint?: string;
   };
 
   export type DebugExportedConfig = {
@@ -87,7 +87,7 @@ export namespace OtelCollector {
     exporters: Exporter;
     extensions: Extension;
     service: Service;
-  }
+  };
 
   export type Opts = {
     containerName?: pulumi.Input<string>;
@@ -109,26 +109,26 @@ export class OtelCollector {
     serviceName: pulumi.Input<string>,
     env: pulumi.Input<string>,
     config: pulumi.Input<OtelCollector.Config>,
-    opts: OtelCollector.Opts = {}
+    opts: OtelCollector.Opts = {},
   ) {
-    const containerName = opts.containerName ||
-      pulumi.interpolate`${serviceName}-otel-collector`;
-    const configVolumeName = opts.configVolumeName ||
-      'otel-collector-config-volume';
+    const containerName =
+      opts.containerName || pulumi.interpolate`${serviceName}-otel-collector`;
+    const configVolumeName =
+      opts.configVolumeName || 'otel-collector-config-volume';
     this.configVolume = pulumi.output(configVolumeName);
     this.taskRoleInlinePolicies = opts.taskRoleInlinePolicies || [];
 
     this.config = pulumi.output(config);
     this.configContainer = this.createConfigContainer(
       this.config,
-      configVolumeName
+      configVolumeName,
     );
     this.container = this.createContainer(
       containerName,
       this.config,
       configVolumeName,
       serviceName,
-      env
+      env,
     );
   }
 
@@ -137,57 +137,57 @@ export class OtelCollector {
     config: pulumi.Output<OtelCollector.Config>,
     configVolumeName: pulumi.Input<string>,
     serviceName: pulumi.Input<string>,
-    env: pulumi.Input<string>
+    env: pulumi.Input<string>,
   ): pulumi.Output<EcsService.Container> {
-    return pulumi.all([
-      containerName,
-      config,
-      configVolumeName,
-      serviceName,
-      env
-    ]).apply(([
-      containerName,
-      config,
-      configVolumeName,
-      serviceName,
-      env
-    ]) => ({
-      name: containerName,
-      image: 'otel/opentelemetry-collector-contrib:0.123.0',
-      portMappings: this.getCollectorPortMappings(config),
-      mountPoints: [{
-        sourceVolume: configVolumeName,
-        containerPath: '/etc/otelcol-contrib',
-        readOnly: true
-      }],
-      dependsOn: [{
-        containerName: this.configContainer.name,
-        condition: 'COMPLETE'
-      }],
-      environment: this.getCollectorEnvironment(serviceName, env)
-    }));
+    return pulumi
+      .all([containerName, config, configVolumeName, serviceName, env])
+      .apply(([containerName, config, configVolumeName, serviceName, env]) => ({
+        name: containerName,
+        image: 'otel/opentelemetry-collector-contrib:0.123.0',
+        portMappings: this.getCollectorPortMappings(config),
+        mountPoints: [
+          {
+            sourceVolume: configVolumeName,
+            containerPath: '/etc/otelcol-contrib',
+            readOnly: true,
+          },
+        ],
+        dependsOn: [
+          {
+            containerName: this.configContainer.name,
+            condition: 'COMPLETE',
+          },
+        ],
+        environment: this.getCollectorEnvironment(serviceName, env),
+      }));
   }
 
   private getCollectorEnvironment(
     serviceName: string,
     env: string,
-  ): { name: string; value: string; }[] {
-    return [{
-      name: 'OTEL_RESOURCE_ATTRIBUTES',
-      value: `service.name=${serviceName},env=${env}`
-    }];
+  ): { name: string; value: string }[] {
+    return [
+      {
+        name: 'OTEL_RESOURCE_ATTRIBUTES',
+        value: `service.name=${serviceName},env=${env}`,
+      },
+    ];
   }
 
   private getCollectorPortMappings(
-    config: OtelCollector.Config
+    config: OtelCollector.Config,
   ): EcsService.Container['portMappings'] {
     const hasOTLPGRpcReceiver = !!config.receivers.otlp?.protocols.grpc;
     const hasOTLPHttpReceiver = !!config.receivers.otlp?.protocols.http;
     const protocol: aws.ecs.Protocol = 'tcp';
 
     return [
-      ...(hasOTLPGRpcReceiver ? [{ containerPort: 4317, hostPort: 4317, protocol }] : []),
-      ...(hasOTLPHttpReceiver ? [{ containerPort: 4318, hostPort: 4318, protocol }] : []),
+      ...(hasOTLPGRpcReceiver
+        ? [{ containerPort: 4317, hostPort: 4317, protocol }]
+        : []),
+      ...(hasOTLPHttpReceiver
+        ? [{ containerPort: 4318, hostPort: 4318, protocol }]
+        : []),
       // TODO: Expose 8888 for collector telemetry
       { containerPort: 13133, hostPort: 13133, protocol },
     ];
@@ -195,20 +195,23 @@ export class OtelCollector {
 
   private createConfigContainer(
     config: pulumi.Output<OtelCollector.Config>,
-    volume: pulumi.Input<string>
+    volume: pulumi.Input<string>,
   ): EcsService.Container {
     return {
       name: 'otel-config-writer',
       image: 'amazonlinux:latest',
       essential: false,
       command: config.apply(config => [
-        'sh', '-c',
-        `echo '${yaml.stringify(config)}' > /etc/otelcol-contrib/config.yaml`
+        'sh',
+        '-c',
+        `echo '${yaml.stringify(config)}' > /etc/otelcol-contrib/config.yaml`,
       ]),
-      mountPoints: [{
-        sourceVolume: volume,
-        containerPath: '/etc/otelcol-contrib',
-      }]
-    }
+      mountPoints: [
+        {
+          sourceVolume: volume,
+          containerPath: '/etc/otelcol-contrib',
+        },
+      ],
+    };
   }
 }
