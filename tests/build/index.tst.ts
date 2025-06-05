@@ -205,7 +205,12 @@ describe('Build output', () => {
       });
 
       it('should have withBatchProcessor method', () => {
-        expect(builder.withBatchProcessor).type.toBeCallableWith(3, 9, '7s');
+        expect(builder.withBatchProcessor).type.toBeCallableWith(
+          'batch',
+          3,
+          9,
+          '7s',
+        );
       });
 
       it('should have withDebug method', () => {
