@@ -9,8 +9,8 @@ const config = new pulumi.Config('aws');
 const awsRegion = config.require('region');
 
 type PersistentStorage = {
-  fileSystem: aws.efs.FileSystem,
-  accessPoint: aws.efs.AccessPoint
+  fileSystem: aws.efs.FileSystem;
+  accessPoint: aws.efs.AccessPoint;
 };
 
 export namespace EcsService {
@@ -20,7 +20,7 @@ export namespace EcsService {
    * - Container restarts
    * - Multiple containers
    */
-  export type PersistentStorageVolume = { name: pulumi.Input<string>; };
+  export type PersistentStorageVolume = { name: pulumi.Input<string> };
 
   /**
    * Specifies how an EFS volume is mounted into a container.
@@ -58,10 +58,10 @@ export namespace EcsService {
      * All containers not marked as `false` will be essential by default.
      */
     essential?: pulumi.Input<boolean>;
-    healthCheck?: pulumi.Input<aws.ecs.HealthCheck>
+    healthCheck?: pulumi.Input<aws.ecs.HealthCheck>;
   };
 
-  export type Tags = { [key: string]: pulumi.Input<string>; };
+  export type Tags = { [key: string]: pulumi.Input<string> };
 
   export type LoadBalancerConfig = {
     containerName: pulumi.Input<string>;
@@ -102,9 +102,7 @@ export namespace EcsService {
     taskExecutionRoleInlinePolicies?: pulumi.Input<
       pulumi.Input<RoleInlinePolicy>[]
     >;
-    taskRoleInlinePolicies?: pulumi.Input<
-      pulumi.Input<RoleInlinePolicy>[]
-    >;
+    taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
     /**
      * Registers tasks with AWS Cloud Map and creates discoverable DNS entries for each task.
      * Simplifies service-to-service communication by enabling service finding based on DNS records such as `http://serviceName.local`.
@@ -150,7 +148,7 @@ const STANDARD_DIRECTORY_PERMISSIONS = '0755';
 const FIRST_POSIX_NON_ROOT_USER = {
   userId: 1000,
   groupId: 1000,
-  permissions: STANDARD_DIRECTORY_PERMISSIONS
+  permissions: STANDARD_DIRECTORY_PERMISSIONS,
 } as const;
 
 const defaults = {
@@ -190,21 +188,26 @@ export class EcsService extends pulumi.ComponentResource {
     super('studion:ecs:Service', name, {}, opts);
     const argsWithDefaults = Object.assign({}, defaults, args);
     const taskExecutionRoleInlinePolicies = pulumi.output(
-      args.taskExecutionRoleInlinePolicies || defaults.taskExecutionRoleInlinePolicies
+      args.taskExecutionRoleInlinePolicies ||
+        defaults.taskExecutionRoleInlinePolicies,
     );
     const taskRoleInlinePolicies = pulumi.output(
-      args.taskRoleInlinePolicies || defaults.taskRoleInlinePolicies
+      args.taskRoleInlinePolicies || defaults.taskRoleInlinePolicies,
     );
     this.name = name;
     this.securityGroups = [];
     this.vpc = pulumi.output(argsWithDefaults.vpc);
     this.logGroup = this.createLogGroup();
-    this.taskExecutionRole = this.createTaskExecutionRole(taskExecutionRoleInlinePolicies);
-    this.taskRole = this.createTaskRole(taskRoleInlinePolicies)
+    this.taskExecutionRole = this.createTaskExecutionRole(
+      taskExecutionRoleInlinePolicies,
+    );
+    this.taskRole = this.createTaskRole(taskRoleInlinePolicies);
 
-    if (argsWithDefaults.volumes.length) {
-      this.persistentStorage = this.createPersistentStorage(this.vpc);
-    }
+    pulumi.output(argsWithDefaults.volumes).apply(volume => {
+      if (volume.length) {
+        this.persistentStorage = this.createPersistentStorage(this.vpc);
+      }
+    });
 
     this.taskDefinition = this.createTaskDefinition(
       argsWithDefaults.containers,
@@ -212,7 +215,7 @@ export class EcsService extends pulumi.ComponentResource {
       this.taskExecutionRole,
       this.taskRole,
       argsWithDefaults.size,
-      { ...commonTags, ...argsWithDefaults.tags }
+      { ...commonTags, ...argsWithDefaults.tags },
     );
 
     if (argsWithDefaults.enableServiceAutoDiscovery) {
@@ -234,12 +237,12 @@ export class EcsService extends pulumi.ComponentResource {
   }
 
   public static createTcpPortMapping(
-    port: pulumi.Input<number>
+    port: pulumi.Input<number>,
   ): aws.ecs.PortMapping {
     return {
       containerPort: port,
       hostPort: port,
-      protocol: 'tcp'
+      protocol: 'tcp',
     };
   }
 
@@ -262,36 +265,40 @@ export class EcsService extends pulumi.ComponentResource {
     taskExecutionRole: aws.iam.Role,
     taskRole: aws.iam.Role,
     size: pulumi.Input<Size>,
-    tags: pulumi.Input<EcsService.Tags>
+    tags: pulumi.Input<EcsService.Tags>,
   ): pulumi.Output<aws.ecs.TaskDefinition> {
     const stack = pulumi.getStack();
     const { cpu, memory } = pulumi.output(size).apply(parseSize);
     const containerDefinitions = containers.map(container => {
-      return this.createContainerDefinition(container)
+      return this.createContainerDefinition(container);
     });
 
     const taskDefinitionVolumes = this.createTaskDefinitionVolumes(volumes);
 
     return pulumi.all(containerDefinitions).apply(containerDefinitions => {
       return taskDefinitionVolumes.apply(volumes => {
-        return new aws.ecs.TaskDefinition(`${this.name}-task-definition`, {
-          family: `${this.name}-task-definition-${stack}`,
-          networkMode: 'awsvpc',
-          executionRoleArn: taskExecutionRole.arn,
-          taskRoleArn: taskRole.arn,
-          cpu,
-          memory,
-          requiresCompatibilities: ['FARGATE'],
-          containerDefinitions: JSON.stringify(containerDefinitions),
-          ...(volumes?.length ? { volumes } : {}),
-          tags: { ...commonTags, ...tags },
-        }, { parent: this })
+        return new aws.ecs.TaskDefinition(
+          `${this.name}-task-definition`,
+          {
+            family: `${this.name}-task-definition-${stack}`,
+            networkMode: 'awsvpc',
+            executionRoleArn: taskExecutionRole.arn,
+            taskRoleArn: taskRole.arn,
+            cpu,
+            memory,
+            requiresCompatibilities: ['FARGATE'],
+            containerDefinitions: JSON.stringify(containerDefinitions),
+            ...(volumes?.length ? { volumes } : {}),
+            tags: { ...commonTags, ...tags },
+          },
+          { parent: this },
+        );
       });
     });
   }
 
   private createTaskDefinitionVolumes(
-    volumes: pulumi.Output<EcsService.PersistentStorageVolume[]>
+    volumes: pulumi.Output<EcsService.PersistentStorageVolume[]>,
   ) {
     return volumes.apply(volumes => {
       if (!volumes.length || !this.persistentStorage) return;
@@ -305,7 +312,7 @@ export class EcsService extends pulumi.ComponentResource {
             accessPointId: this.persistentStorage!.accessPoint.id,
             iam: 'ENABLED',
           },
-        }
+        },
       }));
     });
   }
@@ -314,17 +321,21 @@ export class EcsService extends pulumi.ComponentResource {
     return this.logGroup.name.apply(logGroupName => ({
       ...container,
       readonlyRootFilesystem: false,
-      ...container.mountPoints && {
-        mountPoints: container.mountPoints.map(mountPoint => pulumi.all([
-          mountPoint.sourceVolume,
-          mountPoint.containerPath,
-          mountPoint.readOnly
-        ]).apply(([sourceVolume, containerPath, readOnly]) => ({
-          containerPath,
-          sourceVolume,
-          readOnly: readOnly ?? false,
-        })))
-      },
+      ...(container.mountPoints && {
+        mountPoints: container.mountPoints.map(mountPoint =>
+          pulumi
+            .all([
+              mountPoint.sourceVolume,
+              mountPoint.containerPath,
+              mountPoint.readOnly,
+            ])
+            .apply(([sourceVolume, containerPath, readOnly]) => ({
+              containerPath,
+              sourceVolume,
+              readOnly: readOnly ?? false,
+            })),
+        ),
+      }),
       logConfiguration: {
         logDriver: 'awslogs',
         options: {
@@ -337,7 +348,7 @@ export class EcsService extends pulumi.ComponentResource {
   }
 
   private createTaskExecutionRole(
-    inlinePolicies: pulumi.Output<EcsService.RoleInlinePolicy[]>
+    inlinePolicies: pulumi.Output<EcsService.RoleInlinePolicy[]>,
   ): aws.iam.Role {
     const secretManagerSecretsInlinePolicy = {
       name: `${this.name}-secret-manager-access`,
@@ -376,7 +387,7 @@ export class EcsService extends pulumi.ComponentResource {
   }
 
   private createTaskRole(
-    inlinePolicies: pulumi.Output<EcsService.RoleInlinePolicy[]>
+    inlinePolicies: pulumi.Output<EcsService.RoleInlinePolicy[]>,
   ): aws.iam.Role {
     const execCmdInlinePolicy = {
       name: `${this.name}-exec`,
@@ -398,56 +409,56 @@ export class EcsService extends pulumi.ComponentResource {
       }),
     };
 
-    return new aws.iam.Role(`${this.name}-task-role`, {
-      namePrefix: `${this.name}-task-role-`,
-      assumeRolePolicy,
-      inlinePolicies: inlinePolicies.apply(policies => [
-        execCmdInlinePolicy,
-        ...policies,
-      ]),
-      tags: commonTags,
-    }, { parent: this });
+    return new aws.iam.Role(
+      `${this.name}-task-role`,
+      {
+        namePrefix: `${this.name}-task-role-`,
+        assumeRolePolicy,
+        inlinePolicies: inlinePolicies.apply(policies => [
+          execCmdInlinePolicy,
+          ...policies,
+        ]),
+        tags: commonTags,
+      },
+      { parent: this },
+    );
   }
 
-  public addSecurityGroup(securityGroup: pulumi.Output<aws.ec2.SecurityGroup>): void {
-    this.securityGroups.push(securityGroup)
+  public addSecurityGroup(
+    securityGroup: pulumi.Output<aws.ec2.SecurityGroup>,
+  ): void {
+    this.securityGroups.push(securityGroup);
   }
 
   private createDefaultSecurityGroup(): void {
-    const securityGroup = pulumi.all([
-      this.vpc,
-      this.vpc.vpcId,
-      this.vpc.vpc.cidrBlock
-    ]).apply(([
-      vpc,
-      vpcId,
-      cidrBlock
-    ]) => {
-      return new aws.ec2.SecurityGroup(
-        `${this.name}-service-security-group`,
-        {
-          vpcId,
-          ingress: [
-            {
-              fromPort: 0,
-              toPort: 0,
-              protocol: '-1',
-              cidrBlocks: [cidrBlock],
-            },
-          ],
-          egress: [
-            {
-              fromPort: 0,
-              toPort: 0,
-              protocol: '-1',
-              cidrBlocks: ['0.0.0.0/0'],
-            },
-          ],
-          tags: commonTags,
-        },
-        { parent: this, dependsOn: [vpc] }
-      )
-    });
+    const securityGroup = pulumi
+      .all([this.vpc, this.vpc.vpcId, this.vpc.vpc.cidrBlock])
+      .apply(([vpc, vpcId, cidrBlock]) => {
+        return new aws.ec2.SecurityGroup(
+          `${this.name}-service-security-group`,
+          {
+            vpcId,
+            ingress: [
+              {
+                fromPort: 0,
+                toPort: 0,
+                protocol: '-1',
+                cidrBlocks: [cidrBlock],
+              },
+            ],
+            egress: [
+              {
+                fromPort: 0,
+                toPort: 0,
+                protocol: '-1',
+                cidrBlocks: ['0.0.0.0/0'],
+              },
+            ],
+            tags: commonTags,
+          },
+          { parent: this },
+        );
+      });
     this.addSecurityGroup(securityGroup);
   }
 
@@ -456,28 +467,36 @@ export class EcsService extends pulumi.ComponentResource {
 
     const networkConfiguration = {
       assignPublicIp: ecsServiceArgs.assignPublicIp,
-      subnets: ecsServiceArgs.assignPublicIp ? this.vpc.publicSubnetIds : this.vpc.privateSubnetIds,
+      subnets: ecsServiceArgs.assignPublicIp
+        ? this.vpc.publicSubnetIds
+        : this.vpc.privateSubnetIds,
       securityGroups: pulumi
         .all(this.securityGroups)
         .apply(groups => groups.map(it => it.id)),
-    }
+    };
 
-    return new aws.ecs.Service(`${this.name}-service`, {
-      name: this.name,
-      cluster: pulumi.output(ecsServiceArgs.cluster).id,
-      launchType: 'FARGATE',
-      desiredCount: ecsServiceArgs.desiredCount,
-      taskDefinition: this.taskDefinition.arn,
-      enableExecuteCommand: true,
-      networkConfiguration,
-      ...ecsServiceArgs.loadBalancers && { loadBalancers: ecsServiceArgs.loadBalancers },
-      ...this.serviceDiscoveryService && {
-        serviceRegistries: {
-          registryArn: this.serviceDiscoveryService.arn,
-        },
+    return new aws.ecs.Service(
+      `${this.name}-service`,
+      {
+        name: this.name,
+        cluster: pulumi.output(ecsServiceArgs.cluster).id,
+        launchType: 'FARGATE',
+        desiredCount: ecsServiceArgs.desiredCount,
+        taskDefinition: this.taskDefinition.arn,
+        enableExecuteCommand: true,
+        networkConfiguration,
+        ...(ecsServiceArgs.loadBalancers && {
+          loadBalancers: ecsServiceArgs.loadBalancers,
+        }),
+        ...(this.serviceDiscoveryService && {
+          serviceRegistries: {
+            registryArn: this.serviceDiscoveryService.arn,
+          },
+        }),
+        tags: { ...commonTags, ...ecsServiceArgs.tags },
       },
-      tags: { ...commonTags, ...ecsServiceArgs.tags },
-    }, { parent: this, });
+      { parent: this },
+    );
   }
 
   private createServiceDiscovery(): aws.servicediscovery.Service {
@@ -519,7 +538,7 @@ export class EcsService extends pulumi.ComponentResource {
     clusterName: pulumi.Output<string>,
     serviceName: pulumi.Output<string>,
     minCount: number,
-    maxCount: number
+    maxCount: number,
   ) {
     const autoscalingTarget = new aws.appautoscaling.Target(
       `${this.name}-autoscale-target`,
@@ -570,7 +589,7 @@ export class EcsService extends pulumi.ComponentResource {
   }
 
   private createPersistentStorage(
-    vpc: pulumi.Output<awsx.ec2.Vpc>
+    vpc: pulumi.Output<awsx.ec2.Vpc>,
   ): PersistentStorage {
     const efs = new aws.efs.FileSystem(
       `${this.name}-efs`,
@@ -611,7 +630,7 @@ export class EcsService extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    this.vpc.privateSubnetIds.apply((subnetIds) => {
+    this.vpc.privateSubnetIds.apply(subnetIds => {
       subnetIds.forEach(subnetId => {
         const mountTarget = new aws.efs.MountTarget(
           `${this.name}-mount-target-${subnetId}`,
@@ -625,30 +644,27 @@ export class EcsService extends pulumi.ComponentResource {
       });
     });
 
-    const accessPoint = new aws.efs.AccessPoint(
-      `${this.name}-efs-ap`,
-      {
-        fileSystemId: efs.id,
-        posixUser: {
-          uid: FIRST_POSIX_NON_ROOT_USER.userId,
-          gid: FIRST_POSIX_NON_ROOT_USER.groupId,
-        },
-        rootDirectory: {
-          path: '/data',
-          creationInfo: {
-            ownerUid: FIRST_POSIX_NON_ROOT_USER.userId,
-            ownerGid: FIRST_POSIX_NON_ROOT_USER.groupId,
-            permissions: FIRST_POSIX_NON_ROOT_USER.permissions,
-          },
+    const accessPoint = new aws.efs.AccessPoint(`${this.name}-efs-ap`, {
+      fileSystemId: efs.id,
+      posixUser: {
+        uid: FIRST_POSIX_NON_ROOT_USER.userId,
+        gid: FIRST_POSIX_NON_ROOT_USER.groupId,
+      },
+      rootDirectory: {
+        path: '/data',
+        creationInfo: {
+          ownerUid: FIRST_POSIX_NON_ROOT_USER.userId,
+          ownerGid: FIRST_POSIX_NON_ROOT_USER.groupId,
+          permissions: FIRST_POSIX_NON_ROOT_USER.permissions,
         },
       },
-    );
+    });
 
     return { fileSystem: efs, accessPoint };
   }
 }
 
-function parseSize(size: Size): { cpu: string, memory: string } {
+function parseSize(size: Size): { cpu: string; memory: string } {
   const mapCapabilities = ({ cpu, memory }: CustomSize) => ({
     cpu: String(cpu),
     memory: String(memory),
