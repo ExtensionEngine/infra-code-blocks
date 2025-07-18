@@ -424,41 +424,35 @@ export class EcsService extends pulumi.ComponentResource {
     );
   }
 
-  public addSecurityGroup(
-    securityGroup: pulumi.Output<aws.ec2.SecurityGroup>,
-  ): void {
-    this.securityGroups.push(securityGroup);
+  public addSecurityGroup(securityGroup: aws.ec2.SecurityGroup): void {
+    this.securityGroups.push(pulumi.output(securityGroup));
   }
 
   private createDefaultSecurityGroup(): void {
-    const securityGroup = pulumi
-      .all([this.vpc, this.vpc.vpcId, this.vpc.vpc.cidrBlock])
-      .apply(([vpc, vpcId, cidrBlock]) => {
-        return new aws.ec2.SecurityGroup(
-          `${this.name}-service-security-group`,
+    const securityGroup = new aws.ec2.SecurityGroup(
+      `${this.name}-service-security-group`,
+      {
+        vpcId: this.vpc.vpcId,
+        ingress: [
           {
-            vpcId,
-            ingress: [
-              {
-                fromPort: 0,
-                toPort: 0,
-                protocol: '-1',
-                cidrBlocks: [cidrBlock],
-              },
-            ],
-            egress: [
-              {
-                fromPort: 0,
-                toPort: 0,
-                protocol: '-1',
-                cidrBlocks: ['0.0.0.0/0'],
-              },
-            ],
-            tags: commonTags,
+            fromPort: 0,
+            toPort: 0,
+            protocol: '-1',
+            cidrBlocks: [this.vpc.vpc.cidrBlock],
           },
-          { parent: this },
-        );
-      });
+        ],
+        egress: [
+          {
+            fromPort: 0,
+            toPort: 0,
+            protocol: '-1',
+            cidrBlocks: ['0.0.0.0/0'],
+          },
+        ],
+        tags: commonTags,
+      },
+      { parent: this },
+    );
     this.addSecurityGroup(securityGroup);
   }
 
