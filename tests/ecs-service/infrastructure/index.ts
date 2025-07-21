@@ -26,7 +26,7 @@ const minimalEcsService = new studion.EcsService(`${appName}-min`, {
   cluster,
   vpc: project.vpc,
   containers: [sampleServiceContainer],
-  tags
+  tags,
 });
 
 const lbSecurityGroup = new aws.ec2.SecurityGroup(`${appName}-lb-sg`, {
@@ -145,6 +145,22 @@ const ecsServiceWithStorage = new studion.EcsService(`${appName}-storage`, {
   tags
 });
 
+const ecsServiceWithEmptyVolumes = new studion.EcsService(`${appName}-empty-vol`, {
+  cluster,
+  vpc: project.vpc,
+  containers: [sampleServiceContainer],
+  volumes: [],
+  tags
+});
+
+const ecsServiceWithOutputEmptyVolumes = new studion.EcsService(`${appName}-empty-otp-vol`, {
+  cluster,
+  vpc: project.vpc,
+  containers: [sampleServiceContainer],
+  volumes: pulumi.output([]),
+  tags
+});
+
 module.exports = {
   project,
   cluster,
@@ -153,5 +169,7 @@ module.exports = {
   lbUrl,
   ecsWithDiscovery,
   ecsServiceWithAutoscaling,
-  ecsServiceWithStorage
+  ecsServiceWithStorage,
+  ecsServiceWithEmptyVolumes,
+  ecsServiceWithOutputEmptyVolumes
 };
