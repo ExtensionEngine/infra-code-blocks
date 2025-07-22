@@ -62,6 +62,7 @@ describe('EcsService component deployment', () => {
     assert.strictEqual(ecsService.name, ctx.config.minEcsName, 'Service should have the correct name');
     assert.strictEqual(ecsService.service.launchType, 'FARGATE', 'Service should use FARGATE launch type');
     assert.strictEqual(ecsService.service.desiredCount, 1, 'Service should have 1 desired task');
+    assert.strictEqual(ecsService.service.persistentStorage, undefined, 'Service should not have any storage');
   });
 
   it('should have a running ECS service with desired count of tasks', async () => {

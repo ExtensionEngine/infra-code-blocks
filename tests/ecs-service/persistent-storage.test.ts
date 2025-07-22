@@ -215,4 +215,16 @@ export function testEcsServiceWithStorage(ctx: EcsTestContext) {
       numOfAttempts: 8,
     });
   });
+
+  it('should create ECS service when empty volumes array argument is passed', async () => {
+    const ecsService = ctx.outputs.ecsServiceWithEmptyVolumes.value;
+    assert.ok(ecsService, 'ECS Service should be defined');
+    assert.strictEqual(ecsService.service.persistentStorage, undefined, 'Service should not have persistent storage defined');
+  });
+
+  it('should create ECS service when empty output volumes array argument is passed', async () => {
+    const ecsService = ctx.outputs.ecsServiceWithOutputEmptyVolumes.value;
+    assert.ok(ecsService, 'ECS Service should be defined');
+    assert.strictEqual(ecsService.service.persistentStorage, undefined, 'Service should not have persistent storage defined');
+  });
 }
