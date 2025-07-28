@@ -30,7 +30,8 @@
     "format": "prettier -w .",
     "release": "npm run build && release-it",
     "test": "TS_NODE_PROJECT=tests node --test --test-concurrency=none -r ts-node/register tests/**[!build]/index.test.ts",
-    "test:build": "npm run build && tstyche build"
+    "test:build": "npm run build && tstyche build",
+    "prepare": "husky"
   },
   "prettier": "@studion/prettier-config",
   "dependencies": {
@@ -56,6 +57,8 @@
     "@types/node": "^22",
     "exponential-backoff": "^3.1.2",
     "http-status": "^2.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
     "nanospinner": "^1.2.2",
     "pathe": "^2.0.3",
     "prettier": "^3.4.2",
