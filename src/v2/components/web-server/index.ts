@@ -95,7 +95,7 @@ export class WebServer extends pulumi.ComponentResource {
       port: args.port,
       certificate: this.certificate?.certificate,
       healthCheckPath: args.healthCheckPath
-    });
+    }, { parent: this });
     this.serviceSecurityGroup = this.createSecurityGroup(vpc);
 
     this.initContainers = this.getInitContainers(args);
