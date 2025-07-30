@@ -20,6 +20,7 @@ export namespace WebServer {
     | 'cluster'
     | 'vpc'
     | 'volumes'
+    | 'deploymentController'
     | 'desiredCount'
     | 'autoscaling'
     | 'size'
@@ -189,6 +190,7 @@ export class WebServer extends pulumi.ComponentResource {
     return {
       vpc: args.vpc,
       cluster: args.cluster,
+      deploymentController: args.deploymentController,
       desiredCount: args.desiredCount,
       autoscaling: args.autoscaling,
       size: args.size,

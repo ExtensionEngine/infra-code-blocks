@@ -78,6 +78,11 @@ export namespace EcsService {
     loadBalancers?: pulumi.Input<LoadBalancerConfig[]>;
     volumes?: pulumi.Input<pulumi.Input<EcsService.PersistentStorageVolume>[]>;
     /**
+     * Type of deployment controller to use.
+     * @default "ECS"
+     */
+    deploymentController?: 'ECS' | 'CODE_DEPLOY' | 'EXTERNAL';
+    /**
      * Number of instances of the task definition to place and keep running.
      * @default 1
      */
@@ -152,6 +157,7 @@ const FIRST_POSIX_NON_ROOT_USER = {
 } as const;
 
 const defaults = {
+  deploymentController: 'ECS',
   desiredCount: 1,
   size: 'small',
   environment: [],
@@ -475,6 +481,7 @@ export class EcsService extends pulumi.ComponentResource {
         name: this.name,
         cluster: pulumi.output(ecsServiceArgs.cluster).id,
         launchType: 'FARGATE',
+        deploymentController: { type: ecsServiceArgs.deploymentController },
         desiredCount: ecsServiceArgs.desiredCount,
         taskDefinition: this.taskDefinition.arn,
         enableExecuteCommand: true,
