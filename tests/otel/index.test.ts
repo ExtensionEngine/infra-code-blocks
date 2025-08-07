@@ -5,62 +5,59 @@ import { testOtelCollectorConfigBuilderValidation } from './validation.test';
 
 const awsRegion = 'us-west-2';
 const prometheusNamespace = 'test-namespace';
-const prometheusWriteEndpoint = 'https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-12345/api/v1/remote_write';
+const prometheusWriteEndpoint =
+  'https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-12345/api/v1/remote_write';
 
 const defaultMemoryLimiterConfig = {
   check_interval: '1s',
   limit_percentage: 80,
-  spike_limit_percentage: 15
+  spike_limit_percentage: 15,
 };
 const defaultBatchConfig = {
   send_batch_size: 8192,
   send_batch_max_size: 10000,
-  timeout: '5s'
+  timeout: '5s',
 };
 
 describe('OtelCollectorConfigBuilder', () => {
-  it(
-    'should generate minimal configuration with OTLP receiver and debug exporter',
-    () => {
-      const result = new OtelCollectorConfigBuilder()
-        .withOTLPReceiver(['http'])
-        .withDebug()
-        .build();
+  it('should generate minimal configuration with OTLP receiver and debug exporter', () => {
+    const result = new OtelCollectorConfigBuilder()
+      .withOTLPReceiver(['http'])
+      .withDebug()
+      .build();
 
-      const expected = {
-        receivers: {
-          otlp: {
-            protocols: {
-              http: { endpoint: '0.0.0.0:4318' }
-            }
-          }
+    const expected = {
+      receivers: {
+        otlp: {
+          protocols: {
+            http: { endpoint: '0.0.0.0:4318' },
+          },
         },
-        processors: {},
-        exporters: {
-          debug: { verbosity: 'detailed' }
-        },
-        extensions: {},
-        service: { pipelines: {} }
-      };
+      },
+      processors: {},
+      exporters: {
+        debug: { verbosity: 'detailed' },
+      },
+      extensions: {},
+      service: { pipelines: {} },
+    };
 
-      assert.deepStrictEqual(result, expected);
-    }
-  );
+    assert.deepStrictEqual(result, expected);
+  });
 
   it('should configure batch processor', () => {
     const result = new OtelCollectorConfigBuilder()
       .withBatchProcessor()
       .build();
 
-
     const expected = {
       receivers: {},
       processors: {
-        batch: defaultBatchConfig
+        batch: defaultBatchConfig,
       },
       exporters: {},
       extensions: {},
-      service: { pipelines: {} }
+      service: { pipelines: {} },
     };
 
     assert.deepStrictEqual(result, expected);
@@ -71,15 +68,14 @@ describe('OtelCollectorConfigBuilder', () => {
       .withMemoryLimiterProcessor()
       .build();
 
-
     const expected = {
       receivers: {},
       processors: {
-        memory_limiter: defaultMemoryLimiterConfig
+        memory_limiter: defaultMemoryLimiterConfig,
       },
       exporters: {},
       extensions: {},
-      service: { pipelines: {} }
+      service: { pipelines: {} },
     };
 
     assert.deepStrictEqual(result, expected);
@@ -93,7 +89,7 @@ describe('OtelCollectorConfigBuilder', () => {
     assert.deepStrictEqual(result.processors.batch, {
       send_batch_size: 5000,
       send_batch_max_size: 8000,
-      timeout: '10s'
+      timeout: '10s',
     });
   });
 
@@ -105,7 +101,7 @@ describe('OtelCollectorConfigBuilder', () => {
     assert.deepStrictEqual(result.processors.memory_limiter, {
       check_interval: '3s',
       limit_percentage: 70,
-      spike_limit_percentage: 15
+      spike_limit_percentage: 15,
     });
   });
 
@@ -121,19 +117,19 @@ describe('OtelCollectorConfigBuilder', () => {
         prometheusremotewrite: {
           namespace: prometheusNamespace,
           endpoint: prometheusWriteEndpoint,
-          auth: { authenticator: 'sigv4auth' }
-        }
+          auth: { authenticator: 'sigv4auth' },
+        },
       },
       extensions: {
         sigv4auth: {
           region: awsRegion,
-          service: 'aps'
-        }
+          service: 'aps',
+        },
       },
       service: {
         extensions: ['sigv4auth'],
-        pipelines: {}
-      }
+        pipelines: {},
+      },
     };
 
     assert.deepStrictEqual(result, expected);
@@ -148,10 +144,10 @@ describe('OtelCollectorConfigBuilder', () => {
       receivers: {},
       processors: {},
       exporters: {
-        awsxray: { region: awsRegion }
+        awsxray: { region: awsRegion },
       },
       extensions: {},
-      service: { pipelines: {} }
+      service: { pipelines: {} },
     };
 
     assert.deepStrictEqual(result, expected);
@@ -167,12 +163,12 @@ describe('OtelCollectorConfigBuilder', () => {
       processors: {},
       exporters: {},
       extensions: {
-        health_check: { endpoint: '0.0.0.0:13133' }
+        health_check: { endpoint: '0.0.0.0:13133' },
       },
       service: {
         extensions: ['health_check'],
-        pipelines: {}
-      }
+        pipelines: {},
+      },
     };
 
     assert.deepStrictEqual(result, expected);
@@ -188,12 +184,12 @@ describe('OtelCollectorConfigBuilder', () => {
       processors: {},
       exporters: {},
       extensions: {
-        pprof: { endpoint: '0.0.0.0:1777' }
+        pprof: { endpoint: '0.0.0.0:1777' },
       },
       service: {
         extensions: ['pprof'],
-        pipelines: {}
-      }
+        pipelines: {},
+      },
     };
 
     assert.deepStrictEqual(result, expected);
@@ -206,15 +202,11 @@ describe('OtelCollectorConfigBuilder', () => {
       .withMemoryLimiterProcessor()
       .withAWSXRayExporter(awsRegion)
       .withDebug()
-      .withMetricsPipeline(
-        ['otlp'],
-        ['memory_limiter', 'batch'],
-        ['debug']
-      )
+      .withMetricsPipeline(['otlp'], ['memory_limiter', 'batch'], ['debug'])
       .withTracesPipeline(
         ['otlp'],
         ['memory_limiter', 'batch'],
-        ['awsxray', 'debug']
+        ['awsxray', 'debug'],
       )
       .build();
 
@@ -222,17 +214,17 @@ describe('OtelCollectorConfigBuilder', () => {
       receivers: {
         otlp: {
           protocols: {
-            http: { endpoint: '0.0.0.0:4318' }
-          }
-        }
+            http: { endpoint: '0.0.0.0:4318' },
+          },
+        },
       },
       processors: {
         batch: defaultBatchConfig,
-        memory_limiter: defaultMemoryLimiterConfig
+        memory_limiter: defaultMemoryLimiterConfig,
       },
       exporters: {
         awsxray: { region: awsRegion },
-        debug: { verbosity: 'detailed' }
+        debug: { verbosity: 'detailed' },
       },
       extensions: {},
       service: {
@@ -240,15 +232,15 @@ describe('OtelCollectorConfigBuilder', () => {
           metrics: {
             receivers: ['otlp'],
             processors: ['memory_limiter', 'batch'],
-            exporters: ['debug']
+            exporters: ['debug'],
           },
           traces: {
             receivers: ['otlp'],
             processors: ['memory_limiter', 'batch'],
-            exporters: ['awsxray', 'debug']
-          }
-        }
-      }
+            exporters: ['awsxray', 'debug'],
+          },
+        },
+      },
     };
 
     assert.deepStrictEqual(result, expected);
@@ -269,33 +261,32 @@ describe('OtelCollectorConfigBuilder', () => {
       .withDefault(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
       .build();
 
-
     const expected = {
       receivers: {
         otlp: {
           protocols: {
-            http: { endpoint: '0.0.0.0:4318' }
-          }
-        }
+            http: { endpoint: '0.0.0.0:4318' },
+          },
+        },
       },
       processors: {
         batch: defaultBatchConfig,
-        memory_limiter: defaultMemoryLimiterConfig
+        memory_limiter: defaultMemoryLimiterConfig,
       },
       exporters: {
         prometheusremotewrite: {
           namespace: prometheusNamespace,
           endpoint: prometheusWriteEndpoint,
-          auth: { authenticator: 'sigv4auth' }
+          auth: { authenticator: 'sigv4auth' },
         },
-        awsxray: { region: awsRegion }
+        awsxray: { region: awsRegion },
       },
       extensions: {
         sigv4auth: {
           region: awsRegion,
-          service: 'aps'
+          service: 'aps',
         },
-        health_check: { endpoint: '0.0.0.0:13133' }
+        health_check: { endpoint: '0.0.0.0:13133' },
       },
       service: {
         extensions: ['sigv4auth', 'health_check'],
@@ -303,19 +294,19 @@ describe('OtelCollectorConfigBuilder', () => {
           metrics: {
             receivers: ['otlp'],
             processors: ['memory_limiter', 'batch'],
-            exporters: ['prometheusremotewrite']
+            exporters: ['prometheusremotewrite'],
           },
           traces: {
             receivers: ['otlp'],
             processors: ['memory_limiter', 'batch'],
-            exporters: ['awsxray']
-          }
+            exporters: ['awsxray'],
+          },
         },
         telemetry: {
           logs: { level: 'error' },
-          metrics: { level: 'basic' }
-        }
-      }
+          metrics: { level: 'basic' },
+        },
+      },
     };
 
     assert.deepStrictEqual(result, expected);
@@ -335,44 +326,43 @@ describe('OtelCollectorConfigBuilder', () => {
       .withMetricsPipeline(
         ['otlp'],
         ['memory_limiter', 'batch'],
-        ['prometheusremotewrite', 'debug']
+        ['prometheusremotewrite', 'debug'],
       )
       .withTracesPipeline(
         ['otlp'],
         ['memory_limiter', 'batch'],
-        ['awsxray', 'debug']
+        ['awsxray', 'debug'],
       )
       .build();
-
 
     const expected = {
       receivers: {
         otlp: {
           protocols: {
-            http: { endpoint: '0.0.0.0:4318' }
-          }
-        }
+            http: { endpoint: '0.0.0.0:4318' },
+          },
+        },
       },
       processors: {
         batch: defaultBatchConfig,
-        memory_limiter: defaultMemoryLimiterConfig
+        memory_limiter: defaultMemoryLimiterConfig,
       },
       exporters: {
         prometheusremotewrite: {
           namespace: prometheusNamespace,
           endpoint: prometheusWriteEndpoint,
-          auth: { authenticator: 'sigv4auth' }
+          auth: { authenticator: 'sigv4auth' },
         },
         awsxray: { region: awsRegion },
-        debug: { verbosity: 'detailed' }
+        debug: { verbosity: 'detailed' },
       },
       extensions: {
         sigv4auth: {
           region: awsRegion,
-          service: 'aps'
+          service: 'aps',
         },
         health_check: { endpoint: '0.0.0.0:13133' },
-        pprof: { endpoint: '0.0.0.0:1777' }
+        pprof: { endpoint: '0.0.0.0:1777' },
       },
       service: {
         extensions: ['sigv4auth', 'health_check', 'pprof'],
@@ -380,19 +370,19 @@ describe('OtelCollectorConfigBuilder', () => {
           metrics: {
             receivers: ['otlp'],
             processors: ['memory_limiter', 'batch'],
-            exporters: ['prometheusremotewrite', 'debug']
+            exporters: ['prometheusremotewrite', 'debug'],
           },
           traces: {
             receivers: ['otlp'],
             processors: ['memory_limiter', 'batch'],
-            exporters: ['awsxray', 'debug']
-          }
+            exporters: ['awsxray', 'debug'],
+          },
         },
         telemetry: {
           logs: { level: 'error' },
-          metrics: { level: 'basic' }
-        }
-      }
+          metrics: { level: 'basic' },
+        },
+      },
     };
 
     assert.deepStrictEqual(result, expected);

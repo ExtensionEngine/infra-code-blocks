@@ -5,7 +5,7 @@ import {
   getSuccessRateQuery,
   getPercentileLatencyQuery,
   getLatencyPercentageQuery,
-  TimeRange
+  TimeRange,
 } from './queries';
 
 describe('Prometheus Query Builders', async () => {
@@ -36,9 +36,13 @@ describe('Prometheus Query Builders', async () => {
   describe('getPercentileLatencyQuery', async () => {
     it('should build correct query', () => {
       const percentile = 0.95;
-      const result = getPercentileLatencyQuery(namespace, timeRange, percentile, apiRouteFilter);
-      const expected =
-        `histogram_quantile(${percentile}, sum by(le) (rate(${namespace}_http_server_duration_milliseconds_bucket{${apiRouteFilter}}[${timeRange}])))`;
+      const result = getPercentileLatencyQuery(
+        namespace,
+        timeRange,
+        percentile,
+        apiRouteFilter,
+      );
+      const expected = `histogram_quantile(${percentile}, sum by(le) (rate(${namespace}_http_server_duration_milliseconds_bucket{${apiRouteFilter}}[${timeRange}])))`;
       assert.equal(result, expected);
     });
   });
@@ -46,7 +50,12 @@ describe('Prometheus Query Builders', async () => {
   describe('getLatencyPercentageQuery', async () => {
     it('should build correct query', () => {
       const threshold = 200;
-      const result = getLatencyPercentageQuery(namespace, timeRange, threshold, apiRouteFilter);
+      const result = getLatencyPercentageQuery(
+        namespace,
+        timeRange,
+        threshold,
+        apiRouteFilter,
+      );
       const expected =
         `(sum(rate(${namespace}_http_server_duration_milliseconds_bucket{le="200",${apiRouteFilter}}[2m]))) / ` +
         `(sum(rate(${namespace}_http_server_duration_milliseconds_count{${apiRouteFilter}}[2m]))) * 100`;

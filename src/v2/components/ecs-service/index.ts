@@ -645,21 +645,25 @@ export class EcsService extends pulumi.ComponentResource {
       });
     });
 
-    const accessPoint = new aws.efs.AccessPoint(`${this.name}-efs-ap`, {
-      fileSystemId: efs.id,
-      posixUser: {
-        uid: FIRST_POSIX_NON_ROOT_USER.userId,
-        gid: FIRST_POSIX_NON_ROOT_USER.groupId,
-      },
-      rootDirectory: {
-        path: '/data',
-        creationInfo: {
-          ownerUid: FIRST_POSIX_NON_ROOT_USER.userId,
-          ownerGid: FIRST_POSIX_NON_ROOT_USER.groupId,
-          permissions: FIRST_POSIX_NON_ROOT_USER.permissions,
+    const accessPoint = new aws.efs.AccessPoint(
+      `${this.name}-efs-ap`,
+      {
+        fileSystemId: efs.id,
+        posixUser: {
+          uid: FIRST_POSIX_NON_ROOT_USER.userId,
+          gid: FIRST_POSIX_NON_ROOT_USER.groupId,
+        },
+        rootDirectory: {
+          path: '/data',
+          creationInfo: {
+            ownerUid: FIRST_POSIX_NON_ROOT_USER.userId,
+            ownerGid: FIRST_POSIX_NON_ROOT_USER.groupId,
+            permissions: FIRST_POSIX_NON_ROOT_USER.permissions,
+          },
         },
       },
-    }, { parent: this });
+      { parent: this },
+    );
 
     return { fileSystem: efs, accessPoint };
   }

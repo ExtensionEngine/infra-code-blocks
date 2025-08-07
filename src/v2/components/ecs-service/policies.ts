@@ -13,4 +13,3 @@ export const assumeRolePolicy: aws.iam.PolicyDocument = {
     },
   ],
 };
-

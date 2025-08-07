@@ -103,11 +103,11 @@ type ProjectArgs = {
 };
 ```
 
-| Argument         |                                                                         Description                                                                          |
-| :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| services \*      |                                                                        Service list.                                                                         |
-| enableSSMConnect | Set up ec2 instance and SSM in order to connect to the database in the private subnet. Please refer to the [SSM Connect](#ssm-connect) section for more info. |
-| numberOfAvailabilityZones | Default is 2 which is recommended. If building a dev server, we can reduce to 1 availability zone to reduce hosting cost. |
+| Argument                  |                                                                          Description                                                                          |
+| :------------------------ | :-----------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| services \*               |                                                                         Service list.                                                                         |
+| enableSSMConnect          | Set up ec2 instance and SSM in order to connect to the database in the private subnet. Please refer to the [SSM Connect](#ssm-connect) section for more info. |
+| numberOfAvailabilityZones |                   Default is 2 which is recommended. If building a dev server, we can reduce to 1 availability zone to reduce hosting cost.                   |
 
 ```ts
 type DatabaseServiceOptions = {
@@ -481,9 +481,11 @@ type DatabaseReplicaArgs = {
   }>;
 };
 ```
+
 Database replica requires primary DB instance to exist. If the replica is in the same
 region as primary instance, we should not set `dbSubnetGroupNameParam`.
 The `replicateSourceDb` param is referenced like this:
+
 ```javascript
   const primaryDb = new studion.Database(...);
   const replica = new studion.DatabaseReplica('replica', {

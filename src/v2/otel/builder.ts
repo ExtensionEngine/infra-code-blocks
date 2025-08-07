@@ -11,20 +11,16 @@ export class OtelCollectorBuilder {
   private readonly _serviceName: pulumi.Output<string>;
   private readonly _env: pulumi.Output<string>;
   private readonly _configBuilder: OtelCollectorConfigBuilder;
-  private _taskRoleInlinePolicies: pulumi.Output<EcsService.RoleInlinePolicy>[] = [];
+  private _taskRoleInlinePolicies: pulumi.Output<EcsService.RoleInlinePolicy>[] =
+    [];
 
-  constructor(
-    serviceName: pulumi.Input<string>,
-    env: pulumi.Input<string>
-  ) {
+  constructor(serviceName: pulumi.Input<string>, env: pulumi.Input<string>) {
     this._serviceName = pulumi.output(serviceName);
     this._env = pulumi.output(env);
     this._configBuilder = new OtelCollectorConfigBuilder();
   }
 
-  withOTLPReceiver(
-    protocols: OTLPReceiver.Protocol[] = ['http']
-  ): this {
+  withOTLPReceiver(protocols: OTLPReceiver.Protocol[] = ['http']): this {
     this._configBuilder.withOTLPReceiver(protocols);
 
     return this;
@@ -34,7 +30,7 @@ export class OtelCollectorBuilder {
     name = batchProcessor.defaults.name,
     size = batchProcessor.defaults.size,
     maxSize = batchProcessor.defaults.maxSize,
-    timeout = batchProcessor.defaults.timeout
+    timeout = batchProcessor.defaults.timeout,
   ): this {
     this._configBuilder.withBatchProcessor(name, size, maxSize, timeout);
 
@@ -44,12 +40,12 @@ export class OtelCollectorBuilder {
   withMemoryLimiterProcessor(
     checkInterval = memoryLimiterProcessor.defaults.checkInterval,
     limitPercentage = memoryLimiterProcessor.defaults.limitPercentage,
-    spikeLimitPercentage = memoryLimiterProcessor.defaults.spikeLimitPercentage
+    spikeLimitPercentage = memoryLimiterProcessor.defaults.spikeLimitPercentage,
   ): this {
     this._configBuilder.withMemoryLimiterProcessor(
       checkInterval,
       limitPercentage,
-      spikeLimitPercentage
+      spikeLimitPercentage,
     );
 
     return this;
@@ -77,12 +73,12 @@ export class OtelCollectorBuilder {
   withAPS(
     namespace: pulumi.Input<string>,
     workspace: aws.amp.Workspace,
-    region: string
+    region: string,
   ): this {
     this._configBuilder.withAPS(
       pulumi.output(namespace),
       pulumi.interpolate`${workspace.prometheusEndpoint}api/v1/remote_write`,
-      region
+      region,
     );
     this.createAPSInlinePolicy(workspace);
 
@@ -97,7 +93,7 @@ export class OtelCollectorBuilder {
 
   withTelemetry(
     logLevel: 'debug' | 'warn' | 'error' = 'error',
-    metricsVerbosity: 'basic' | 'normal' | 'detailed' = 'basic'
+    metricsVerbosity: 'basic' | 'normal' | 'detailed' = 'basic',
   ): this {
     this._configBuilder.withTelemetry(logLevel, metricsVerbosity);
 
@@ -109,11 +105,7 @@ export class OtelCollectorBuilder {
     processors: OtelCollector.ProcessorType[],
     exporters: OtelCollector.ExporterType[],
   ): this {
-    this._configBuilder.withMetricsPipeline(
-      receivers,
-      processors,
-      exporters
-    );
+    this._configBuilder.withMetricsPipeline(receivers, processors, exporters);
 
     return this;
   }
@@ -123,11 +115,7 @@ export class OtelCollectorBuilder {
     processors: OtelCollector.ProcessorType[],
     exporters: OtelCollector.ExporterType[],
   ): this {
-    this._configBuilder.withTracesPipeline(
-      receivers,
-      processors,
-      exporters
-    );
+    this._configBuilder.withTracesPipeline(receivers, processors, exporters);
 
     return this;
   }
@@ -135,12 +123,12 @@ export class OtelCollectorBuilder {
   withDefault(
     prometheusNamespace: pulumi.Input<string>,
     prometheusWorkspace: aws.amp.Workspace,
-    awsRegion: string
+    awsRegion: string,
   ): this {
     this._configBuilder.withDefault(
       pulumi.output(prometheusNamespace),
       pulumi.interpolate`${prometheusWorkspace.prometheusEndpoint}api/v1/remote_write`,
-      awsRegion
+      awsRegion,
     );
     this.createAPSInlinePolicy(prometheusWorkspace);
     this.createAWSXRayPolicy();
@@ -153,46 +141,49 @@ export class OtelCollectorBuilder {
       this._serviceName,
       this._env,
       this._configBuilder.build(),
-      { taskRoleInlinePolicies: this._taskRoleInlinePolicies }
+      { taskRoleInlinePolicies: this._taskRoleInlinePolicies },
     );
   }
 
   private createAPSInlinePolicy(workspace: aws.amp.Workspace): void {
-    const policy: pulumi.Output<EcsService.RoleInlinePolicy> = pulumi.all(([
-      this._serviceName,
-      workspace.arn
-    ])).apply(([serviceName, workspaceArn]) => ({
-      name: `${serviceName}-task-role-aps-write`,
-      policy: JSON.stringify({
-        Version: '2012-10-17',
-        Statement: [{
-          Effect: 'Allow',
-          Action: ['aps:RemoteWrite'],
-          Resource: workspaceArn,
-        }],
-      }),
-    }));
+    const policy: pulumi.Output<EcsService.RoleInlinePolicy> = pulumi
+      .all([this._serviceName, workspace.arn])
+      .apply(([serviceName, workspaceArn]) => ({
+        name: `${serviceName}-task-role-aps-write`,
+        policy: JSON.stringify({
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Action: ['aps:RemoteWrite'],
+              Resource: workspaceArn,
+            },
+          ],
+        }),
+      }));
 
     this._taskRoleInlinePolicies.push(policy);
   }
 
   private createAWSXRayPolicy() {
-    const policy: pulumi.Output<EcsService.RoleInlinePolicy> = this._serviceName
-      .apply(serviceName => ({
+    const policy: pulumi.Output<EcsService.RoleInlinePolicy> =
+      this._serviceName.apply(serviceName => ({
         name: `${serviceName}-task-role-xray`,
         policy: JSON.stringify({
           Version: '2012-10-17',
-          Statement: [{
-            Effect: 'Allow',
-            Action: [
-              'xray:PutTraceSegments',
-              'xray:PutTelemetryRecords',
-              'xray:GetSamplingRules',
-              'xray:GetSamplingTargets',
-              'xray:GetSamplingStatisticSummaries',
-            ],
-            Resource: '*',
-          }],
+          Statement: [
+            {
+              Effect: 'Allow',
+              Action: [
+                'xray:PutTraceSegments',
+                'xray:PutTelemetryRecords',
+                'xray:GetSamplingRules',
+                'xray:GetSamplingTargets',
+                'xray:GetSamplingStatisticSummaries',
+              ],
+              Resource: '*',
+            },
+          ],
         }),
       }));
 

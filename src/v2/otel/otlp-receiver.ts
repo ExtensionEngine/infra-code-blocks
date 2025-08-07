@@ -11,10 +11,9 @@ export namespace OTLPReceiver {
 
 export const Protocol = {
   grpc: {
-    endpoint: '0.0.0.0:4317'
+    endpoint: '0.0.0.0:4317',
   },
   http: {
-    endpoint: '0.0.0.0:4318'
-  }
+    endpoint: '0.0.0.0:4318',
+  },
 };
-

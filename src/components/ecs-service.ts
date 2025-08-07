@@ -38,7 +38,7 @@ export type PersistentStorageMountPoint = {
   readOnly?: boolean;
 };
 
-export type PersistentStorageVolume = { name: string; };
+export type PersistentStorageVolume = { name: string };
 
 export type PersistentStorageConfig = {
   volumes: PersistentStorageVolume[];
@@ -161,7 +161,7 @@ const STANDARD_DIRECTORY_PERMISSIONS = '0755';
 const FIRST_POSIX_NON_ROOT_USER = {
   userId: 1000,
   groupId: 1000,
-  permissions: STANDARD_DIRECTORY_PERMISSIONS
+  permissions: STANDARD_DIRECTORY_PERMISSIONS,
 } as const;
 
 const defaults = {
@@ -193,10 +193,15 @@ export class EcsService extends pulumi.ComponentResource {
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     const aliases = opts.aliases || [];
-    super('studion:ecs:LegacyService', name, {}, {
-      ...opts,
-      aliases: [...aliases, { type: 'studion:ecs:Service' }]
-    });
+    super(
+      'studion:ecs:LegacyService',
+      name,
+      {},
+      {
+        ...opts,
+        aliases: [...aliases, { type: 'studion:ecs:Service' }],
+      },
+    );
     const argsWithDefaults = Object.assign({}, defaults, args);
 
     this.name = name;
@@ -376,24 +381,21 @@ export class EcsService extends pulumi.ComponentResource {
 
     const fileSystemId = this.createPersistentStorage(argsWithDefaults).id;
 
-    const accessPoint = new aws.efs.AccessPoint(
-      `${this.name}-efs-ap`,
-      {
-        fileSystemId,
-        posixUser: {
-          uid: FIRST_POSIX_NON_ROOT_USER.userId,
-          gid: FIRST_POSIX_NON_ROOT_USER.groupId,
-        },
-        rootDirectory: {
-          path: '/data',
-          creationInfo: {
-            ownerUid: FIRST_POSIX_NON_ROOT_USER.userId,
-            ownerGid: FIRST_POSIX_NON_ROOT_USER.groupId,
-            permissions: FIRST_POSIX_NON_ROOT_USER.permissions,
-          },
+    const accessPoint = new aws.efs.AccessPoint(`${this.name}-efs-ap`, {
+      fileSystemId,
+      posixUser: {
+        uid: FIRST_POSIX_NON_ROOT_USER.userId,
+        gid: FIRST_POSIX_NON_ROOT_USER.groupId,
+      },
+      rootDirectory: {
+        path: '/data',
+        creationInfo: {
+          ownerUid: FIRST_POSIX_NON_ROOT_USER.userId,
+          ownerGid: FIRST_POSIX_NON_ROOT_USER.groupId,
+          permissions: FIRST_POSIX_NON_ROOT_USER.permissions,
         },
       },
-    );
+    });
 
     const taskDefinition = new aws.ecs.TaskDefinition(
       `${this.name}-task-definition`,
@@ -442,13 +444,13 @@ export class EcsService extends pulumi.ComponentResource {
                     },
                   ],
                   ...(persistentStorageConfig && {
-                    mountPoints: (persistentStorageConfig as PersistentStorageConfig).mountPoints.map(
-                      mountPoint => ({
-                        containerPath: mountPoint.containerPath,
-                        sourceVolume: mountPoint.sourceVolume,
-                        readOnly: mountPoint.readOnly ?? false,
-                      }),
-                    ),
+                    mountPoints: (
+                      persistentStorageConfig as PersistentStorageConfig
+                    ).mountPoints.map(mountPoint => ({
+                      containerPath: mountPoint.containerPath,
+                      sourceVolume: mountPoint.sourceVolume,
+                      readOnly: mountPoint.readOnly ?? false,
+                    })),
                   }),
                   logConfiguration: {
                     logDriver: 'awslogs',
@@ -466,19 +468,19 @@ export class EcsService extends pulumi.ComponentResource {
             },
           ),
         ...(argsWithDefaults.persistentStorageConfig && {
-          volumes: (argsWithDefaults.persistentStorageConfig as PersistentStorageConfig)
-            .volumes
-            .map(volume => ({
-              name: volume.name,
-              efsVolumeConfiguration: {
-                fileSystemId,
-                transitEncryption: 'ENABLED',
-                authorizationConfig: {
-                  accessPointId: accessPoint.id,
-                  iam: 'ENABLED',
-                },
-              }
-            })),
+          volumes: (
+            argsWithDefaults.persistentStorageConfig as PersistentStorageConfig
+          ).volumes.map(volume => ({
+            name: volume.name,
+            efsVolumeConfiguration: {
+              fileSystemId,
+              transitEncryption: 'ENABLED',
+              authorizationConfig: {
+                accessPointId: accessPoint.id,
+                iam: 'ENABLED',
+              },
+            },
+          })),
         }),
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },

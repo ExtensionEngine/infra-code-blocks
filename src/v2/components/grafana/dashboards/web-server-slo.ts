@@ -1,12 +1,12 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
-import { queries as promQ } from '../../prometheus'
+import { queries as promQ } from '../../prometheus';
 import { Grafana } from './types';
 import {
   createBurnRatePanel,
   createStatPercentagePanel,
   createTimeSeriesPanel,
-  createTimeSeriesPercentagePanel
+  createTimeSeriesPercentagePanel,
 } from './panels';
 
 class WebServerSloDashboardBuilder {
@@ -15,10 +15,7 @@ class WebServerSloDashboardBuilder {
   panels: Grafana.Panel[] = [];
   tags?: pulumi.Output<string[]>;
 
-  constructor(
-    name: string,
-    args: Grafana.Args,
-  ) {
+  constructor(name: string, args: Grafana.Args) {
     this.name = name;
     this.title = pulumi.output(args.title);
   }
@@ -27,27 +24,37 @@ class WebServerSloDashboardBuilder {
     target: number,
     window: promQ.TimeRange,
     dataSource: string,
-    prometheusNamespace: string
+    prometheusNamespace: string,
   ): this {
-    const availabilityPercentage = promQ.getAvailabilityPercentageQuery(prometheusNamespace, window);
-    const availabilityBurnRate = promQ.getBurnRateQuery(promQ.getAvailabilityQuery(prometheusNamespace, '1h'), target);
+    const availabilityPercentage = promQ.getAvailabilityPercentageQuery(
+      prometheusNamespace,
+      window,
+    );
+    const availabilityBurnRate = promQ.getBurnRateQuery(
+      promQ.getAvailabilityQuery(prometheusNamespace, '1h'),
+      target,
+    );
 
     const availabilitySloPanel = createStatPercentagePanel(
       'Availability',
       { x: 0, y: 0, w: 8, h: 8 },
-      dataSource, {
-      label: 'Availability',
-      query: availabilityPercentage,
-      thresholds: []
-    });
+      dataSource,
+      {
+        label: 'Availability',
+        query: availabilityPercentage,
+        thresholds: [],
+      },
+    );
     const availabilityBurnRatePanel = createBurnRatePanel(
       'Availability Burn Rate',
       { x: 0, y: 8, w: 8, h: 4 },
-      dataSource, {
-      label: 'Burn Rate',
-      query: availabilityBurnRate,
-      thresholds: []
-    });
+      dataSource,
+      {
+        label: 'Burn Rate',
+        query: availabilityBurnRate,
+        thresholds: [],
+      },
+    );
 
     this.panels.push(availabilitySloPanel, availabilityBurnRatePanel);
 
@@ -60,11 +67,22 @@ class WebServerSloDashboardBuilder {
     shortWindow: promQ.TimeRange,
     filter: string,
     dataSource: string,
-    prometheusNamespace: string
+    prometheusNamespace: string,
   ): this {
-    const successRateSlo = promQ.getSuccessPercentageQuery(prometheusNamespace, window, filter);
-    const successRateBurnRate = promQ.getBurnRateQuery(promQ.getSuccessRateQuery(prometheusNamespace, '1h', filter), target);
-    const successRate = promQ.getSuccessPercentageQuery(prometheusNamespace, shortWindow, filter);
+    const successRateSlo = promQ.getSuccessPercentageQuery(
+      prometheusNamespace,
+      window,
+      filter,
+    );
+    const successRateBurnRate = promQ.getBurnRateQuery(
+      promQ.getSuccessRateQuery(prometheusNamespace, '1h', filter),
+      target,
+    );
+    const successRate = promQ.getSuccessPercentageQuery(
+      prometheusNamespace,
+      shortWindow,
+      filter,
+    );
 
     const successRateSloPanel = createStatPercentagePanel(
       'Success Rate',
@@ -73,8 +91,8 @@ class WebServerSloDashboardBuilder {
       {
         label: 'Success Rate',
         query: successRateSlo,
-        thresholds: []
-      }
+        thresholds: [],
+      },
     );
     const successRatePanel = createTimeSeriesPercentagePanel(
       'HTTP Request Success Rate',
@@ -83,8 +101,8 @@ class WebServerSloDashboardBuilder {
       {
         label: 'Success Rate',
         query: successRate,
-        thresholds: []
-      }
+        thresholds: [],
+      },
     );
     const successRateBurnRatePanel = createBurnRatePanel(
       'Success Rate Burn Rate',
@@ -93,11 +111,15 @@ class WebServerSloDashboardBuilder {
       {
         label: 'Burn Rate',
         query: successRateBurnRate,
-        thresholds: []
-      }
+        thresholds: [],
+      },
     );
 
-    this.panels.push(successRateSloPanel, successRatePanel, successRateBurnRatePanel);
+    this.panels.push(
+      successRateSloPanel,
+      successRatePanel,
+      successRateBurnRatePanel,
+    );
 
     return this;
   }
@@ -109,12 +131,30 @@ class WebServerSloDashboardBuilder {
     shortWindow: promQ.TimeRange,
     filter: string,
     dataSource: string,
-    prometheusNamespace: string
+    prometheusNamespace: string,
   ): this {
-    const latencySlo = promQ.getLatencyPercentageQuery(prometheusNamespace, window, targetLatency, filter);
-    const latencyBurnRate = promQ.getBurnRateQuery(promQ.getLatencyRateQuery(prometheusNamespace, '1h', targetLatency), target);
-    const percentileLatency = promQ.getPercentileLatencyQuery(prometheusNamespace, shortWindow, target, filter);
-    const latencyBelowThreshold = promQ.getLatencyPercentageQuery(prometheusNamespace, shortWindow, targetLatency, filter);
+    const latencySlo = promQ.getLatencyPercentageQuery(
+      prometheusNamespace,
+      window,
+      targetLatency,
+      filter,
+    );
+    const latencyBurnRate = promQ.getBurnRateQuery(
+      promQ.getLatencyRateQuery(prometheusNamespace, '1h', targetLatency),
+      target,
+    );
+    const percentileLatency = promQ.getPercentileLatencyQuery(
+      prometheusNamespace,
+      shortWindow,
+      target,
+      filter,
+    );
+    const latencyBelowThreshold = promQ.getLatencyPercentageQuery(
+      prometheusNamespace,
+      shortWindow,
+      targetLatency,
+      filter,
+    );
 
     const latencySloPanel = createStatPercentagePanel(
       'Request % below 250ms',
@@ -123,8 +163,8 @@ class WebServerSloDashboardBuilder {
       {
         label: 'Request % below 250ms',
         query: latencySlo,
-        thresholds: []
-      }
+        thresholds: [],
+      },
     );
     const percentileLatencyPanel = createTimeSeriesPanel(
       '99th Percentile Latency',
@@ -133,9 +173,9 @@ class WebServerSloDashboardBuilder {
       {
         label: '99th Percentile Latency',
         query: percentileLatency,
-        thresholds: []
+        thresholds: [],
       },
-      'ms'
+      'ms',
     );
     const latencyPercentagePanel = createTimeSeriesPercentagePanel(
       'Request percentage below 250ms',
@@ -144,8 +184,8 @@ class WebServerSloDashboardBuilder {
       {
         label: 'Request percentage below 250ms',
         query: latencyBelowThreshold,
-        thresholds: []
-      }
+        thresholds: [],
+      },
     );
     const latencyBurnRatePanel = createBurnRatePanel(
       'Latency Burn Rate',
@@ -154,42 +194,40 @@ class WebServerSloDashboardBuilder {
       {
         label: 'Burn Rate',
         query: latencyBurnRate,
-        thresholds: []
-      }
+        thresholds: [],
+      },
     );
 
     this.panels.push(
       latencySloPanel,
       percentileLatencyPanel,
       latencyPercentagePanel,
-      latencyBurnRatePanel
+      latencyBurnRatePanel,
     );
 
     return this;
   }
 
-  build(provider: pulumi.Output<grafana.Provider>): pulumi.Output<grafana.oss.Dashboard> {
-    return pulumi.all([
-      this.title,
-      this.panels,
-      provider,
-      this.tags
-    ]).apply(([
-      title,
-      panels,
-      provider,
-      tags
-    ]) => {
-      return new grafana.oss.Dashboard(this.name, {
-        configJson: JSON.stringify({
-          title,
-          tags,
-          timezone: 'browser',
-          refresh: '10s',
-          panels,
-        })
-      }, { provider });
-    });
+  build(
+    provider: pulumi.Output<grafana.Provider>,
+  ): pulumi.Output<grafana.oss.Dashboard> {
+    return pulumi
+      .all([this.title, this.panels, provider, this.tags])
+      .apply(([title, panels, provider, tags]) => {
+        return new grafana.oss.Dashboard(
+          this.name,
+          {
+            configJson: JSON.stringify({
+              title,
+              tags,
+              timezone: 'browser',
+              refresh: '10s',
+              panels,
+            }),
+          },
+          { provider },
+        );
+      });
   }
 }
 

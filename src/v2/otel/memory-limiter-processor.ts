@@ -9,5 +9,5 @@ export namespace MemoryLimiterProcessor {
 export const defaults = {
   checkInterval: '1s',
   limitPercentage: 80,
-  spikeLimitPercentage: 15
+  spikeLimitPercentage: 15,
 };
