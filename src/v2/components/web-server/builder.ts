@@ -53,6 +53,7 @@ export class WebServerBuilder {
   public configureEcs(config: WebServerBuilder.EcsConfig): this {
     this._ecsConfig = {
       cluster: config.cluster,
+      deploymentController: config.deploymentController,
       desiredCount: config.desiredCount,
       autoscaling: config.autoscaling,
       size: config.size,
