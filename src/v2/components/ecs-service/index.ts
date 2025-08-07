@@ -652,7 +652,7 @@ export class EcsService extends pulumi.ComponentResource {
           permissions: FIRST_POSIX_NON_ROOT_USER.permissions,
         },
       },
-    });
+    }, { parent: this });
 
     return { fileSystem: efs, accessPoint };
   }
