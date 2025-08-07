@@ -10,5 +10,5 @@ export const defaults = {
   name: 'batch',
   size: 8192,
   maxSize: 10000,
-  timeout: '5s'
+  timeout: '5s',
 };

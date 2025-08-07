@@ -5,34 +5,28 @@ const countPostfix = 'count';
 const bucketPostfix = 'bucket';
 const httpStatusCodeLabel = 'http_status_code';
 
-export function getBurnRateQuery(
-  metricQuery: string,
-  target: number
-): string {
-  return `(1 - ${metricQuery}) / ${(1 - target).toFixed(5)}`
+export function getBurnRateQuery(metricQuery: string, target: number): string {
+  return `(1 - ${metricQuery}) / ${(1 - target).toFixed(5)}`;
 }
 
 export function getAvailabilityQuery(
   namespace: string,
-  timeRange: TimeRange
+  timeRange: TimeRange,
 ): string {
   const successFilter = `${httpStatusCodeLabel}!~"5.."`;
   const successfulRequestsQuery = getCountRate(
     namespace,
     timeRange,
-    successFilter
+    successFilter,
   );
-  const totalRequestsQuery = getCountRate(
-    namespace,
-    timeRange
-  );
+  const totalRequestsQuery = getCountRate(namespace, timeRange);
 
   return `${successfulRequestsQuery} / ${totalRequestsQuery}`;
 }
 
 export function getAvailabilityPercentageQuery(
   namespace: string,
-  timeRange: TimeRange
+  timeRange: TimeRange,
 ): string {
   return `${getAvailabilityQuery(namespace, timeRange)} * 100`;
 }
@@ -40,7 +34,7 @@ export function getAvailabilityPercentageQuery(
 export function getSuccessRateQuery(
   namespace: string,
   timeRange: TimeRange,
-  filter: string
+  filter: string,
 ): string {
   const successFilter = [`${httpStatusCodeLabel}=~"[2-4].."`, filter].join(',');
   const totalFilter = filter;
@@ -48,13 +42,9 @@ export function getSuccessRateQuery(
   const successfulRequestsQuery = getCountRate(
     namespace,
     timeRange,
-    successFilter
+    successFilter,
   );
-  const totalRequestsQuery = getCountRate(
-    namespace,
-    timeRange,
-    totalFilter
-  );
+  const totalRequestsQuery = getCountRate(namespace, timeRange, totalFilter);
 
   return `${successfulRequestsQuery} / ${totalRequestsQuery}`;
 }
@@ -62,7 +52,7 @@ export function getSuccessRateQuery(
 export function getSuccessPercentageQuery(
   namespace: string,
   timeRange: TimeRange,
-  filter: string
+  filter: string,
 ): string {
   return `${getSuccessRateQuery(namespace, timeRange, filter)} * 100`;
 }
@@ -71,7 +61,7 @@ export function getPercentileLatencyQuery(
   namespace: string,
   timeRange: TimeRange,
   percentile: number,
-  filter: string
+  filter: string,
 ): string {
   const bucketMetric = getMetric(namespace, bucketPostfix, filter);
   const bucketRate = `sum by(le) (rate(${bucketMetric}[${timeRange}]))`;
@@ -83,14 +73,14 @@ export function getLatencyRateQuery(
   namespace: string,
   timeRange: TimeRange,
   threshold: number,
-  filter?: string
+  filter?: string,
 ): string {
   const filterWithThreshold = [`le="${threshold}"`, filter].join(',');
 
   const requestsUnderThreshold = getBucketRate(
     namespace,
     timeRange,
-    filterWithThreshold
+    filterWithThreshold,
   );
   const totalRequests = getCountRate(namespace, timeRange, filter);
 
@@ -101,7 +91,7 @@ export function getLatencyPercentageQuery(
   namespace: string,
   timeRange: TimeRange,
   threshold: number,
-  filter?: string
+  filter?: string,
 ): string {
   return `${getLatencyRateQuery(namespace, timeRange, threshold, filter)} * 100`;
 }
@@ -109,7 +99,7 @@ export function getLatencyPercentageQuery(
 function getCountRate(
   namespace: string,
   timeRange: TimeRange,
-  filter?: string
+  filter?: string,
 ): string {
   const countMetric = getMetric(namespace, countPostfix, filter);
 
@@ -119,7 +109,7 @@ function getCountRate(
 function getBucketRate(
   namespace: string,
   timeRange: TimeRange,
-  filter?: string
+  filter?: string,
 ): string {
   const bucketMetric = getMetric(namespace, bucketPostfix, filter);
 
@@ -129,7 +119,7 @@ function getBucketRate(
 function getMetric(
   namespace: string,
   postfix: string,
-  filter?: string
+  filter?: string,
 ): string {
   return `${namespace}_${metricName}_${postfix}${filter ? `{${filter}}` : ''}`;
 }

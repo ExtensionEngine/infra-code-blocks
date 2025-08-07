@@ -2,7 +2,7 @@ import {
   DestroyResult,
   InlineProgramArgs,
   LocalWorkspace,
-  OutputMap
+  OutputMap,
 } from '@pulumi/pulumi/automation';
 import { createSpinner } from 'nanospinner';
 

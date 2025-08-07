@@ -44,9 +44,9 @@ export namespace Grafana {
           steps: Threshold[];
         };
         custom?: {
-          lineInterpolation?: string,
-          spanNulls: boolean
-        }
+          lineInterpolation?: string;
+          spanNulls: boolean;
+        };
       };
     };
     options?: {
@@ -60,7 +60,7 @@ export namespace Grafana {
         values?: boolean;
       };
     };
-  }
+  };
 
   export namespace Panel {
     export type Position = {
@@ -68,6 +68,6 @@ export namespace Grafana {
       y: number;
       w: number;
       h: number;
-    }
+    };
   }
 }

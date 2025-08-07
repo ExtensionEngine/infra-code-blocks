@@ -9,4 +9,3 @@ export namespace PrometheusRemoteWriteExporter {
     };
   };
 }
-

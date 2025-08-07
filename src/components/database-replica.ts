@@ -130,7 +130,7 @@ export class DatabaseReplica extends pulumi.ComponentResource {
         ...monitoringOptions,
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
-      { parent: this }
+      { parent: this },
     );
     return instance;
   }

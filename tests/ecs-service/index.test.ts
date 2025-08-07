@@ -5,7 +5,7 @@ import {
   ECSClient,
   ListTasksCommand,
   DescribeTasksCommand,
-  DescribeServicesCommand
+  DescribeServicesCommand,
 } from '@aws-sdk/client-ecs';
 import { EC2Client } from '@aws-sdk/client-ec2';
 import { ElasticLoadBalancingV2Client } from '@aws-sdk/client-elastic-load-balancing-v2';
@@ -23,7 +23,7 @@ import { testEcsServiceWithAutoscaling } from './autoscaling.test';
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
   projectName: 'icb-test-ecs-service',
-  program: () => import('./infrastructure')
+  program: () => import('./infrastructure'),
 };
 
 describe('EcsService component deployment', () => {
@@ -37,8 +37,8 @@ describe('EcsService component deployment', () => {
         numOfAttempts: 5,
         startingDelay: 1000,
         timeMultiple: 2,
-        jitter: 'full'
-      }
+        jitter: 'full',
+      },
     },
     clients: {
       ecs: new ECSClient({ region }),
@@ -46,8 +46,8 @@ describe('EcsService component deployment', () => {
       elb: new ElasticLoadBalancingV2Client({ region }),
       sd: new ServiceDiscoveryClient({ region }),
       appAutoscaling: new ApplicationAutoScalingClient({ region }),
-      efs: new EFSClient({ region })
-    }
+      efs: new EFSClient({ region }),
+    },
   };
 
   before(async () => {
@@ -59,10 +59,26 @@ describe('EcsService component deployment', () => {
   it('should create an ECS service with the correct configuration', async () => {
     const ecsService = ctx.outputs.minimalEcsService.value;
     assert.ok(ecsService, 'ECS Service should be defined');
-    assert.strictEqual(ecsService.name, ctx.config.minEcsName, 'Service should have the correct name');
-    assert.strictEqual(ecsService.service.launchType, 'FARGATE', 'Service should use FARGATE launch type');
-    assert.strictEqual(ecsService.service.desiredCount, 1, 'Service should have 1 desired task');
-    assert.strictEqual(ecsService.service.persistentStorage, undefined, 'Service should not have any storage');
+    assert.strictEqual(
+      ecsService.name,
+      ctx.config.minEcsName,
+      'Service should have the correct name',
+    );
+    assert.strictEqual(
+      ecsService.service.launchType,
+      'FARGATE',
+      'Service should use FARGATE launch type',
+    );
+    assert.strictEqual(
+      ecsService.service.desiredCount,
+      1,
+      'Service should have 1 desired task',
+    );
+    assert.strictEqual(
+      ecsService.service.persistentStorage,
+      undefined,
+      'Service should not have any storage',
+    );
   });
 
   it('should have a running ECS service with desired count of tasks', async () => {
@@ -73,7 +89,7 @@ describe('EcsService component deployment', () => {
     return backOff(async () => {
       const command = new DescribeServicesCommand({
         cluster: clusterName,
-        services: [serviceName]
+        services: [serviceName],
       });
       const { services } = await ctx.clients.ecs.send(command);
 
@@ -84,7 +100,7 @@ describe('EcsService component deployment', () => {
       assert.strictEqual(
         service.desiredCount,
         service.runningCount,
-        `Service should have ${service.desiredCount} running tasks`
+        `Service should have ${service.desiredCount} running tasks`,
       );
     }, ctx.config.exponentialBackOffConfig);
   });
@@ -96,7 +112,7 @@ describe('EcsService component deployment', () => {
 
     const listCommand = new ListTasksCommand({
       cluster: clusterName,
-      family: ecsService.taskDefinition.family
+      family: ecsService.taskDefinition.family,
     });
     const { taskArns } = await ctx.clients.ecs.send(listCommand);
 
@@ -104,15 +120,22 @@ describe('EcsService component deployment', () => {
 
     const describeCommand = new DescribeTasksCommand({
       cluster: clusterName,
-      tasks: taskArns
+      tasks: taskArns,
     });
     const { tasks } = await ctx.clients.ecs.send(describeCommand);
 
     assert.ok(tasks && tasks.length, 'Tasks should exist');
     tasks.forEach(task => {
-      assert.strictEqual(task.taskDefinitionArn, taskDefArn,
-        'Task should use the correct task definition');
-      assert.strictEqual(task.lastStatus, 'RUNNING', 'Task should be in RUNNING state');
+      assert.strictEqual(
+        task.taskDefinitionArn,
+        taskDefArn,
+        'Task should use the correct task definition',
+      );
+      assert.strictEqual(
+        task.lastStatus,
+        'RUNNING',
+        'Task should be in RUNNING state',
+      );
     });
   });
 
@@ -125,22 +148,22 @@ describe('EcsService component deployment', () => {
     assert.strictEqual(
       containerDefs.length,
       1,
-      'Should have 1 container definition'
+      'Should have 1 container definition',
     );
     assert.strictEqual(
       containerDefs[0].name,
       'sample-service',
-      'Container should have correct name'
+      'Container should have correct name',
     );
     assert.strictEqual(
       containerDefs[0].image,
       'amazon/amazon-ecs-sample',
-      'Container should use correct image'
+      'Container should use correct image',
     );
     assert.strictEqual(
       containerDefs[0].portMappings[0].containerPort,
       80,
-      'Container should map port 80'
+      'Container should map port 80',
     );
   });
 
@@ -159,11 +182,13 @@ describe('EcsService component deployment', () => {
     assert.strictEqual(
       ecsService.logGroup.retentionInDays,
       14,
-      'Log group should have 14-day retention'
+      'Log group should have 14-day retention',
     );
     assert.ok(
-      ecsService.logGroup.namePrefix.startsWith(`/ecs/${ctx.config.minEcsName}-`),
-      'Log group should have correct name prefix'
+      ecsService.logGroup.namePrefix.startsWith(
+        `/ecs/${ctx.config.minEcsName}-`,
+      ),
+      'Log group should have correct name prefix',
     );
   });
 
@@ -171,16 +196,21 @@ describe('EcsService component deployment', () => {
     const ecsService = ctx.outputs.minimalEcsService.value;
     const taskDef = ecsService.taskDefinition;
 
-    assert.ok(taskDef.executionRoleArn, 'Task execution role should be defined');
+    assert.ok(
+      taskDef.executionRoleArn,
+      'Task execution role should be defined',
+    );
     assert.ok(taskDef.taskRoleArn, 'Task role should be defined');
 
     assert.ok(
-      taskDef.executionRoleArn.includes(`${ctx.config.minEcsName}-task-exec-role`),
-      'Execution role should have correct name'
+      taskDef.executionRoleArn.includes(
+        `${ctx.config.minEcsName}-task-exec-role`,
+      ),
+      'Execution role should have correct name',
     );
     assert.ok(
       taskDef.taskRoleArn.includes(`${ctx.config.minEcsName}-task-role`),
-      'Task role should have correct name'
+      'Task role should have correct name',
     );
   });
 
@@ -192,37 +222,45 @@ describe('EcsService component deployment', () => {
     assert.strictEqual(
       networkConfig.assignPublicIp,
       false,
-      'Should not assign public IP by default'
+      'Should not assign public IP by default',
     );
     assert.ok(
       networkConfig.securityGroups.length > 0,
-      'Should have at least one security group'
+      'Should have at least one security group',
     );
     assert.ok(
       networkConfig.subnets.length > 0,
-      'Should have at least one subnet'
+      'Should have at least one subnet',
     );
   });
 
   it('should have security group with proper rules', async () => {
     const ecsService = ctx.outputs.minimalEcsService.value;
     const project = ctx.outputs.project.value;
-    assert.ok(ecsService.securityGroups.length > 0, 'Should have security groups');
+    assert.ok(
+      ecsService.securityGroups.length > 0,
+      'Should have security groups',
+    );
 
     const sg = ecsService.securityGroups[0];
-    assert.ok(sg.ingress[0].cidrBlocks.includes(project.vpc.vpc.cidrBlock),
-      'Ingress rule should allow traffic from VPC CIDR');
+    assert.ok(
+      sg.ingress[0].cidrBlocks.includes(project.vpc.vpc.cidrBlock),
+      'Ingress rule should allow traffic from VPC CIDR',
+    );
     assert.strictEqual(
       sg.egress[0].cidrBlocks[0],
       '0.0.0.0/0',
-      'Egress rule should allow all outbound traffic'
+      'Egress rule should allow all outbound traffic',
     );
   });
 
   it('should create security group in the correct VPC', async () => {
     const ecsService = ctx.outputs.minimalEcsService.value;
     const project = ctx.outputs.project.value;
-    assert.ok(ecsService.securityGroups.length > 0, 'Should have security groups');
+    assert.ok(
+      ecsService.securityGroups.length > 0,
+      'Should have security groups',
+    );
 
     const sg = ecsService.securityGroups[0];
     const expectedVpcId = project.vpc.vpcId;
@@ -230,12 +268,13 @@ describe('EcsService component deployment', () => {
     assert.strictEqual(
       sg.vpcId,
       expectedVpcId,
-      `Security group should be created in the correct VPC (expected: ${expectedVpcId}, got: ${sg.vpcId})`
+      `Security group should be created in the correct VPC (expected: ${expectedVpcId}, got: ${sg.vpcId})`,
     );
   });
 
   describe('With autoscaling', () => testEcsServiceWithAutoscaling(ctx));
-  describe('With service discovery', () => testEcsServiceWithServiceDiscovery(ctx));
+  describe('With service discovery', () =>
+    testEcsServiceWithServiceDiscovery(ctx));
   describe('With persistent storage', () => testEcsServiceWithStorage(ctx));
   describe('With load balancer', () => testEcsServiceWithLb(ctx));
 });

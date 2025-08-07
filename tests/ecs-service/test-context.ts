@@ -27,4 +27,7 @@ interface AwsContext {
   };
 }
 
-export interface EcsTestContext extends ConfigContext, PulumiProgramContext, AwsContext { };
+export interface EcsTestContext
+  extends ConfigContext,
+    PulumiProgramContext,
+    AwsContext {}

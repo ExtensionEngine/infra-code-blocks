@@ -10,7 +10,7 @@ const init = {
   name: 'init',
   image: 'busybox:latest',
   essential: false,
-  command: ['sh', '-c', 'echo "Init container running" && exit 0']
+  command: ['sh', '-c', 'echo "Init container running" && exit 0'],
 };
 const sidecar = {
   name: 'sidecar',
@@ -18,14 +18,17 @@ const sidecar = {
   essential: true,
   command: ['sh', '-c', 'echo "Sidecar running" && sleep infinity'],
   healthCheck: {
-    command: ["CMD-SHELL", "echo healthy || exit 1"],
+    command: ['CMD-SHELL', 'echo healthy || exit 1'],
     interval: 30,
     timeout: 5,
     retries: 3,
-    startPeriod: 10
-  }
+    startPeriod: 10,
+  },
 };
-const otelCollector = new studion.openTelemetry.OtelCollectorBuilder(webServerName, stackName)
+const otelCollector = new studion.openTelemetry.OtelCollectorBuilder(
+  webServerName,
+  stackName,
+)
   .withOTLPReceiver()
   .withDebug()
   .withMetricsPipeline(['otlp'], [], ['debug'])
@@ -33,7 +36,7 @@ const otelCollector = new studion.openTelemetry.OtelCollectorBuilder(webServerNa
 
 const cluster = new aws.ecs.Cluster(`${webServerName}-cluster`, {
   name: `${webServerName}-cluster-${stackName}`,
-  tags
+  tags,
 });
 
 const webServer = new studion.WebServerBuilder(webServerName)
@@ -42,7 +45,7 @@ const webServer = new studion.WebServerBuilder(webServerName)
     cluster,
     desiredCount: 1,
     size: 'small',
-    autoscaling: { enabled: false }
+    autoscaling: { enabled: false },
   })
   .withInitContainer(init)
   .withSidecarContainer(sidecar)

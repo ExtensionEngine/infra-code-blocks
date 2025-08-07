@@ -53,10 +53,12 @@ export class Mongo extends pulumi.ComponentResource {
     const port = args.port || 27017;
     const persistentStorageConfig = args.persistentStorageConfig || {
       volumes: [{ name: 'mongo' }],
-      mountPoints: [{
-        sourceVolume: 'mongo',
-        containerPath:  '/data/db'
-      }]
+      mountPoints: [
+        {
+          sourceVolume: 'mongo',
+          containerPath: '/data/db',
+        },
+      ],
     };
 
     const { username, password, privateSubnetIds, ...ecsServiceArgs } = args;

@@ -16,7 +16,7 @@ export namespace WebServerBuilder {
     | 'domain'
     | 'hostedZoneId'
     | 'otelCollectorConfig'
-  >
+  >;
 }
 
 export class WebServerBuilder {
@@ -39,12 +39,12 @@ export class WebServerBuilder {
   public configureWebServer(
     image: WebServer.Container['image'],
     port: WebServer.Container['port'],
-    config: Omit<WebServer.Container, 'image' | 'port'> = {}
+    config: Omit<WebServer.Container, 'image' | 'port'> = {},
   ): this {
     this._container = {
       image,
       port,
-      ...config
+      ...config,
     };
 
     return this;
@@ -60,7 +60,7 @@ export class WebServerBuilder {
       taskExecutionRoleInlinePolicies: config.taskExecutionRoleInlinePolicies,
       taskRoleInlinePolicies: config.taskRoleInlinePolicies,
       tags: config.tags,
-    }
+    };
 
     return this;
   }
@@ -79,7 +79,7 @@ export class WebServerBuilder {
 
   public withCustomDomain(
     domain: pulumi.Input<string>,
-    hostedZoneId: pulumi.Input<string>
+    hostedZoneId: pulumi.Input<string>,
   ): this {
     this._domain = domain;
     this._hostedZoneId = hostedZoneId;
@@ -106,7 +106,7 @@ export class WebServerBuilder {
   }
 
   public withCustomHealthCheckPath(
-    path: WebServer.Args['healthCheckPath']
+    path: WebServer.Args['healthCheckPath'],
   ): this {
     this._healthCheckPath = path;
 
@@ -115,27 +115,37 @@ export class WebServerBuilder {
 
   public build(opts: pulumi.ComponentResourceOptions = {}): WebServer {
     if (!this._container) {
-      throw new Error('Web server not configured. Make sure to call WebServerBuilder.configureWebServer().');
+      throw new Error(
+        'Web server not configured. Make sure to call WebServerBuilder.configureWebServer().',
+      );
     }
     if (!this._ecsConfig) {
-      throw new Error('ECS not configured. Make sure to call WebServerBuilder.configureEcs().');
+      throw new Error(
+        'ECS not configured. Make sure to call WebServerBuilder.configureEcs().',
+      );
     }
     if (!this._vpc) {
-      throw new Error('VPC not provided. Make sure to call WebServerBuilder.withVpc().');
+      throw new Error(
+        'VPC not provided. Make sure to call WebServerBuilder.withVpc().',
+      );
     }
 
-    return new WebServer(this._name, {
-      ...this._ecsConfig,
-      ...this._container,
-      vpc: this._vpc,
-      volumes: this._volumes,
-      publicSubnetIds: this._vpc.publicSubnetIds,
-      domain: this._domain,
-      hostedZoneId: this._hostedZoneId,
-      healthCheckPath: this._healthCheckPath,
-      otelCollector: this._otelCollector,
-      initContainers: this._initContainers,
-      sidecarContainers: this._sidecarContainers
-    }, opts)
+    return new WebServer(
+      this._name,
+      {
+        ...this._ecsConfig,
+        ...this._container,
+        vpc: this._vpc,
+        volumes: this._volumes,
+        publicSubnetIds: this._vpc.publicSubnetIds,
+        domain: this._domain,
+        hostedZoneId: this._hostedZoneId,
+        healthCheckPath: this._healthCheckPath,
+        otelCollector: this._otelCollector,
+        initContainers: this._initContainers,
+        sidecarContainers: this._sidecarContainers,
+      },
+      opts,
+    );
   }
 }

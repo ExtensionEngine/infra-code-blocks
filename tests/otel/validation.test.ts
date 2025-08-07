@@ -4,127 +4,138 @@ import { OtelCollectorConfigBuilder } from '../../src/v2/otel/config';
 
 export function testOtelCollectorConfigBuilderValidation() {
   it('should throw error when no OTLP receiver protocols are provided', () => {
-    const createInvalidConfig = () => new OtelCollectorConfigBuilder()
-      .withOTLPReceiver([])
-      .build();
+    const createInvalidConfig = () =>
+      new OtelCollectorConfigBuilder().withOTLPReceiver([]).build();
 
     assert.throws(createInvalidConfig, {
       name: 'Error',
-      message: 'At least one OTLP receiver protocol should be provided'
+      message: 'At least one OTLP receiver protocol should be provided',
     });
   });
 
   it('should throw error when unsupported OTLP receiver protocol is provided', () => {
-    const createInvalidConfig = () => new OtelCollectorConfigBuilder()
-      // @ts-expect-error - Passing invalid protocol to test runtime error
-      .withOTLPReceiver(['invalid'])
-      .build();
+    const createInvalidConfig = () =>
+      new OtelCollectorConfigBuilder()
+        // @ts-expect-error - Passing invalid protocol to test runtime error
+        .withOTLPReceiver(['invalid'])
+        .build();
 
     assert.throws(createInvalidConfig, {
       name: 'Error',
-      message: 'OTLP receiver protocol invalid is not supported'
+      message: 'OTLP receiver protocol invalid is not supported',
     });
   });
 
   it('should throw error when metrics pipeline references undefined receiver', () => {
-    const createInvalidConfig = () => new OtelCollectorConfigBuilder()
-      .withMetricsPipeline(['otlp'], [], [])
-      .build();
+    const createInvalidConfig = () =>
+      new OtelCollectorConfigBuilder()
+        .withMetricsPipeline(['otlp'], [], [])
+        .build();
 
     assert.throws(createInvalidConfig, {
       name: 'Error',
-      message: "Receiver 'otlp' is used in metrics pipeline but not defined"
+      message: "Receiver 'otlp' is used in metrics pipeline but not defined",
     });
   });
 
   it('should throw error when metrics pipeline references undefined processor', () => {
-    const createInvalidConfig = () => new OtelCollectorConfigBuilder()
-      .withOTLPReceiver(['http'])
-      .withMetricsPipeline(['otlp'], ['batch'], [])
-      .build();
+    const createInvalidConfig = () =>
+      new OtelCollectorConfigBuilder()
+        .withOTLPReceiver(['http'])
+        .withMetricsPipeline(['otlp'], ['batch'], [])
+        .build();
 
     assert.throws(createInvalidConfig, {
       name: 'Error',
-      message: "Processor 'batch' is used in metrics pipeline but not defined"
+      message: "Processor 'batch' is used in metrics pipeline but not defined",
     });
   });
 
   it('should throw error when metrics pipeline references undefined exporter', () => {
-    const createInvalidConfig = () => new OtelCollectorConfigBuilder()
-      .withOTLPReceiver(['http'])
-      .withBatchProcessor()
-      .withMetricsPipeline(['otlp'], ['batch'], ['debug'])
-      .build();
+    const createInvalidConfig = () =>
+      new OtelCollectorConfigBuilder()
+        .withOTLPReceiver(['http'])
+        .withBatchProcessor()
+        .withMetricsPipeline(['otlp'], ['batch'], ['debug'])
+        .build();
 
     assert.throws(createInvalidConfig, {
       name: 'Error',
-      message: "Exporter 'debug' is used in metrics pipeline but not defined"
+      message: "Exporter 'debug' is used in metrics pipeline but not defined",
     });
   });
 
   it('should throw error when traces pipeline references undefined receiver', () => {
-    const createInvalidConfig = () => new OtelCollectorConfigBuilder()
-      .withTracesPipeline(['otlp'], [], [])
-      .build();
+    const createInvalidConfig = () =>
+      new OtelCollectorConfigBuilder()
+        .withTracesPipeline(['otlp'], [], [])
+        .build();
 
     assert.throws(createInvalidConfig, {
       name: 'Error',
-      message: "Receiver 'otlp' is used in traces pipeline but not defined"
+      message: "Receiver 'otlp' is used in traces pipeline but not defined",
     });
   });
 
   it('should throw error when traces pipeline references undefined processor', () => {
-    const createInvalidConfig = () => new OtelCollectorConfigBuilder()
-      .withOTLPReceiver(['http'])
-      .withTracesPipeline(['otlp'], ['memory_limiter'], [])
-      .build();
+    const createInvalidConfig = () =>
+      new OtelCollectorConfigBuilder()
+        .withOTLPReceiver(['http'])
+        .withTracesPipeline(['otlp'], ['memory_limiter'], [])
+        .build();
 
     assert.throws(createInvalidConfig, {
       name: 'Error',
-      message: "Processor 'memory_limiter' is used in traces pipeline but not defined"
+      message:
+        "Processor 'memory_limiter' is used in traces pipeline but not defined",
     });
   });
 
   it('should throw error when traces pipeline references undefined exporter', () => {
-    const createInvalidConfig = () => new OtelCollectorConfigBuilder()
-      .withOTLPReceiver(['http'])
-      .withMemoryLimiterProcessor()
-      .withTracesPipeline(['otlp'], ['memory_limiter'], ['awsxray'])
-      .build();
+    const createInvalidConfig = () =>
+      new OtelCollectorConfigBuilder()
+        .withOTLPReceiver(['http'])
+        .withMemoryLimiterProcessor()
+        .withTracesPipeline(['otlp'], ['memory_limiter'], ['awsxray'])
+        .build();
 
     assert.throws(createInvalidConfig, {
       name: 'Error',
-      message: "Exporter 'awsxray' is used in traces pipeline but not defined"
+      message: "Exporter 'awsxray' is used in traces pipeline but not defined",
     });
   });
 
   it('should throw error when memory_limiter is not the first processor in traces pipeline ', () => {
-    const createInvalidConfig = () => new OtelCollectorConfigBuilder()
-      .withOTLPReceiver(['http'])
-      .withMemoryLimiterProcessor()
-      .withBatchProcessor()
-      .withDebug()
-      .withTracesPipeline(['otlp'], ['batch', 'memory_limiter'], ['debug'])
-      .build();
+    const createInvalidConfig = () =>
+      new OtelCollectorConfigBuilder()
+        .withOTLPReceiver(['http'])
+        .withMemoryLimiterProcessor()
+        .withBatchProcessor()
+        .withDebug()
+        .withTracesPipeline(['otlp'], ['batch', 'memory_limiter'], ['debug'])
+        .build();
 
     assert.throws(createInvalidConfig, {
       name: 'Error',
-      message: 'memory_limiter processor is not the first processor in the traces pipeline.'
+      message:
+        'memory_limiter processor is not the first processor in the traces pipeline.',
     });
   });
 
   it('should throw error when memory_limiter is not the first processor in metrics pipeline ', () => {
-    const createInvalidConfig = () => new OtelCollectorConfigBuilder()
-      .withOTLPReceiver(['http'])
-      .withMemoryLimiterProcessor()
-      .withBatchProcessor()
-      .withDebug()
-      .withMetricsPipeline(['otlp'], ['batch', 'memory_limiter'], ['debug'])
-      .build();
+    const createInvalidConfig = () =>
+      new OtelCollectorConfigBuilder()
+        .withOTLPReceiver(['http'])
+        .withMemoryLimiterProcessor()
+        .withBatchProcessor()
+        .withDebug()
+        .withMetricsPipeline(['otlp'], ['batch', 'memory_limiter'], ['debug'])
+        .build();
 
     assert.throws(createInvalidConfig, {
       name: 'Error',
-      message: 'memory_limiter processor is not the first processor in the metrics pipeline.'
+      message:
+        'memory_limiter processor is not the first processor in the metrics pipeline.',
     });
   });
 }
