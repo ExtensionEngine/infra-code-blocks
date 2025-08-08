@@ -28,7 +28,7 @@
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc -b src",
     "format": "prettier -w .",
-    "release": "npm run build && release-it",
+    "release": "release-it --only-version",
     "test": "TS_NODE_PROJECT=tests node --test --test-concurrency=none -r ts-node/register tests/**[!build]/index.test.ts",
     "test:build": "npm run build && tstyche build",
     "prepare": "husky"
@@ -71,13 +71,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "release-it": {
-    "git": {
-      "commitMessage": "chore: release ${version}"
-    },
-    "github": {
-      "release": true
-    }
   }
 }
