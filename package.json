@@ -31,7 +31,7 @@
     "release": "release-it --only-version",
     "test": "TS_NODE_PROJECT=tests node --test --test-concurrency=none -r ts-node/register tests/**[!build]/index.test.ts",
     "test:build": "npm run build && tstyche build",
-    "prepare": "husky"
+    "prepare": "husky && npm run build"
   },
   "prettier": "@studion/prettier-config",
   "dependencies": {
