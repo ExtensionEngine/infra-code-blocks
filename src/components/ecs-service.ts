@@ -451,6 +451,7 @@ export class EcsService extends pulumi.ComponentResource {
                       sourceVolume: mountPoint.sourceVolume,
                       readOnly: mountPoint.readOnly ?? false,
                     })),
+                    user: `${FIRST_POSIX_NON_ROOT_USER.userId}:${FIRST_POSIX_NON_ROOT_USER.groupId}`,
                   }),
                   logConfiguration: {
                     logDriver: 'awslogs',
