@@ -35,7 +35,6 @@
   },
   "prettier": "@studion/prettier-config",
   "dependencies": {
-    "@aws-sdk/client-elasticache": "^3.901.0",
     "@pulumi/aws": "^6.66.3",
     "@pulumi/awsx": "^2.21.0",
     "@pulumi/pulumi": "^3.146.0",
@@ -52,7 +51,9 @@
     "@aws-sdk/client-ecs": "^3.766.0",
     "@aws-sdk/client-efs": "^3.758.0",
     "@aws-sdk/client-elastic-load-balancing-v2": "^3.764.0",
+    "@aws-sdk/client-elasticache": "^3.901.0",
     "@aws-sdk/client-route-53": "^3.782.0",
+    "@aws-sdk/client-secrets-manager": "^3.906.0",
     "@aws-sdk/client-servicediscovery": "^3.758.0",
     "@studion/prettier-config": "^0.1.0",
     "@types/node": "^22",
@@ -68,7 +69,8 @@
     "tsconfig-paths": "^4.2.0",
     "tstyche": "^4.0.0-beta.9",
     "typescript": "^5.7.3",
-    "undici": "^6.21.2"
+    "undici": "^6.21.2",
+    "ioredis": "^5.8.1"
   },
   "publishConfig": {
     "access": "public"
