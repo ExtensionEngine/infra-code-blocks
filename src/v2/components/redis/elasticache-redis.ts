@@ -1,13 +1,28 @@
 import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
 import * as awsx from '@pulumi/awsx';
-import { commonTags as tags } from '../../../constants';
+import { commonTags } from '../../../constants';
 
 type RedisArgs = {
+  /**
+   * The Virtual Private Cloud where the Redis cluster will be deployed
+   */
   vpc: pulumi.Input<awsx.ec2.Vpc>;
+  /**
+   * Version number of the cache engine to be used
+   */
   engineVersion?: string;
+  /**
+   * Instance type for cache nodes
+   */
   nodeType?: string;
+  /**
+   * The name of the parameter group to associate with this cache cluster.
+   */
   parameterGroupName?: pulumi.Input<string>;
+  /**
+   * A map of tags to assign to the resource.
+   */
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
@@ -39,32 +54,24 @@ export class ElastiCacheRedis extends pulumi.ComponentResource {
 
     this.securityGroup = this.createSecurityGroup();
     this.subnetGroup = this.createSubnetGroup();
-    this.cluster = this.createRedisCluster(
-      argsWithDefaults.engineVersion,
-      argsWithDefaults.nodeType,
-      argsWithDefaults.parameterGroupName,
-    );
+    this.cluster = this.createRedisCluster(argsWithDefaults);
 
     this.registerOutputs();
   }
 
-  private createRedisCluster(
-    engineVersion: RedisArgs['engineVersion'],
-    nodeType: RedisArgs['nodeType'],
-    parameterGroupName: RedisArgs['parameterGroupName'],
-  ) {
+  private createRedisCluster(argsWithDefaults: RedisArgs) {
     return new aws.elasticache.Cluster(
       `${this.name}-cluster`,
       {
         engine: 'redis',
-        engineVersion,
-        nodeType,
+        engineVersion: argsWithDefaults.engineVersion,
+        nodeType: argsWithDefaults.nodeType,
         numCacheNodes: 1,
         securityGroupIds: [this.securityGroup.id],
         subnetGroupName: this.subnetGroup.name,
-        parameterGroupName,
+        parameterGroupName: argsWithDefaults.parameterGroupName,
         port: 6379,
-        tags,
+        tags: { ...commonTags, ...argsWithDefaults.tags },
       },
       { parent: this },
     );
@@ -75,7 +82,7 @@ export class ElastiCacheRedis extends pulumi.ComponentResource {
       `${this.name}-subnet-group`,
       {
         subnetIds: this.vpc.isolatedSubnetIds,
-        tags,
+        tags: commonTags,
       },
       { parent: this },
     );
@@ -94,7 +101,7 @@ export class ElastiCacheRedis extends pulumi.ComponentResource {
             cidrBlocks: [this.vpc.vpc.cidrBlock],
           },
         ],
-        tags,
+        tags: commonTags,
       },
       { parent: this },
     );
