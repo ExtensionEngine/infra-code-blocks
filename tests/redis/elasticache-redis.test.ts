@@ -6,7 +6,10 @@ import {
   DescribeCacheClustersCommand,
   DescribeCacheSubnetGroupsCommand,
 } from '@aws-sdk/client-elasticache';
-import { DescribeSecurityGroupsCommand } from '@aws-sdk/client-ec2';
+import {
+  DescribeSecurityGroupsCommand,
+  IpPermission,
+} from '@aws-sdk/client-ec2';
 
 export function testElastiCacheRedis(ctx: RedisTestContext) {
   it('should create a Redis cluster with the correct configuration', async () => {
@@ -109,7 +112,7 @@ export function testElastiCacheRedis(ctx: RedisTestContext) {
     );
 
     const redisRule = securityGroup.IpPermissions?.find(
-      (rule: any) => rule.FromPort === 6379 && rule.ToPort === 6379,
+      (rule: IpPermission) => rule.FromPort === 6379 && rule.ToPort === 6379,
     );
     assert.ok(redisRule, 'Should have Redis port 6379 ingress rule');
     assert.strictEqual(

@@ -63,8 +63,6 @@ export function testUpstashRedis(ctx: RedisTestContext) {
     try {
       const pingResult = await client.ping();
       assert.strictEqual(pingResult, 'PONG', 'Redis should respond to ping');
-    } catch (error) {
-      throw error;
     } finally {
       await client.disconnect();
     }

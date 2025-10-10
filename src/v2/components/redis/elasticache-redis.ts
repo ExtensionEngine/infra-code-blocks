@@ -4,9 +4,6 @@ import * as awsx from '@pulumi/awsx';
 import { commonTags } from '../../../constants';
 
 type RedisArgs = {
-  /**
-   * The Virtual Private Cloud where the Redis cluster will be deployed
-   */
   vpc: pulumi.Input<awsx.ec2.Vpc>;
   /**
    * Version number of the cache engine to be used
@@ -20,9 +17,6 @@ type RedisArgs = {
    * The name of the parameter group to associate with this cache cluster.
    */
   parameterGroupName?: pulumi.Input<string>;
-  /**
-   * A map of tags to assign to the resource.
-   */
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
