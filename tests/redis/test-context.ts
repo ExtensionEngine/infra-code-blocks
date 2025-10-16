@@ -4,9 +4,23 @@ import { EC2Client } from '@aws-sdk/client-ec2';
 import { SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 
 interface ConfigContext {
-  config: {
-    [key: string]: any;
+  config: RedisTestConfig;
+}
+
+interface RedisTestConfig {
+  elastiCacheRedisName: string;
+  upstashRedisName: string;
+  exponentialBackOffConfig: {
+    delayFirstAttempt: boolean;
+    numOfAttempts: number;
+    startingDelay: number;
+    timeMultiple: number;
+    jitter: 'full' | 'none';
   };
+}
+
+interface ConfigContext {
+  config: RedisTestConfig;
 }
 
 interface PulumiProgramContext {

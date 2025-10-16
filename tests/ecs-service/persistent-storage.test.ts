@@ -260,7 +260,10 @@ export function testEcsServiceWithStorage(ctx: EcsTestContext) {
   it('should successfully write to and read from EFS volume', async () => {
     const ecsServiceWithStorage = ctx.outputs.ecsServiceWithStorage.value;
     const clusterName = ctx.outputs.cluster.value.name;
-    const region = process.env.AWS_REGION || 'us-east-2';
+    const region = process.env.AWS_REGION;
+    if (!region) {
+      throw new Error('AWS_REGION environment variable is required');
+    }
     const logsClient = new CloudWatchLogsClient({ region });
 
     const listCommand = new ListTasksCommand({

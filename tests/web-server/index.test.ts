@@ -36,7 +36,11 @@ class NonRetryableError extends Error {
 }
 
 describe('Web server component deployment', () => {
-  const region = process.env.AWS_REGION || 'us-east-2';
+  const region = process.env.AWS_REGION;
+  if (!region) {
+    throw new Error('AWS_REGION environment variable is required');
+  }
+
   const ctx: WebServerTestContext = {
     outputs: {},
     config,

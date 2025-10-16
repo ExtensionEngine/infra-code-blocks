@@ -3,14 +3,21 @@ import * as upstash from '@upstash/pulumi';
 import { Password } from '../../../components/password';
 
 export type RedisArgs = {
-  /**
-   * Redis database name.
-   */
   dbName: pulumi.Input<string>;
   /**
-   * Primary region for the database (Can be one of [us-east-1, us-west-1, us-west-2, eu-central-1, eu-west-1, sa-east-1, ap-southeast-1, ap-southeast-2])
+   * Primary region for the database
+   * @default 'us-east-1'
    */
-  primaryRegion?: pulumi.Input<string>;
+  primaryRegion?: pulumi.Input<
+    | 'us-east-1'
+    | 'us-west-1'
+    | 'us-west-2'
+    | 'eu-central-1'
+    | 'eu-west-1'
+    | 'sa-east-1'
+    | 'ap-southeast-1'
+    | 'ap-southeast-2'
+  >;
 };
 
 const defaults = {
@@ -30,14 +37,15 @@ export class UpstashRedis extends pulumi.ComponentResource {
   constructor(name: string, args: RedisArgs, opts: RedisOptions) {
     super('studion:Redis:Upstash', name, {}, opts);
 
-    const stack = pulumi.getStack();
-
     const argsWithDefaults = Object.assign({}, defaults, args);
+
+    const dbName =
+      argsWithDefaults.dbName ?? `${pulumi.getProject()}-${pulumi.getStack()}`;
 
     this.instance = new upstash.RedisDatabase(
       name,
       {
-        databaseName: `${argsWithDefaults.dbName}-${stack}`,
+        databaseName: dbName,
         region: argsWithDefaults.region,
         primaryRegion: argsWithDefaults.primaryRegion,
         eviction: true,

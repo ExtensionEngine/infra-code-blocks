@@ -7,14 +7,17 @@ type RedisArgs = {
   vpc: pulumi.Input<awsx.ec2.Vpc>;
   /**
    * Version number of the cache engine to be used
+   * @default '7.1'
    */
   engineVersion?: string;
   /**
    * Instance type for cache nodes
+   * @default 'cache.t4g.micro'
    */
   nodeType?: string;
   /**
    * The name of the parameter group to associate with this cache cluster.
+   * @default 'default.redis7'
    */
   parameterGroupName?: pulumi.Input<string>;
   tags?: pulumi.Input<{
@@ -48,24 +51,34 @@ export class ElastiCacheRedis extends pulumi.ComponentResource {
 
     this.securityGroup = this.createSecurityGroup();
     this.subnetGroup = this.createSubnetGroup();
-    this.cluster = this.createRedisCluster(argsWithDefaults);
+    this.cluster = this.createRedisCluster(
+      argsWithDefaults.engineVersion,
+      argsWithDefaults.nodeType,
+      argsWithDefaults.parameterGroupName,
+      argsWithDefaults.tags,
+    );
 
     this.registerOutputs();
   }
 
-  private createRedisCluster(argsWithDefaults: RedisArgs) {
+  private createRedisCluster(
+    engineVersion: RedisArgs['engineVersion'],
+    nodeType: RedisArgs['nodeType'],
+    parameterGroupName: RedisArgs['parameterGroupName'],
+    tags: RedisArgs['tags'],
+  ) {
     return new aws.elasticache.Cluster(
       `${this.name}-cluster`,
       {
         engine: 'redis',
-        engineVersion: argsWithDefaults.engineVersion,
-        nodeType: argsWithDefaults.nodeType,
+        engineVersion: engineVersion,
+        nodeType: nodeType,
         numCacheNodes: 1,
         securityGroupIds: [this.securityGroup.id],
         subnetGroupName: this.subnetGroup.name,
-        parameterGroupName: argsWithDefaults.parameterGroupName,
+        parameterGroupName: parameterGroupName,
         port: 6379,
-        tags: { ...commonTags, ...argsWithDefaults.tags },
+        tags: { ...commonTags, ...tags },
       },
       { parent: this },
     );

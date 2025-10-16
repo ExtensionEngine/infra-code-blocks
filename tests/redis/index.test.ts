@@ -15,7 +15,11 @@ const programArgs: InlineProgramArgs = {
 };
 
 describe('Redis component deployment', () => {
-  const region = process.env.AWS_REGION || 'us-east-2';
+  const region = process.env.AWS_REGION;
+  if (!region) {
+    throw new Error('AWS_REGION environment variable is required');
+  }
+
   const hasUpstashCredentials =
     process.env.UPSTASH_EMAIL && process.env.UPSTASH_API_KEY;
   const ctx: RedisTestContext = {
@@ -45,9 +49,11 @@ describe('Redis component deployment', () => {
   after(() => automation.destroy(programArgs));
 
   describe('ElastiCache Redis', () => testElastiCacheRedis(ctx));
-  hasUpstashCredentials
-    ? describe('Upstash Redis', () => testUpstashRedis(ctx))
-    : console.log(
-        'Skipping Upstash redis tests, Upstash credentials were not provided...',
-      );
+  if (hasUpstashCredentials) {
+    describe('Upstash Redis', () => testUpstashRedis(ctx));
+  } else {
+    console.log(
+      'Skipping Upstash redis tests, Upstash credentials were not provided...',
+    );
+  }
 });
