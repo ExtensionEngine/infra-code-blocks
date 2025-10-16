@@ -327,6 +327,7 @@ export class EcsService extends pulumi.ComponentResource {
     return this.logGroup.name.apply(logGroupName => ({
       ...container,
       readonlyRootFilesystem: false,
+      user: `${FIRST_POSIX_NON_ROOT_USER.userId}:${FIRST_POSIX_NON_ROOT_USER.groupId}`,
       ...(container.mountPoints && {
         mountPoints: container.mountPoints.map(mountPoint =>
           pulumi
