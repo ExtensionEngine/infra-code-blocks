@@ -8,6 +8,7 @@ interface ConfigContext {
 }
 
 interface RedisTestConfig {
+  defaultElastiCacheRedisName: string;
   elastiCacheRedisName: string;
   upstashRedisName: string;
   exponentialBackOffConfig: {

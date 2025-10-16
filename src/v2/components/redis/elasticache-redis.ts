@@ -25,7 +25,7 @@ type RedisArgs = {
   }>;
 };
 
-const defaults = {
+export const defaults = {
   engineVersion: '7.1',
   nodeType: 'cache.t4g.micro',
   parameterGroupName: 'default.redis7',

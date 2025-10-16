@@ -11,6 +11,11 @@ const tags = {
 
 const project = new Project(appName, { services: [] });
 
+const defaultElastiCacheRedis = new studion.ElastiCacheRedis(
+  `${appName}-default-elasticache`,
+  { vpc: project.vpc },
+);
+
 const elastiCacheRedis = new studion.ElastiCacheRedis(
   `${appName}-elasticache`,
   {
@@ -42,6 +47,7 @@ if (upstashEmail && upstashApiKey) {
 
 module.exports = {
   project,
+  defaultElastiCacheRedis,
   elastiCacheRedis,
   ...(upstashRedis && { upstashRedis }),
 };

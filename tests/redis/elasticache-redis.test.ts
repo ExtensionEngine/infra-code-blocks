@@ -10,8 +10,38 @@ import {
   DescribeSecurityGroupsCommand,
   IpPermission,
 } from '@aws-sdk/client-ec2';
+import { defaults as elastiCacheDefaults } from '../../src/v2/components/redis/elasticache-redis';
 
 export function testElastiCacheRedis(ctx: RedisTestContext) {
+  it('should create a default Redis cluster with the correct configuration', async () => {
+    const redis = ctx.outputs.defaultElastiCacheRedis.value;
+    assert.ok(redis, 'Redis instance should be defined');
+    assert.strictEqual(
+      redis.name,
+      ctx.config.defaultElastiCacheRedisName,
+      'Redis should have the correct name',
+    );
+    assert.ok(redis.cluster, 'Redis cluster should be defined');
+    assert.ok(redis.securityGroup, 'Security group should be defined');
+    assert.ok(redis.subnetGroup, 'Subnet group should be defined');
+    assert.strictEqual(
+      redis.cluster.engineVersion,
+      elastiCacheDefaults.engineVersion,
+      `Engine version should be ${elastiCacheDefaults.engineVersion}`,
+    );
+    assert.strictEqual(
+      redis.cluster.parameterGroupName,
+      elastiCacheDefaults.parameterGroupName,
+      `Parameter group name should be ${elastiCacheDefaults.parameterGroupName}`,
+    );
+    assert.strictEqual(
+      redis.cluster.nodeType,
+      elastiCacheDefaults.nodeType,
+      `Node type should be ${elastiCacheDefaults.nodeType}`,
+    );
+    assert.strictEqual(redis.cluster.port, 6379, 'Port should be 6379');
+  });
+
   it('should create a Redis cluster with the correct configuration', async () => {
     const redis = ctx.outputs.elastiCacheRedis.value;
     assert.ok(redis, 'Redis instance should be defined');

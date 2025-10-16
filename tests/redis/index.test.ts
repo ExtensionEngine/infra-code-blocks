@@ -25,6 +25,7 @@ describe('Redis component deployment', () => {
   const ctx: RedisTestContext = {
     outputs: {},
     config: {
+      defaultElastiCacheRedisName: 'redis-test-default-elasticache',
       elastiCacheRedisName: 'redis-test-elasticache',
       upstashRedisName: 'redis-test-upstash',
       exponentialBackOffConfig: {
