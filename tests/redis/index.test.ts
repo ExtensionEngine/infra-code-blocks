@@ -7,6 +7,8 @@ import { RedisTestContext } from './test-context';
 import { testElastiCacheRedis } from './elasticache-redis.test';
 import { testUpstashRedis } from './upstash-redis.test';
 import { SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
+import { CloudWatchLogsClient } from '@aws-sdk/client-cloudwatch-logs';
+import { ECSClient } from '@aws-sdk/client-ecs';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -27,6 +29,7 @@ describe('Redis component deployment', () => {
     config: {
       defaultElastiCacheRedisName: 'redis-test-default-elasticache',
       elastiCacheRedisName: 'redis-test-elasticache',
+      elastiCacheTestClientName: 'redis-test-ec-client',
       upstashRedisName: 'redis-test-upstash',
       exponentialBackOffConfig: {
         delayFirstAttempt: true,
@@ -40,6 +43,8 @@ describe('Redis component deployment', () => {
       elasticache: new ElastiCacheClient({ region }),
       ec2: new EC2Client({ region }),
       secretsManager: new SecretsManagerClient({ region }),
+      ecs: new ECSClient({ region }),
+      cloudwatchLogs: new CloudWatchLogsClient({ region }),
     },
   };
 

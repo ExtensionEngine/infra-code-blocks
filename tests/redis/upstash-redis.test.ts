@@ -3,6 +3,7 @@ import { RedisTestContext } from './test-context';
 import assert = require('node:assert');
 import { GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import Redis from 'ioredis';
+import { backOff } from 'exponential-backoff';
 
 export function testUpstashRedis(ctx: RedisTestContext) {
   it('should create Upstash Redis database with correct configuration', async () => {
@@ -40,31 +41,33 @@ export function testUpstashRedis(ctx: RedisTestContext) {
   });
 
   it('should connect to Upstash Redis instance', async () => {
-    const redis = ctx.outputs.upstashRedis.value;
-    const secretArn = redis.password.secret.arn;
+    return backOff(async () => {
+      const redis = ctx.outputs.upstashRedis.value;
+      const secretArn = redis.password.secret.arn;
 
-    assert.ok(secretArn, 'Password secret ARN should be defined');
+      assert.ok(secretArn, 'Password secret ARN should be defined');
 
-    const command = new GetSecretValueCommand({
-      SecretId: secretArn,
-    });
-    const response = await ctx.clients.secretsManager.send(command);
-    assert.ok(response.SecretString, 'Secret should contain a password');
+      const command = new GetSecretValueCommand({
+        SecretId: secretArn,
+      });
+      const response = await ctx.clients.secretsManager.send(command);
+      assert.ok(response.SecretString, 'Secret should contain a password');
 
-    const client = new Redis({
-      host: redis.instance.endpoint,
-      port: redis.instance.port,
-      tls: {},
-      password: response.SecretString,
-      connectTimeout: 10000,
-      lazyConnect: true,
-      maxRetriesPerRequest: 2,
-    });
-    try {
-      const pingResult = await client.ping();
-      assert.strictEqual(pingResult, 'PONG', 'Redis should respond to ping');
-    } finally {
-      await client.disconnect();
-    }
+      const client = new Redis({
+        host: redis.instance.endpoint,
+        port: redis.instance.port,
+        tls: {},
+        password: response.SecretString,
+        connectTimeout: 10000,
+        lazyConnect: true,
+        maxRetriesPerRequest: 2,
+      });
+      try {
+        const pingResult = await client.ping();
+        assert.strictEqual(pingResult, 'PONG', 'Redis should respond to ping');
+      } finally {
+        await client.disconnect();
+      }
+    }, ctx.config.exponentialBackOffConfig);
   });
 }

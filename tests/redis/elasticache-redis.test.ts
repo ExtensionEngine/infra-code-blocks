@@ -11,6 +11,12 @@ import {
   IpPermission,
 } from '@aws-sdk/client-ec2';
 import { defaults as elastiCacheDefaults } from '../../src/v2/components/redis/elasticache-redis';
+import { DescribeTasksCommand, ListTasksCommand } from '@aws-sdk/client-ecs';
+import {
+  DescribeLogGroupsCommand,
+  DescribeLogStreamsCommand,
+  GetLogEventsCommand,
+} from '@aws-sdk/client-cloudwatch-logs';
 
 export function testElastiCacheRedis(ctx: RedisTestContext) {
   it('should create a default Redis cluster with the correct configuration', async () => {
@@ -149,6 +155,102 @@ export function testElastiCacheRedis(ctx: RedisTestContext) {
       redisRule.IpProtocol,
       'tcp',
       'Should allow TCP protocol',
+    );
+  });
+
+  it('should connect to ElastiCache Redis instance', async () => {
+    const testClient = ctx.outputs.testClient.value;
+    assert.ok(testClient, 'Test client should be deployed');
+
+    const success = await backOff(
+      async () => {
+        const listTasksCommand = new ListTasksCommand({
+          cluster: ctx.outputs.cluster.value.name,
+          serviceName: testClient.service.name,
+        });
+        const { taskArns } = await ctx.clients.ecs.send(listTasksCommand);
+        if (!taskArns || taskArns.length === 0) {
+          throw new Error('No running tasks found for test client');
+        }
+
+        const describeTasksCommand = new DescribeTasksCommand({
+          cluster: ctx.outputs.cluster.value.name,
+          tasks: taskArns,
+        });
+        const { tasks } = await ctx.clients.ecs.send(describeTasksCommand);
+
+        if (!tasks || tasks.length === 0) {
+          throw new Error('No task details found');
+        }
+
+        const logGroupNamePrefix = `/ecs/${ctx.config.elastiCacheTestClientName}-`;
+
+        const describeLogGroupsCommand = new DescribeLogGroupsCommand({
+          logGroupNamePrefix: logGroupNamePrefix,
+        });
+
+        const logGroupsResponse = await ctx.clients.cloudwatchLogs.send(
+          describeLogGroupsCommand,
+        );
+        const logGroups = logGroupsResponse.logGroups;
+
+        if (!logGroups || logGroups.length === 0) {
+          throw new Error(
+            'No log groups found with prefix: ' + logGroupNamePrefix,
+          );
+        }
+
+        const logGroupName = logGroups[0].logGroupName;
+        const logStreamsCommand = new DescribeLogStreamsCommand({
+          logGroupName,
+          orderBy: 'LastEventTime',
+          descending: true,
+        });
+
+        const logStreamsResponse =
+          await ctx.clients.cloudwatchLogs.send(logStreamsCommand);
+        const logStreams = logStreamsResponse.logStreams;
+
+        if (!logStreams || logStreams.length === 0) {
+          throw new Error('No log streams found yet');
+        }
+
+        const getLogEventsCommand = new GetLogEventsCommand({
+          logGroupName,
+          logStreamName: logStreams[0].logStreamName,
+          startFromHead: true,
+        });
+
+        const { events } =
+          await ctx.clients.cloudwatchLogs.send(getLogEventsCommand);
+
+        if (!events || events.length === 0) {
+          throw new Error('No log events found yet');
+        }
+
+        const logContent = events.map(event => event.message).join('\n');
+
+        if (logContent.includes('SUCCESS: Redis ping was successful')) {
+          return true;
+        }
+
+        if (logContent.includes('ERROR:')) {
+          throw new Error('Found error in test logs: ' + logContent);
+        }
+
+        return false;
+      },
+      {
+        ...ctx.config.exponentialBackOffConfig,
+        numOfAttempts: 10,
+        startingDelay: 5000,
+      },
+    );
+
+    assert.strictEqual(
+      success,
+      true,
+      'Client should connect to ElastiCache Redis successfully',
     );
   });
 }
