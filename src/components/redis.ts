@@ -28,7 +28,7 @@ export class Redis extends pulumi.ComponentResource {
   username = 'default';
 
   constructor(name: string, args: RedisArgs, opts: RedisOptions) {
-    super('studion:Redis', name, {}, opts);
+    super('studion:LegacyRedis', name, {}, opts);
 
     const project = pulumi.getProject();
     const stack = pulumi.getStack();

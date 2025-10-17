@@ -27,7 +27,11 @@ const programArgs: InlineProgramArgs = {
 };
 
 describe('EcsService component deployment', () => {
-  const region = process.env.AWS_REGION || 'us-east-2';
+  const region = process.env.AWS_REGION;
+  if (!region) {
+    throw new Error('AWS_REGION environment variable is required');
+  }
+
   const ctx: EcsTestContext = {
     outputs: {},
     config: {
