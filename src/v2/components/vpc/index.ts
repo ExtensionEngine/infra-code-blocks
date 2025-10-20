@@ -1,6 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as awsx from '@pulumi/awsx';
 import { commonTags } from '../../../constants';
+import { enums } from '@pulumi/awsx/types';
 
 export type VpcArgs = {
   /**
@@ -35,6 +36,7 @@ export class Vpc extends pulumi.ComponentResource {
         numberOfAvailabilityZones: argsWithDefaults.numberOfAvailabilityZones,
         enableDnsHostnames: true,
         enableDnsSupport: true,
+        subnetStrategy: enums.ec2.SubnetAllocationStrategy.Auto,
         subnetSpecs: [
           { type: awsx.ec2.SubnetType.Public, cidrMask: 24 },
           { type: awsx.ec2.SubnetType.Private, cidrMask: 24 },
