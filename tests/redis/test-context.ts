@@ -5,10 +5,6 @@ import { SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { CloudWatchLogsClient } from '@aws-sdk/client-cloudwatch-logs';
 import { ECSClient } from '@aws-sdk/client-ecs';
 
-interface ConfigContext {
-  config: RedisTestConfig;
-}
-
 interface RedisTestConfig {
   defaultElastiCacheRedisName: string;
   elastiCacheRedisName: string;
