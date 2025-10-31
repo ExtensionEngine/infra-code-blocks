@@ -1,4 +1,5 @@
 import * as aws from '@pulumi/aws';
+import * as awsx from '@pulumi/awsx';
 import * as pulumi from '@pulumi/pulumi';
 import { Password } from '../../../components/password';
 import { commonTags } from '../../../constants';
@@ -13,12 +14,7 @@ export namespace Database {
      * Username for the master DB user.
      */
     username: pulumi.Input<string>;
-    vpcId: pulumi.Input<string>;
-    isolatedSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
-    /**
-     * The IPv4 CIDR block for the VPC.
-     */
-    vpcCidrBlock: pulumi.Input<string>;
+    vpc: pulumi.Input<awsx.ec2.Vpc>;
     /**
      * Specifies if the RDS instance is multi-AZ. Defaults to false.
      */
@@ -131,14 +127,14 @@ export class Database extends pulumi.ComponentResource {
 
     const argsWithDefaults = Object.assign({}, defaults, args);
     const {
-      vpcId,
-      isolatedSubnetIds,
-      vpcCidrBlock,
       enableMonitoring,
       snapshotIdentifier,
     } = argsWithDefaults;
-    this.dbSubnetGroup = this.createSubnetGroup({ isolatedSubnetIds });
-    this.dbSecurityGroup = this.createSecurityGroup({ vpcId, vpcCidrBlock });
+
+    const vpc = pulumi.output(argsWithDefaults.vpc);
+    this.dbSubnetGroup = this.createSubnetGroup(vpc.isolatedSubnetIds);
+    this.dbSecurityGroup = this.createSecurityGroup(vpc.vpcId, vpc.vpc.cidrBlock);
+  
     this.kms = this.createEncryptionKey();
     this.password = new Password(
       `${this.name}-database-password`,
@@ -157,9 +153,7 @@ export class Database extends pulumi.ComponentResource {
     this.registerOutputs();
   }
 
-  private createSubnetGroup({
-    isolatedSubnetIds,
-  }: Pick<Database.Args, 'isolatedSubnetIds'>) {
+  private createSubnetGroup(isolatedSubnetIds: awsx.ec2.Vpc['isolatedSubnetIds']) {
     const dbSubnetGroup = new aws.rds.SubnetGroup(
       `${this.name}-subnet-group`,
       {
@@ -171,10 +165,10 @@ export class Database extends pulumi.ComponentResource {
     return dbSubnetGroup;
   }
 
-  private createSecurityGroup({
-    vpcId,
-    vpcCidrBlock,
-  }: Pick<Database.Args, 'vpcId' | 'vpcCidrBlock'>) {
+  private createSecurityGroup(
+    vpcId: awsx.ec2.Vpc['vpcId'],
+    vpcCidrBlock: pulumi.Output<string>
+  ) {
     const dbSecurityGroup = new aws.ec2.SecurityGroup(
       `${this.name}-security-group`,
       {
