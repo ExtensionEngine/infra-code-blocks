@@ -5,6 +5,7 @@ export { WebServerLoadBalancer } from './components/web-server/load-balancer';
 export { ElastiCacheRedis } from './components/redis/elasticache-redis';
 export { UpstashRedis } from './components/redis/upstash-redis';
 export { Database } from './components/database';
+export { DatabaseBuilder } from './components/database/builder';
 
 import { OtelCollectorBuilder } from './otel/builder';
 import { OtelCollector } from './otel';
