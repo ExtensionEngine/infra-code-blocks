@@ -61,6 +61,11 @@ export namespace Database {
      */
     allowMajorVersionUpgrade?: pulumi.Input<boolean>;
     /**
+     * Set this to false to disallow automatic minor version updates to the
+     * DB instance during the maintenance window. Defaults to true.
+     */
+    autoMinorVersionUpgrade?: pulumi.Input<boolean>;
+    /**
      * The name of custom aws.rds.ParameterGroup. Setting this param will apply custom
      * DB parameters to this instance.
      */
@@ -93,6 +98,7 @@ const defaults = {
   instanceClass: 'db.t4g.micro',
   enableMonitoring: false,
   allowMajorVersionUpgrade: false,
+  autoMinorVersionUpgrade: true,
   engineVersion: '17.2',
 };
 
@@ -274,7 +280,7 @@ export class Database extends pulumi.ComponentResource {
         publiclyAccessible: false,
         skipFinalSnapshot: argsWithDefaults.skipFinalSnapshot,
         applyImmediately: argsWithDefaults.applyImmediately,
-        autoMinorVersionUpgrade: true,
+        autoMinorVersionUpgrade: argsWithDefaults.autoMinorVersionUpgrade,
         maintenanceWindow: 'Mon:07:00-Mon:07:30',
         finalSnapshotIdentifier: `${this.name}-final-snapshot-${stack}`,
         backupWindow: '06:00-06:30',
