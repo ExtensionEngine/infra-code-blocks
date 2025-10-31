@@ -71,6 +71,11 @@ export namespace Database {
      */
     parameterGroupName?: pulumi.Input<string>;
     /**
+     * Set this to `{ enabled: true }` to enable low-downtime updates using RDS Blue/Green deployments.
+     * Defaults to `{ enabled: false }`.
+     */
+    blueGreenUpdate?: pulumi.Input<aws.types.input.rds.InstanceBlueGreenUpdate>;
+    /**
      * Specifies whether to create this database from a snapshot.
      * This correlates to the snapshot ID you'd find in the RDS console,
      * e.g: rds:production-2015-06-26-06-05.
@@ -100,6 +105,9 @@ const defaults = {
   allowMajorVersionUpgrade: false,
   autoMinorVersionUpgrade: true,
   engineVersion: '17.2',
+  blueGreenUpdate: {
+    enabled: false,
+  },
 };
 
 export class Database extends pulumi.ComponentResource {
@@ -288,6 +296,7 @@ export class Database extends pulumi.ComponentResource {
         caCertIdentifier: 'rds-ca-rsa2048-g1',
         parameterGroupName: argsWithDefaults.parameterGroupName,
         allowMajorVersionUpgrade: argsWithDefaults.allowMajorVersionUpgrade,
+        blueGreenUpdate: argsWithDefaults.blueGreenUpdate,
         snapshotIdentifier:
           this.encryptedSnapshotCopy?.targetDbSnapshotIdentifier,
         ...monitoringOptions,
