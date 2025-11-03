@@ -258,4 +258,51 @@ describe('Build output', () => {
       });
     });
   });
+
+  describe('Database', () => {
+    it('should export Database', () => {
+      expect(studion).type.toHaveProperty('Database');
+    });
+
+    it('should export DatabaseBuilder', () => {
+      expect(studion).type.toHaveProperty('DatabaseBuilder');
+    });
+
+    describe('Instantiation', () => {
+      const { Database, DatabaseBuilder } = studion;
+
+      it('should construct Database', () => {
+        expect(Database).type.toBeConstructableWith('dbName', {
+          vpc: new awsx.ec2.Vpc('vpcName'),
+          dbName: 'dbdb',
+          username: 'username',
+        });
+      });
+
+      it('should construct DatabaseBuilder', () => {
+        expect(DatabaseBuilder).type.toBeConstructableWith('dbbName');
+      });
+    });
+
+    describe('Builder', () => {
+      const builder = new studion.DatabaseBuilder('dbbName');
+
+      it('should have build method', () => {
+        expect(builder.build).type.toBeCallableWith();
+      });
+
+      it('should have configure method', () => {
+        expect(builder.configure).type.toBeCallableWith({
+          dbName: 'dbdb',
+          username: 'username',
+        });
+      });
+
+      it('should have withVpc method', () => {
+        expect(builder.withVpc).type.toBeCallableWith(
+          new awsx.ec2.Vpc('vpcName'),
+        );
+      });
+    });
+  });
 });
