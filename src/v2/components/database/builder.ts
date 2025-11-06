@@ -4,31 +4,30 @@ import * as awsx from '@pulumi/awsx';
 import { Database } from '.';
 
 export namespace DatabaseBuilder {
-  export type Args = Pick<Database.Args, 'dbName' | 'username' | 'password'>;
-
-  export type Config = Omit<Database.Args, keyof Args | 'vpc'>;
+  export type Config = Omit<Database.Args, 'vpc' | 'enableMonitoring' | 'snapshotIdentifier'>;
 }
 
 export class DatabaseBuilder {
   private _name: string;
-  private _args?: DatabaseBuilder.Args;
   private _config?: DatabaseBuilder.Config;
-  private _vpc?: pulumi.Output<awsx.ec2.Vpc>;
-  private _enableMonitoring?: pulumi.Input<boolean>;
-  private _snapshotIdentifier?: pulumi.Input<string>;
+  private _vpc?: Database.Args['vpc'];
+  private _enableMonitoring?: Database.Args['enableMonitoring'];
+  private _snapshotIdentifier?: Database.Args['snapshotIdentifier'];
   
   constructor(name: string) {
     this._name = name;
   }
 
-  public create(args: DatabaseBuilder.Args): this {
-    this._args = args;
-
-    return this;
-  }
-
-  public configure(config: DatabaseBuilder.Config): this {
-    this._config = config;
+  public configure(
+    dbName: DatabaseBuilder.Config['dbName'],
+    username: DatabaseBuilder.Config['username'],
+    config: Omit<DatabaseBuilder.Config, 'dbName' | 'username'> = {},
+  ): this {
+    this._config = {
+      dbName,
+      username,
+      ...config,
+    };
 
     return this;
   }
@@ -52,9 +51,9 @@ export class DatabaseBuilder {
   }
 
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
-    if (!this._args) {
+    if (!this._config) {
       throw new Error(
-        'Database args not provided. Make sure to call DatabaseBuilder.create().',
+        'Database is not configured. Make sure to call DatabaseBuilder.configure().',
       );
     }
 
@@ -68,7 +67,6 @@ export class DatabaseBuilder {
     return new Database(
       this._name,
       {
-        ...this._args,
         ...this._config,
         vpc: this._vpc,
         enableMonitoring: this._enableMonitoring,

@@ -4,15 +4,11 @@ import * as config from './config';
 export const project = new Project(config.projectName, { services: [] });
 
 export const database = new studion.DatabaseBuilder(config.instanceName)
-  .create(
-    {
-      dbName: config.dbName,
-      username: config.username,
-      password: config.password,
-    }
-  )
   .configure(
+    config.dbName,
+    config.username,
     {
+      password: config.password,
       applyImmediately: config.applyImmediately,
       skipFinalSnapshot: config.skipFinalSnapshot
     },

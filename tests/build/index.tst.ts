@@ -292,16 +292,27 @@ describe('Build output', () => {
       });
 
       it('should have configure method', () => {
-        expect(builder.configure).type.toBeCallableWith({
-          dbName: 'dbdb',
-          username: 'username',
-        });
+        expect(builder.configure).type.toBeCallableWith(
+          'dbdb',
+          'username',
+          {
+            password: 'password',
+          }
+        );
       });
 
       it('should have withVpc method', () => {
         expect(builder.withVpc).type.toBeCallableWith(
           new awsx.ec2.Vpc('vpcName'),
         );
+      });
+
+      it('should have withMonitoring method', () => {
+        expect(builder.withMonitoring).type.toBeCallableWith();
+      });
+
+      it('should have withSnapshot method', () => {
+        expect(builder.withSnapshot).type.toBeCallableWith('snapshot-id');
       });
     });
   });
