@@ -1,5 +1,5 @@
-export const projectName = 'database-test-project';
-export const instanceName = 'database-test-instance';
+export const projectName = 'db-test-project';
+export const instanceName = 'db-test-instance';
 export const dbName = 'databasetestdb';
 export const username = 'databasetestusername';
 export const password = 'databasetestpassword';

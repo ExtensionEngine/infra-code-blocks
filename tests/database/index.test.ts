@@ -1,12 +1,22 @@
 import { describe, it, before, after } from 'node:test';
 import { DescribeDBSubnetGroupsCommand, RDSClient } from '@aws-sdk/client-rds';
-import { DescribeKeyCommand, GetKeyRotationStatusCommand, KMSClient } from '@aws-sdk/client-kms';
-import { DescribeSecurityGroupsCommand, EC2Client, IpPermission } from '@aws-sdk/client-ec2';
+import {
+  DescribeKeyCommand,
+  GetKeyRotationStatusCommand,
+  KMSClient,
+} from '@aws-sdk/client-kms';
+import {
+  DescribeSecurityGroupsCommand,
+  EC2Client,
+  IpPermission,
+} from '@aws-sdk/client-ec2';
 import * as assert from 'node:assert';
 import * as automation from '../automation';
 import * as config from './infrastructure/config';
 import { DatabaseTestContext } from './test-context';
-import { InlineProgramArgs } from "@pulumi/pulumi/automation";
+import { IAMClient } from '@aws-sdk/client-iam';
+import { InlineProgramArgs } from '@pulumi/pulumi/automation';
+import { testDbWithMonitoring } from './monitoring.test';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -14,7 +24,7 @@ const programArgs: InlineProgramArgs = {
   program: () => import('./infrastructure'),
 };
 
-// TODO: Add tests for monitoring role & encrypted snapshot copy
+// TODO: Add tests for encrypted snapshot copy
 
 describe('Database component deployment', () => {
   const region = process.env.AWS_REGION;
@@ -29,8 +39,9 @@ describe('Database component deployment', () => {
       rds: new RDSClient({ region }),
       ec2: new EC2Client({ region }),
       kms: new KMSClient({ region }),
-    }
-  }
+      iam: new IAMClient({ region }),
+    },
+  };
 
   before(async () => {
     ctx.outputs = await automation.deploy(programArgs);
@@ -51,11 +62,31 @@ describe('Database component deployment', () => {
     assert.ok(database.dbSubnetGroup, 'Subnet group should be defined');
     assert.ok(database.kms, 'Encryption key should be defined');
     assert.ok(database.password, 'Password should be defined');
-    assert.strictEqual(database.instance.dbName, config.dbName, 'Db name argument should be set correctly');
-    assert.strictEqual(database.instance.username, config.username, 'Username argument should be set correctly');
-    assert.strictEqual(database.instance.password, config.password, 'Password argument should be set correctly');
-    assert.strictEqual(database.instance.applyImmediately, config.applyImmediately, 'Apply immediately argument should be set correctly');
-    assert.strictEqual(database.instance.skipFinalSnapshot, config.skipFinalSnapshot, 'Skip final snapshot argument should be set correctly');
+    assert.strictEqual(
+      database.instance.dbName,
+      config.dbName,
+      'Db name argument should be set correctly',
+    );
+    assert.strictEqual(
+      database.instance.username,
+      config.username,
+      'Username argument should be set correctly',
+    );
+    assert.strictEqual(
+      database.instance.password,
+      config.password,
+      'Password argument should be set correctly',
+    );
+    assert.strictEqual(
+      database.instance.applyImmediately,
+      config.applyImmediately,
+      'Apply immediately argument should be set correctly',
+    );
+    assert.strictEqual(
+      database.instance.skipFinalSnapshot,
+      config.skipFinalSnapshot,
+      'Skip final snapshot argument should be set correctly',
+    );
   });
 
   it('should create subnet group in the correct VPC', async () => {
@@ -133,11 +164,7 @@ describe('Database component deployment', () => {
       'ENCRYPT_DECRYPT',
       'KMS key should be used for encryption/decryption',
     );
-    assert.strictEqual(
-      KeyMetadata.Enabled,
-      true,
-      'KMS key should be enabled',
-    );
+    assert.strictEqual(KeyMetadata.Enabled, true, 'KMS key should be enabled');
     assert.strictEqual(
       KeyMetadata.MultiRegion,
       false,
@@ -152,4 +179,6 @@ describe('Database component deployment', () => {
       'KMS key rotation should be enabled',
     );
   });
+
+  describe('With monitoring', () => testDbWithMonitoring(ctx));
 });

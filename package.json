@@ -52,6 +52,7 @@
     "@aws-sdk/client-efs": "^3.758.0",
     "@aws-sdk/client-elastic-load-balancing-v2": "^3.764.0",
     "@aws-sdk/client-elasticache": "^3.901.0",
+    "@aws-sdk/client-iam": "^3.925.0",
     "@aws-sdk/client-kms": "^3.922.0",
     "@aws-sdk/client-rds": "^3.922.0",
     "@aws-sdk/client-route-53": "^3.782.0",
