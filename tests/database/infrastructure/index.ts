@@ -1,7 +1,7 @@
-import { Project, next as studion } from '@studion/infra-code-blocks';
+import { next as studion } from '@studion/infra-code-blocks';
 import * as config from './config';
 
-export const project = new Project(config.projectName, { services: [] });
+export const vpc = new studion.Vpc(config.projectName, {});
 
 export const database = new studion.DatabaseBuilder(config.instanceName)
   .configure(
@@ -13,5 +13,5 @@ export const database = new studion.DatabaseBuilder(config.instanceName)
       skipFinalSnapshot: config.skipFinalSnapshot
     },
   )
-  .withVpc(project.vpc)
-  .build({ parent: project });
+  .withVpc(vpc.vpc)
+  .build();

@@ -60,7 +60,7 @@ describe('Database component deployment', () => {
 
   it('should create subnet group in the correct VPC', async () => {
     const database = ctx.outputs.database.value;
-    const project = ctx.outputs.project.value;
+    const vpc = ctx.outputs.vpc.value;
     const dbSubnetGroupName = database.dbSubnetGroup.name;
 
     const command = new DescribeDBSubnetGroupsCommand({
@@ -75,7 +75,7 @@ describe('Database component deployment', () => {
     const [subnetGroup] = DBSubnetGroups;
     assert.strictEqual(
       subnetGroup.VpcId,
-      project.vpc.vpcId,
+      vpc.vpc.vpcId,
       'Subnet group should be in the correct VPC',
     );
     assert.ok(
@@ -86,7 +86,7 @@ describe('Database component deployment', () => {
 
   it('should create a security group with correct ingress rules', async () => {
     const database = ctx.outputs.database.value;
-    const project = ctx.outputs.project.value;
+    const vpc = ctx.outputs.vpc.value;
     const dbSecurityGroupId = database.dbSecurityGroup.id;
 
     const command = new DescribeSecurityGroupsCommand({
@@ -100,7 +100,7 @@ describe('Database component deployment', () => {
     const [securityGroup] = SecurityGroups;
     assert.strictEqual(
       securityGroup.VpcId,
-      project.vpc.vpcId,
+      vpc.vpc.vpcId,
       'Security group should be in the correct VPC',
     );
 
