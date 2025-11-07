@@ -62,10 +62,14 @@ export namespace Database {
      */
     autoMinorVersionUpgrade?: pulumi.Input<boolean>;
     /**
-     * The name of custom aws.rds.ParameterGroup. Setting this param will apply custom
+     * The name of existing custom aws.rds.ParameterGroup. Setting this param will apply custom
      * DB parameters to this instance.
      */
     parameterGroupName?: pulumi.Input<string>;
+    /**
+     * Arguments for creation of new custom aws.rds.ParameterGroup.
+     */
+    parameterGroupArgs?: pulumi.Input<aws.rds.ParameterGroupArgs>;
     /**
      * Set this to `{ enabled: true }` to enable low-downtime updates using RDS Blue/Green deployments.
      * Defaults to `{ enabled: false }`.
@@ -115,6 +119,7 @@ export class Database extends pulumi.ComponentResource {
   password: Password;
   encryptedSnapshotCopy?: aws.rds.SnapshotCopy;
   monitoringRole?: aws.iam.Role;
+  parameterGroup?: pulumi.Output<aws.rds.ParameterGroup>;
 
   constructor(
     name: string,
@@ -129,6 +134,7 @@ export class Database extends pulumi.ComponentResource {
     const {
       enableMonitoring,
       snapshotIdentifier,
+      parameterGroupArgs,
     } = argsWithDefaults;
 
     const vpc = pulumi.output(argsWithDefaults.vpc);
@@ -147,6 +153,9 @@ export class Database extends pulumi.ComponentResource {
     if (snapshotIdentifier) {
       this.encryptedSnapshotCopy =
         this.createEncryptedSnapshotCopy(snapshotIdentifier);
+    }
+    if (parameterGroupArgs) {
+      this.parameterGroup = this.createParameterGroup(parameterGroupArgs);
     }
     this.instance = this.createDatabaseInstance(args);
 
@@ -248,6 +257,18 @@ export class Database extends pulumi.ComponentResource {
     return encryptedSnapshotCopy;
   }
 
+  private createParameterGroup(
+    parameterGroupArgs: pulumi.Input<aws.rds.ParameterGroupArgs>
+  ) {
+    return pulumi.output(parameterGroupArgs).apply(args => {
+      return new aws.rds.ParameterGroup(
+        `${this.name}-parameter-group`,
+        args,
+        { parent: this }
+      );
+    })
+  }
+
   private createDatabaseInstance(args: Database.Args) {
     const argsWithDefaults = Object.assign({}, defaults, args);
     const stack = pulumi.getStack();
@@ -261,6 +282,10 @@ export class Database extends pulumi.ComponentResource {
             performanceInsightsRetentionPeriod: 7,
           }
         : {};
+
+    const parameterGroupName = this.parameterGroup
+        ? this.parameterGroup.name
+        : argsWithDefaults.parameterGroupName;
 
     const instance = new aws.rds.Instance(
       `${this.name}-rds`,
@@ -288,7 +313,7 @@ export class Database extends pulumi.ComponentResource {
         backupWindow: '06:00-06:30',
         backupRetentionPeriod: 14,
         caCertIdentifier: 'rds-ca-rsa2048-g1',
-        parameterGroupName: argsWithDefaults.parameterGroupName,
+        parameterGroupName,
         allowMajorVersionUpgrade: argsWithDefaults.allowMajorVersionUpgrade,
         blueGreenUpdate: argsWithDefaults.blueGreenUpdate,
         snapshotIdentifier:

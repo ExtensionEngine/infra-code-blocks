@@ -1,10 +1,13 @@
-
 import * as pulumi from '@pulumi/pulumi';
+import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 import { Database } from '.';
 
 export namespace DatabaseBuilder {
-  export type Config = Omit<Database.Args, 'vpc' | 'enableMonitoring' | 'snapshotIdentifier'>;
+  export type Config = Omit<
+    Database.Args,
+    'vpc' | 'enableMonitoring' | 'snapshotIdentifier'
+  >;
 }
 
 export class DatabaseBuilder {
@@ -13,7 +16,8 @@ export class DatabaseBuilder {
   private _vpc?: Database.Args['vpc'];
   private _enableMonitoring?: Database.Args['enableMonitoring'];
   private _snapshotIdentifier?: Database.Args['snapshotIdentifier'];
-  
+  private _parameterGroupArgs?: Database.Args['parameterGroupArgs'];
+
   constructor(name: string) {
     this._name = name;
   }
@@ -34,19 +38,27 @@ export class DatabaseBuilder {
 
   public withVpc(vpc: pulumi.Input<awsx.ec2.Vpc>): this {
     this._vpc = pulumi.output(vpc);
-    
+
     return this;
   }
 
   public withMonitoring(): this {
     this._enableMonitoring = true;
-    
+
     return this;
   }
 
   public withSnapshot(snapshotIdentifier: pulumi.Input<string>): this {
     this._snapshotIdentifier = snapshotIdentifier;
-    
+
+    return this;
+  }
+
+  public withParameterGroup(
+    parameterGroupArgs: pulumi.Input<aws.rds.ParameterGroupArgs>,
+  ): this {
+    this._parameterGroupArgs = parameterGroupArgs;
+
     return this;
   }
 
@@ -63,7 +75,6 @@ export class DatabaseBuilder {
       );
     }
 
-
     return new Database(
       this._name,
       {
@@ -71,9 +82,9 @@ export class DatabaseBuilder {
         vpc: this._vpc,
         enableMonitoring: this._enableMonitoring,
         snapshotIdentifier: this._snapshotIdentifier,
+        parameterGroupArgs: this._parameterGroupArgs,
       },
       opts,
     );
   }
-
 }

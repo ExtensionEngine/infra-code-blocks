@@ -13,8 +13,8 @@ const database = new studion.DatabaseBuilder(config.instanceName)
   .build();
 
 const dbWithMonitoring = new studion.DatabaseBuilder(
-  `${config.instanceName}-w-monitoring`,
-)
+    `${config.instanceName}-w-monitoring`,
+  )
   .configure(config.dbName, config.username, {
     password: config.password,
     applyImmediately: config.applyImmediately,
@@ -24,4 +24,18 @@ const dbWithMonitoring = new studion.DatabaseBuilder(
   .withMonitoring()
   .build();
 
-export { vpc, database, dbWithMonitoring };
+const dbWithParameterGroup = new studion.DatabaseBuilder(
+    `${config.instanceName}-w-param-group`,
+  )
+  .configure(config.dbName, config.username, {
+    password: config.password,
+    applyImmediately: config.applyImmediately,
+    skipFinalSnapshot: config.skipFinalSnapshot,
+  })
+  .withVpc(vpc.vpc)
+  .withParameterGroup({
+    family: 'postgres17'
+  })
+  .build();
+
+export { vpc, database, dbWithMonitoring, dbWithParameterGroup };

@@ -314,6 +314,12 @@ describe('Build output', () => {
       it('should have withSnapshot method', () => {
         expect(builder.withSnapshot).type.toBeCallableWith('snapshot-id');
       });
+
+      it('should have withParameterGroup method', () => {
+        expect(builder.withParameterGroup).type.toBeCallableWith({
+          family: 'custom-family'
+        });
+      });
     });
   });
 });

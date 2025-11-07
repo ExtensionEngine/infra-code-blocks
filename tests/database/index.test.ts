@@ -17,6 +17,7 @@ import { DatabaseTestContext } from './test-context';
 import { IAMClient } from '@aws-sdk/client-iam';
 import { InlineProgramArgs } from '@pulumi/pulumi/automation';
 import { testDbWithMonitoring } from './monitoring.test';
+import { testDbWithParameterGroup } from './parameter-group.test';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -181,4 +182,5 @@ describe('Database component deployment', () => {
   });
 
   describe('With monitoring', () => testDbWithMonitoring(ctx));
+  describe('With parameter group', () => testDbWithParameterGroup(ctx));
 });
