@@ -52,7 +52,7 @@ describe('Database component deployment', () => {
 
   it('should create a Database with the correct configuration', () => {
     const database = ctx.outputs.database.value;
-    const project = ctx.outputs.project.value;
+
     assert.ok(database, 'Database should be defined');
     assert.strictEqual(
       database.name,
