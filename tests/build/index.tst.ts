@@ -269,7 +269,7 @@ describe('Build output', () => {
     });
 
     describe('Instantiation', () => {
-      const { Database, DatabaseBuilder } = studion;
+      const { Database, DatabaseBuilder, DatabaseReplica } = studion;
 
       it('should construct Database', () => {
         expect(Database).type.toBeConstructableWith('dbName', {
@@ -281,6 +281,13 @@ describe('Build output', () => {
 
       it('should construct DatabaseBuilder', () => {
         expect(DatabaseBuilder).type.toBeConstructableWith('dbbName');
+      });
+
+      it('should construct DatabaseReplica', () => {
+        expect(DatabaseReplica).type.toBeConstructableWith('dbreplica', {
+          replicateSourceDb: 'source-db-id',
+          dbSecurityGroupId: 'db-security-group-id'
+        });
       });
     });
 
@@ -319,6 +326,10 @@ describe('Build output', () => {
         expect(builder.withParameterGroup).type.toBeCallableWith({
           family: 'custom-family'
         });
+      });
+
+      it('should have withReplica method', () => {
+        expect(builder.withReplica).type.toBeCallableWith();
       });
     });
   });
