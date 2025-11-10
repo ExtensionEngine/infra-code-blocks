@@ -7,6 +7,7 @@ export { UpstashRedis } from './components/redis/upstash-redis';
 export { Vpc } from './components/vpc';
 export { Database } from './components/database';
 export { DatabaseBuilder } from './components/database/builder';
+export { DatabaseReplica } from './components/database/database-replica';
 
 import { OtelCollectorBuilder } from './otel/builder';
 import { OtelCollector } from './otel';

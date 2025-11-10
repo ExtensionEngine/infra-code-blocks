@@ -1,6 +1,6 @@
 import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
-import { commonTags } from '../constants';
+import { commonTags } from '../../../constants';
 
 export type DatabaseReplicaArgs = {
   /**
@@ -82,7 +82,7 @@ export class DatabaseReplica extends pulumi.ComponentResource {
     args: DatabaseReplicaArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:LegacyDatabaseReplica', name, {}, opts);
+    super('studion:DatabaseReplica', name, {}, opts);
 
     this.name = name;
 
