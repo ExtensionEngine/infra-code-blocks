@@ -46,6 +46,11 @@ export type DatabaseReplicaArgs = {
    */
   instanceClass?: pulumi.Input<string>;
   /**
+   * Set this to false to disallow automatic minor version updates to the
+   * DB instance during the maintenance window. Defaults to true.
+   */
+  autoMinorVersionUpgrade?: pulumi.Input<boolean>;
+  /**
    * The name of custom aws.rds.ParameterGroup. Setting this param will apply custom
    * DB parameters to this instance.
    */
@@ -69,6 +74,7 @@ const defaults = {
   maxAllocatedStorage: 100,
   instanceClass: 'db.t4g.micro',
   enableMonitoring: false,
+  autoMinorVersionUpgrade: true,
   engineVersion: '17.2',
 };
 
@@ -122,7 +128,7 @@ export class DatabaseReplica extends pulumi.ComponentResource {
         multiAz: argsWithDefaults.multiAz,
         publiclyAccessible: false,
         applyImmediately: argsWithDefaults.applyImmediately,
-        autoMinorVersionUpgrade: true,
+        autoMinorVersionUpgrade: argsWithDefaults.autoMinorVersionUpgrade,
         maintenanceWindow: 'Mon:07:00-Mon:07:30',
         replicateSourceDb: argsWithDefaults.replicateSourceDb,
         parameterGroupName: argsWithDefaults.parameterGroupName,
