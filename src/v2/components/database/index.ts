@@ -286,7 +286,7 @@ export class Database extends pulumi.ComponentResource {
 
     return new DatabaseReplica(
       `${this.name}-replica`, {
-        replicateSourceDb: this.instance.id,
+        replicateSourceDb: this.instance.arn,
         dbSubnetGroupName: this.dbSubnetGroup.name,
         dbSecurityGroupId: this.dbSecurityGroup.id,
         monitoringRole: this.monitoringRole,
