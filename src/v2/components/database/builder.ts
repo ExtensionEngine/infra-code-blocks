@@ -17,6 +17,7 @@ export class DatabaseBuilder {
   private _enableMonitoring?: Database.Args['enableMonitoring'];
   private _snapshotIdentifier?: Database.Args['snapshotIdentifier'];
   private _parameterGroupArgs?: Database.Args['parameterGroupArgs'];
+  private _hasReplica?: Database.Args['hasReplica'];
 
   constructor(name: string) {
     this._name = name;
@@ -62,6 +63,12 @@ export class DatabaseBuilder {
     return this;
   }
 
+  public withReplica(): this {
+    this._hasReplica = true;
+
+    return this;
+  }
+
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
     if (!this._config) {
       throw new Error(
@@ -81,6 +88,7 @@ export class DatabaseBuilder {
         ...this._config,
         vpc: this._vpc,
         enableMonitoring: this._enableMonitoring,
+        hasReplica: this._hasReplica,
         snapshotIdentifier: this._snapshotIdentifier,
         parameterGroupArgs: this._parameterGroupArgs,
       },

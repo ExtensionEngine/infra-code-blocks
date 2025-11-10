@@ -1,8 +1,9 @@
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 import * as pulumi from '@pulumi/pulumi';
-import { Password } from '../../../components/password';
 import { commonTags } from '../../../constants';
+import { DatabaseReplica } from './database-replica';
+import { Password } from '../../../components/password';
 
 export namespace Database {
   export type Args = {
@@ -51,6 +52,10 @@ export namespace Database {
      * Set this to true to enable database monitoring. Defaults to false.
      */
     enableMonitoring?: pulumi.Input<boolean>;
+    /**
+     * Set this to true to create database replica. Defaults to false.
+     */
+    hasReplica?: pulumi.Input<boolean>;
     /**
      * Set this to true to allow major version upgrades, for example when creating
      * db from the snapshot. Defaults to false.
@@ -120,6 +125,8 @@ export class Database extends pulumi.ComponentResource {
   encryptedSnapshotCopy?: aws.rds.SnapshotCopy;
   monitoringRole?: aws.iam.Role;
   parameterGroup?: pulumi.Output<aws.rds.ParameterGroup>;
+  hasReplica?: boolean;
+  replica?: DatabaseReplica;
 
   constructor(
     name: string,
@@ -135,6 +142,7 @@ export class Database extends pulumi.ComponentResource {
       enableMonitoring,
       snapshotIdentifier,
       parameterGroupArgs,
+      hasReplica,
     } = argsWithDefaults;
 
     const vpc = pulumi.output(argsWithDefaults.vpc);
@@ -158,6 +166,10 @@ export class Database extends pulumi.ComponentResource {
       this.parameterGroup = this.createParameterGroup(parameterGroupArgs);
     }
     this.instance = this.createDatabaseInstance(args);
+
+    if (hasReplica) {
+      this.replica = this.createDatabaseReplica(args);
+    }
 
     this.registerOutputs();
   }
@@ -267,6 +279,21 @@ export class Database extends pulumi.ComponentResource {
         { parent: this }
       );
     })
+  }
+
+  private createDatabaseReplica(args: Database.Args) {
+    const argsWithDefaults = Object.assign({}, defaults, args);
+
+    return new DatabaseReplica(
+      `${this.name}-replica`, {
+        replicateSourceDb: this.instance.id,
+        dbSubnetGroupName: this.dbSubnetGroup.name,
+        dbSecurityGroupId: this.dbSecurityGroup.id,
+        monitoringRole: this.monitoringRole,
+        ...argsWithDefaults,
+      },
+      { parent: this }
+    );
   }
 
   private createDatabaseInstance(args: Database.Args) {
