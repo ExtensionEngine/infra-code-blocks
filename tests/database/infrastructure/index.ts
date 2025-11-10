@@ -38,4 +38,16 @@ const dbWithParameterGroup = new studion.DatabaseBuilder(
   })
   .build();
 
-export { vpc, database, dbWithMonitoring, dbWithParameterGroup };
+  const dbWithReplica = new studion.DatabaseBuilder(
+    `${config.instanceName}-w-replica`,
+  )
+  .configure(config.dbName, config.username, {
+    password: config.password,
+    applyImmediately: config.applyImmediately,
+    skipFinalSnapshot: config.skipFinalSnapshot,
+  })
+  .withVpc(vpc.vpc)
+  .withReplica()
+  .build();
+
+export { vpc, database, dbWithMonitoring, dbWithParameterGroup, dbWithReplica };

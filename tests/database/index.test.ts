@@ -18,6 +18,7 @@ import { IAMClient } from '@aws-sdk/client-iam';
 import { InlineProgramArgs } from '@pulumi/pulumi/automation';
 import { testDbWithMonitoring } from './monitoring.test';
 import { testDbWithParameterGroup } from './parameter-group.test';
+import { testDbWithReplica } from './replica.test';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -183,4 +184,6 @@ describe('Database component deployment', () => {
 
   describe('With monitoring', () => testDbWithMonitoring(ctx));
   describe('With parameter group', () => testDbWithParameterGroup(ctx));
+
+  describe('With replica', () => testDbWithReplica(ctx));
 });
