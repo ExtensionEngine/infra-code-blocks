@@ -18,6 +18,7 @@ export namespace Database {
     instanceClass?: pulumi.Input<string>;
     enableMonitoring?: pulumi.Input<boolean>;
     allowMajorVersionUpgrade?: pulumi.Input<boolean>;
+    autoMinorVersionUpgrade?: pulumi.Input<boolean>;
     parameterGroupName?: pulumi.Input<string>;
     snapshotIdentifier?: pulumi.Input<string>;
     engineVersion?: pulumi.Input<string>;
@@ -36,6 +37,7 @@ const defaults = {
   instanceClass: 'db.t4g.micro',
   enableMonitoring: false,
   allowMajorVersionUpgrade: false,
+  autoMinorVersionUpgrade: true,
   engineVersion: '17.2',
 };
 
@@ -214,7 +216,6 @@ export class Database extends pulumi.ComponentResource {
         publiclyAccessible: false,
         skipFinalSnapshot: argsWithDefaults.skipFinalSnapshot,
         applyImmediately: argsWithDefaults.applyImmediately,
-        autoMinorVersionUpgrade: true,
         maintenanceWindow: 'Mon:07:00-Mon:07:30',
         finalSnapshotIdentifier: `${this.name}-final-snapshot-${stack}`,
         backupWindow: '06:00-06:30',
@@ -222,6 +223,7 @@ export class Database extends pulumi.ComponentResource {
         caCertIdentifier: 'rds-ca-rsa2048-g1',
         parameterGroupName: argsWithDefaults.parameterGroupName,
         allowMajorVersionUpgrade: argsWithDefaults.allowMajorVersionUpgrade,
+        autoMinorVersionUpgrade: argsWithDefaults.autoMinorVersionUpgrade,
         snapshotIdentifier:
           this.encryptedSnapshotCopy?.targetDbSnapshotIdentifier,
         ...monitoringOptions,
