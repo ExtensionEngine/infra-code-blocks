@@ -11,7 +11,7 @@ export function testDbWithMonitoring(ctx: DatabaseTestContext) {
     const dbWithMonitoring = ctx.outputs.dbWithMonitoring.value;
 
     assert.strictEqual(
-      dbWithMonitoring.instance.performanceInsightsEnabled,
+      dbWithMonitoring.instance.enablePerformanceInsights,
       true,
       'Performance insights should be enabled',
     );

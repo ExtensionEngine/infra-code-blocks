@@ -12,7 +12,7 @@ export function testDbWithCustomParamGroup(ctx: DatabaseTestContext) {
       'Parameter group should exist',
     );
     assert.strictEqual(
-      dbWithCustomParamGroup.instance.parameterGroupName,
+      dbWithCustomParamGroup.instance.dbParameterGroupName,
       dbWithCustomParamGroup.parameterGroup.name,
       'Parameter group name should be set correctly',
     );

@@ -203,14 +203,13 @@ export class Database extends pulumi.ComponentResource {
 
   private createDatabaseInstance(args: Database.Args) {
     const argsWithDefaults = Object.assign({}, defaults, args);
-    const stack = pulumi.getStack();
 
     const monitoringOptions =
       argsWithDefaults.enableMonitoring && this.monitoringRole
         ? {
             monitoringInterval: 60,
             monitoringRoleArn: this.monitoringRole.arn,
-            performanceInsightsEnabled: true,
+            enablePerformanceInsights: true,
             performanceInsightsRetentionPeriod: 7,
           }
         : {};

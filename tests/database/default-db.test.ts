@@ -33,7 +33,7 @@ export function testDefaultDb(ctx: DatabaseTestContext) {
     assert.strictEqual(instance.allocatedStorage, '20', 'Allocated storage argument should be set to 20');
     assert.strictEqual(instance.maxAllocatedStorage, 100, 'Max allocated storage argument should be set to 100');
     assert.strictEqual(instance.dbInstanceClass, 'db.t4g.micro', 'DB instance class argument should be set to db.t4g.micro');
-    assert.strictEqual(instance.performanceInsightsEnabled, false, 'Performance insights enabled argument should be set to false');
+    assert.strictEqual(instance.enablePerformanceInsights, false, 'Enable performance insights argument should be set to false');
     assert.strictEqual(instance.allowMajorVersionUpgrade, false, 'Allow major version upgrade argument should be set to false');
     assert.strictEqual(instance.autoMinorVersionUpgrade, true, 'Auto minor version upgrade argument should be set to true');
     assert.strictEqual(instance.engineVersion, '17.2', 'Engine version argument should be set to 17.2');
