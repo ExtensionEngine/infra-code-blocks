@@ -1,4 +1,5 @@
 import * as aws from '@pulumi/aws';
+import * as awsNative from '@pulumi/aws-native';
 import * as awsx from '@pulumi/awsx';
 import * as pulumi from '@pulumi/pulumi';
 import { Password } from '../../../components/password';
@@ -8,12 +9,12 @@ export namespace Database {
   export type Args = {
     dbName: pulumi.Input<string>;
     username: pulumi.Input<string>;
+    password?: pulumi.Input<string>;
     vpc: pulumi.Input<awsx.ec2.Vpc>;
     multiAz?: pulumi.Input<boolean>;
-    password?: pulumi.Input<string>;
     applyImmediately?: pulumi.Input<boolean>;
-    skipFinalSnapshot?: pulumi.Input<boolean>;
-    allocatedStorage?: pulumi.Input<number>;
+    deleteAutomatedBackups?: pulumi.Input<boolean>;
+    allocatedStorage?: pulumi.Input<string>;
     maxAllocatedStorage?: pulumi.Input<number>;
     instanceClass?: pulumi.Input<string>;
     enableMonitoring?: pulumi.Input<boolean>;
@@ -31,8 +32,8 @@ export namespace Database {
 const defaults = {
   multiAz: false,
   applyImmediately: false,
-  skipFinalSnapshot: false,
-  allocatedStorage: 20,
+  deleteAutomatedBackups: false,
+  allocatedStorage: '20',
   maxAllocatedStorage: 100,
   instanceClass: 'db.t4g.micro',
   enableMonitoring: false,
@@ -43,7 +44,7 @@ const defaults = {
 
 export class Database extends pulumi.ComponentResource {
   name: string;
-  instance: aws.rds.Instance;
+  instance: awsNative.rds.DbInstance;
   kms: aws.kms.Key;
   dbSubnetGroup: aws.rds.SubnetGroup;
   dbSecurityGroup: aws.ec2.SecurityGroup;
@@ -196,38 +197,40 @@ export class Database extends pulumi.ComponentResource {
           }
         : {};
 
-    const instance = new aws.rds.Instance(
+    const instance = new awsNative.rds.DbInstance(
       `${this.name}-rds`,
       {
-        identifierPrefix: `${this.name}-`,
         engine: 'postgres',
         engineVersion: argsWithDefaults.engineVersion,
+        dbInstanceClass: argsWithDefaults.instanceClass,
+        dbName: argsWithDefaults.dbName,
+        masterUsername: argsWithDefaults.username,
+        masterUserPassword: this.password.value,
+        dbSubnetGroupName: this.dbSubnetGroup.name,
+        vpcSecurityGroups: [this.dbSecurityGroup.id],
         allocatedStorage: argsWithDefaults.allocatedStorage,
         maxAllocatedStorage: argsWithDefaults.maxAllocatedStorage,
-        instanceClass: argsWithDefaults.instanceClass,
-        dbName: argsWithDefaults.dbName,
-        username: argsWithDefaults.username,
-        password: this.password.value,
-        dbSubnetGroupName: this.dbSubnetGroup.name,
-        vpcSecurityGroupIds: [this.dbSecurityGroup.id],
-        storageEncrypted: true,
-        kmsKeyId: this.kms.arn,
         multiAz: argsWithDefaults.multiAz,
-        publiclyAccessible: false,
-        skipFinalSnapshot: argsWithDefaults.skipFinalSnapshot,
         applyImmediately: argsWithDefaults.applyImmediately,
-        maintenanceWindow: 'Mon:07:00-Mon:07:30',
-        finalSnapshotIdentifier: `${this.name}-final-snapshot-${stack}`,
-        backupWindow: '06:00-06:30',
-        backupRetentionPeriod: 14,
-        caCertIdentifier: 'rds-ca-rsa2048-g1',
-        parameterGroupName: argsWithDefaults.parameterGroupName,
         allowMajorVersionUpgrade: argsWithDefaults.allowMajorVersionUpgrade,
         autoMinorVersionUpgrade: argsWithDefaults.autoMinorVersionUpgrade,
-        snapshotIdentifier:
+        deleteAutomatedBackups: argsWithDefaults.deleteAutomatedBackups,
+        kmsKeyId: this.kms.arn,
+        storageEncrypted: true,
+        publiclyAccessible: false,
+        preferredMaintenanceWindow: 'Mon:07:00-Mon:07:30',
+        preferredBackupWindow: '06:00-06:30',
+        backupRetentionPeriod: 14,
+        caCertificateIdentifier: 'rds-ca-rsa2048-g1',
+        dbParameterGroupName: argsWithDefaults.parameterGroupName,
+        dbSnapshotIdentifier:
           this.encryptedSnapshotCopy?.targetDbSnapshotIdentifier,
         ...monitoringOptions,
-        tags: { ...commonTags, ...argsWithDefaults.tags },
+        tags: [
+          ...Object.entries({ ...commonTags, ...argsWithDefaults.tags }).map(
+            ([key, value]) => ({ key, value })
+          ),
+        ],
       },
       { parent: this, dependsOn: [this.password] },
     );

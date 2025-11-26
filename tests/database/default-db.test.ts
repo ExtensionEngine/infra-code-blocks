@@ -25,15 +25,14 @@ export function testDefaultDb(ctx: DatabaseTestContext) {
 
     assert.strictEqual(instance.multiAz, false, 'Multi-AZ argument should be set to false');
     assert.strictEqual(instance.applyImmediately, false, 'Apply immediately argument should be set to false');
-    assert.strictEqual(instance.skipFinalSnapshot, false, 'Skip final snapshot argument should be set to false');
-    assert.strictEqual(instance.allocatedStorage, 20, 'Allocated storage argument should be set to 20');
+    assert.strictEqual(instance.deleteAutomatedBackups, false, 'Delete automated backups argument should be set to false');
+    assert.strictEqual(instance.allocatedStorage, '20', 'Allocated storage argument should be set to 20');
     assert.strictEqual(instance.maxAllocatedStorage, 100, 'Max allocated storage argument should be set to 100');
-    assert.strictEqual(instance.instanceClass, 'db.t4g.micro', 'Instance class argument should be set to db.t4g.micro');
+    assert.strictEqual(instance.dbInstanceClass, 'db.t4g.micro', 'DB instance class argument should be set to db.t4g.micro');
     assert.strictEqual(instance.performanceInsightsEnabled, false, 'Performance insights enabled argument should be set to false');
     assert.strictEqual(instance.allowMajorVersionUpgrade, false, 'Allow major version upgrade argument should be set to false');
     assert.strictEqual(instance.autoMinorVersionUpgrade, true, 'Auto minor version upgrade argument should be set to true');
     assert.strictEqual(instance.engineVersion, '17.2', 'Engine version argument should be set to 17.2');
-
     assert.strictEqual(instance.engine, 'postgres', 'Engine argument should be set to postgres');
     assert.strictEqual(instance.storageEncrypted, true, 'Storage encrypted argument should be set to true');
     assert.strictEqual(instance.publiclyAccessible, false, 'Publicly accessible argument should be set to false');
