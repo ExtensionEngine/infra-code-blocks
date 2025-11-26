@@ -8,6 +8,7 @@ import { IAMClient } from '@aws-sdk/client-iam';
 import { InlineProgramArgs } from '@pulumi/pulumi/automation';
 import { KMSClient } from '@aws-sdk/client-kms';
 import { RDSClient } from '@aws-sdk/client-rds';
+import { testDbWithCustomParamGroup } from './parameter-group.test';
 import { testDbWithMonitoring } from './monitoring.test';
 
 const programArgs: InlineProgramArgs = {
@@ -43,4 +44,5 @@ describe('Database component deployment', () => {
   after(() => cleanupFinalSnapshot(ctx));
 
   describe('Database with monitoring', () => testDbWithMonitoring(ctx));
+  describe('Database with custom parameter group', () => testDbWithCustomParamGroup(ctx));
 });

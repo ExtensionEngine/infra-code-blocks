@@ -26,4 +26,19 @@ const dbWithMonitoring = new studion.DatabaseBuilder(
   .withMonitoring()
   .build();
 
-export { vpc, defaultDb, dbWithMonitoring };
+const dbWithCustomParamGroup = new studion.DatabaseBuilder(
+    `${config.appName}-w-param-group`
+  )
+  .configure(config.dbName, config.dbUsername, {
+    password: config.dbPassword,
+    tags: config.tags,
+    applyImmediately: true,
+    deleteAutomatedBackups: true,
+  })
+  .withVpc(vpc.vpc)
+  .withCustomParameterGroup({
+    family: 'postgres17'
+  })
+  .build();
+
+export { vpc, defaultDb, dbWithMonitoring, dbWithCustomParamGroup };

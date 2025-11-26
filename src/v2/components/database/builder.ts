@@ -4,7 +4,7 @@ import * as awsx from '@pulumi/awsx';
 import { Database } from '.';
 
 export namespace DatabaseBuilder {
-  export type Config = Omit<Database.Args, 'vpc' | 'enableMonitoring'>;
+  export type Config = Omit<Database.Args, 'vpc' | 'enableMonitoring' | 'customParameterGroupArgs'>;
 }
 
 export class DatabaseBuilder {
@@ -12,6 +12,7 @@ export class DatabaseBuilder {
   private _config?: DatabaseBuilder.Config;
   private _vpc?: Database.Args['vpc'];
   private _enableMonitoring?: Database.Args['enableMonitoring'];
+  private _customParameterGroupArgs?: Database.Args['customParameterGroupArgs'];
 
   constructor(name: string) {
     this._name = name;
@@ -43,6 +44,14 @@ export class DatabaseBuilder {
     return this;
   }
 
+  public withCustomParameterGroup(
+    customParameterGroupArgs: pulumi.Input<aws.rds.ParameterGroupArgs>,
+  ): this {
+    this._customParameterGroupArgs = customParameterGroupArgs;
+
+    return this;
+  }
+
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
     if (!this._config) {
       throw new Error(
@@ -56,12 +65,17 @@ export class DatabaseBuilder {
       );
     }
 
+    if (this._customParameterGroupArgs && this._config.parameterGroupName) {
+      console.warn('You provided both customParameterGroupArgs and parameterGroupName, so the latter will be ignored.')
+    }
+
     return new Database(
       this._name,
       {
         ...this._config,
         vpc: this._vpc,
         enableMonitoring: this._enableMonitoring,
+        customParameterGroupArgs: this._customParameterGroupArgs,
       },
       opts,
     );

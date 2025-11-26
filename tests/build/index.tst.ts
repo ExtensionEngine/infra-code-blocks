@@ -310,6 +310,12 @@ describe('Build output', () => {
       it('should have withMonitoring method', () => {
         expect(builder.withMonitoring).type.toBeCallableWith();
       });
+
+      it('should have withCustomParameterGroup method', () => {
+        expect(builder.withCustomParameterGroup).type.toBeCallableWith({
+          family: 'custom-family'
+        });
+      });
     });
   });
 });
