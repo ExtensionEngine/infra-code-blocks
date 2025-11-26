@@ -4,13 +4,14 @@ import * as awsx from '@pulumi/awsx';
 import { Database } from '.';
 
 export namespace DatabaseBuilder {
-  export type Config = Omit<Database.Args, 'vpc'>;
+  export type Config = Omit<Database.Args, 'vpc' | 'enableMonitoring'>;
 }
 
 export class DatabaseBuilder {
   private _name: string;
   private _config?: DatabaseBuilder.Config;
   private _vpc?: Database.Args['vpc'];
+  private _enableMonitoring?: Database.Args['enableMonitoring'];
 
   constructor(name: string) {
     this._name = name;
@@ -36,6 +37,12 @@ export class DatabaseBuilder {
     return this;
   }
 
+  public withMonitoring(): this {
+    this._enableMonitoring = true;
+
+    return this;
+  }
+
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
     if (!this._config) {
       throw new Error(
@@ -54,6 +61,7 @@ export class DatabaseBuilder {
       {
         ...this._config,
         vpc: this._vpc,
+        enableMonitoring: this._enableMonitoring,
       },
       opts,
     );

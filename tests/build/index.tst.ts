@@ -306,6 +306,10 @@ describe('Build output', () => {
           new awsx.ec2.Vpc('vpcName'),
         );
       });
+
+      it('should have withMonitoring method', () => {
+        expect(builder.withMonitoring).type.toBeCallableWith();
+      });
     });
   });
 });

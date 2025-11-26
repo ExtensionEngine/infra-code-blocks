@@ -10,7 +10,7 @@ export function testDefaultDb(ctx: DatabaseTestContext) {
     const database = ctx.outputs.defaultDb.value;
 
     assert.ok(database, 'Database should be defined');
-    assert.strictEqual(database.name, `${ctx.config.appName}-default-db`, 'Database should have correct name');
+    assert.strictEqual(database.name, `${ctx.config.appName}-default`, 'Database should have correct name');
 
     assert.ok(database.instance, 'Db instance should be defined');
     assert.ok(database.dbSecurityGroup, 'Db security group should be defined');
@@ -22,6 +22,10 @@ export function testDefaultDb(ctx: DatabaseTestContext) {
 
   it('should create database instance with correct default configuration', () => {
     const instance = ctx.outputs.defaultDb.value.instance;
+
+    assert.strictEqual(instance.dbName, ctx.config.dbName, 'Database instance should have correct dbName'); 
+    assert.strictEqual(instance.masterUsername, ctx.config.dbUsername, 'Database instance should have correct master username'); 
+    assert.strictEqual(instance.masterUserPassword, ctx.config.dbPassword, 'Database instance should have correct master user password'); 
 
     assert.strictEqual(instance.multiAz, false, 'Multi-AZ argument should be set to false');
     assert.strictEqual(instance.applyImmediately, false, 'Apply immediately argument should be set to false');

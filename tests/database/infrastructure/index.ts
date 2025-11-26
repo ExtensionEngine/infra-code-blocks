@@ -3,7 +3,9 @@ import * as config from './config';
 
 const vpc = new studion.Vpc(`${config.appName}-vpc`, {});
 
-const defaultDb = new studion.DatabaseBuilder(`${config.appName}-default-db`)
+const defaultDb = new studion.DatabaseBuilder(
+    `${config.appName}-default`
+  )
   .configure(config.dbName, config.dbUsername, {
     password: config.dbPassword,
     tags: config.tags,
@@ -11,4 +13,17 @@ const defaultDb = new studion.DatabaseBuilder(`${config.appName}-default-db`)
   .withVpc(vpc.vpc)
   .build();
 
-export { vpc, defaultDb };
+const dbWithMonitoring = new studion.DatabaseBuilder(
+    `${config.appName}-w-monitoring`
+  )
+  .configure(config.dbName, config.dbUsername, {
+    password: config.dbPassword,
+    tags: config.tags,
+    applyImmediately: true,
+    deleteAutomatedBackups: true,
+  })
+  .withVpc(vpc.vpc)
+  .withMonitoring()
+  .build();
+
+export { vpc, defaultDb, dbWithMonitoring };

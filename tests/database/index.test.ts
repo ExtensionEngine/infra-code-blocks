@@ -4,9 +4,11 @@ import * as automation from '../automation';
 import * as config from './infrastructure/config';
 import { DatabaseTestContext } from './test-context';
 import { EC2Client } from '@aws-sdk/client-ec2';
+import { IAMClient } from '@aws-sdk/client-iam';
 import { InlineProgramArgs } from '@pulumi/pulumi/automation';
 import { KMSClient } from '@aws-sdk/client-kms';
 import { RDSClient } from '@aws-sdk/client-rds';
+import { testDbWithMonitoring } from './monitoring.test';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -27,6 +29,7 @@ describe('Database component deployment', () => {
       rds: new RDSClient({ region }),
       ec2: new EC2Client({ region }),
       kms: new KMSClient({ region }),
+      iam: new IAMClient({ region }),
     },
   };
 
@@ -39,4 +42,5 @@ describe('Database component deployment', () => {
   describe('Default database', () => testDefaultDb(ctx));
   after(() => cleanupFinalSnapshot(ctx));
 
+  describe('Database with monitoring', () => testDbWithMonitoring(ctx));
 });
