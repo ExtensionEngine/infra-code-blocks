@@ -6,7 +6,7 @@ import { Database } from '.';
 export namespace DatabaseBuilder {
   export type Config = Omit<
     Database.Args,
-    'vpc' | 'enableMonitoring' | 'customParameterGroupArgs' | 'kms'
+    'vpc' | 'enableMonitoring' | 'customParameterGroupArgs' | 'kms' | 'snapshotIdentifier'
   >;
 }
 
