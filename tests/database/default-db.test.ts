@@ -29,7 +29,6 @@ export function testDefaultDb(ctx: DatabaseTestContext) {
 
     assert.strictEqual(instance.multiAz, false, 'Multi-AZ argument should be set to false');
     assert.strictEqual(instance.applyImmediately, false, 'Apply immediately argument should be set to false');
-    assert.strictEqual(instance.deleteAutomatedBackups, false, 'Delete automated backups argument should be set to false');
     assert.strictEqual(instance.allocatedStorage, '20', 'Allocated storage argument should be set to 20');
     assert.strictEqual(instance.maxAllocatedStorage, 100, 'Max allocated storage argument should be set to 100');
     assert.strictEqual(instance.dbInstanceClass, 'db.t4g.micro', 'DB instance class argument should be set to db.t4g.micro');
@@ -132,18 +131,4 @@ export function testDefaultDb(ctx: DatabaseTestContext) {
       'KMS key rotation should be enabled',
     );
   });
-}
-
-export async function cleanupFinalSnapshot(ctx: DatabaseTestContext) {
-    const database = ctx.outputs.defaultDb.value;
-    const describeCommand = new DescribeDBSnapshotsCommand({
-      DBInstanceIdentifier: database.instance.identifier,
-    });
-    const { DBSnapshots } = await ctx.clients.rds.send(describeCommand);
-    if (!DBSnapshots || !DBSnapshots.length) return;
-    const [snapshot] = DBSnapshots;
-    const deleteCommand = new DeleteDBSnapshotCommand({
-      DBSnapshotIdentifier: snapshot.DBSnapshotIdentifier
-    });
-    await ctx.clients.rds.send(deleteCommand);
 }

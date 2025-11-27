@@ -1,4 +1,3 @@
-import { cleanupFinalSnapshot, testDefaultDb } from './default-db.test';
 import { describe, before, after } from 'node:test';
 import * as automation from '../automation';
 import * as config from './infrastructure/config';
@@ -12,6 +11,7 @@ import { testDbWithCustomKms } from './kms.test';
 import { testDbWithCustomParamGroup } from './parameter-group.test';
 import { testDbWithMonitoring } from './monitoring.test';
 import { testDbFromSnapshot } from './snapshot.test';
+import { testDefaultDb } from './default-db.test';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -43,8 +43,6 @@ describe('Database component deployment', () => {
   after(() => automation.destroy(programArgs));
 
   describe('Default database', () => testDefaultDb(ctx));
-  after(() => cleanupFinalSnapshot(ctx));
-
   describe('Database with monitoring', () => testDbWithMonitoring(ctx));
   describe('Database with custom parameter group', () => testDbWithCustomParamGroup(ctx));
   describe('Database with custom kms key', () => testDbWithCustomKms(ctx));
