@@ -1,6 +1,16 @@
-import { DeleteDBSnapshotCommand, DescribeDBSnapshotsCommand, DescribeDBSubnetGroupsCommand } from '@aws-sdk/client-rds';
-import { DescribeKeyCommand, GetKeyRotationStatusCommand } from '@aws-sdk/client-kms';
-import { DescribeSecurityGroupsCommand, IpPermission } from '@aws-sdk/client-ec2';
+import {
+  DeleteDBSnapshotCommand,
+  DescribeDBSnapshotsCommand,
+  DescribeDBSubnetGroupsCommand,
+} from '@aws-sdk/client-rds';
+import {
+  DescribeKeyCommand,
+  GetKeyRotationStatusCommand,
+} from '@aws-sdk/client-kms';
+import {
+  DescribeSecurityGroupsCommand,
+  IpPermission,
+} from '@aws-sdk/client-ec2';
 import * as assert from 'node:assert';
 import { DatabaseTestContext } from './test-context';
 import { it } from 'node:test';
@@ -10,35 +20,98 @@ export function testDefaultDb(ctx: DatabaseTestContext) {
     const database = ctx.outputs.defaultDb.value;
 
     assert.ok(database, 'Database should be defined');
-    assert.strictEqual(database.name, `${ctx.config.appName}-default`, 'Database should have correct name');
+    assert.strictEqual(
+      database.name,
+      `${ctx.config.appName}-default`,
+      'Database should have correct name',
+    );
 
     assert.ok(database.instance, 'Db instance should be defined');
     assert.ok(database.dbSecurityGroup, 'Db security group should be defined');
     assert.ok(database.dbSubnetGroup, 'Db subnet group should be defined');
     assert.ok(database.kms, 'Kms key should be defined');
     assert.ok(database.password, 'Password should be defined');
-  
   });
 
   it('should create database instance with correct default configuration', () => {
     const instance = ctx.outputs.defaultDb.value.instance;
 
-    assert.strictEqual(instance.dbName, ctx.config.dbName, 'Database instance should have correct dbName'); 
-    assert.strictEqual(instance.masterUsername, ctx.config.dbUsername, 'Database instance should have correct master username'); 
-    assert.strictEqual(instance.masterUserPassword, ctx.config.dbPassword, 'Database instance should have correct master user password'); 
+    assert.strictEqual(
+      instance.dbName,
+      ctx.config.dbName,
+      'Database instance should have correct dbName',
+    );
+    assert.strictEqual(
+      instance.masterUsername,
+      ctx.config.dbUsername,
+      'Database instance should have correct master username',
+    );
+    assert.strictEqual(
+      instance.masterUserPassword,
+      ctx.config.dbPassword,
+      'Database instance should have correct master user password',
+    );
 
-    assert.strictEqual(instance.multiAz, false, 'Multi-AZ argument should be set to false');
-    assert.strictEqual(instance.applyImmediately, false, 'Apply immediately argument should be set to false');
-    assert.strictEqual(instance.allocatedStorage, '20', 'Allocated storage argument should be set to 20');
-    assert.strictEqual(instance.maxAllocatedStorage, 100, 'Max allocated storage argument should be set to 100');
-    assert.strictEqual(instance.dbInstanceClass, 'db.t4g.micro', 'DB instance class argument should be set to db.t4g.micro');
-    assert.strictEqual(instance.enablePerformanceInsights, false, 'Enable performance insights argument should be set to false');
-    assert.strictEqual(instance.allowMajorVersionUpgrade, false, 'Allow major version upgrade argument should be set to false');
-    assert.strictEqual(instance.autoMinorVersionUpgrade, true, 'Auto minor version upgrade argument should be set to true');
-    assert.strictEqual(instance.engineVersion, '17.2', 'Engine version argument should be set to 17.2');
-    assert.strictEqual(instance.engine, 'postgres', 'Engine argument should be set to postgres');
-    assert.strictEqual(instance.storageEncrypted, true, 'Storage encrypted argument should be set to true');
-    assert.strictEqual(instance.publiclyAccessible, false, 'Publicly accessible argument should be set to false');
+    assert.strictEqual(
+      instance.multiAz,
+      false,
+      'Multi-AZ argument should be set to false',
+    );
+    assert.strictEqual(
+      instance.applyImmediately,
+      false,
+      'Apply immediately argument should be set to false',
+    );
+    assert.strictEqual(
+      instance.allocatedStorage,
+      '20',
+      'Allocated storage argument should be set to 20',
+    );
+    assert.strictEqual(
+      instance.maxAllocatedStorage,
+      100,
+      'Max allocated storage argument should be set to 100',
+    );
+    assert.strictEqual(
+      instance.dbInstanceClass,
+      'db.t4g.micro',
+      'DB instance class argument should be set to db.t4g.micro',
+    );
+    assert.strictEqual(
+      instance.enablePerformanceInsights,
+      false,
+      'Enable performance insights argument should be set to false',
+    );
+    assert.strictEqual(
+      instance.allowMajorVersionUpgrade,
+      false,
+      'Allow major version upgrade argument should be set to false',
+    );
+    assert.strictEqual(
+      instance.autoMinorVersionUpgrade,
+      true,
+      'Auto minor version upgrade argument should be set to true',
+    );
+    assert.strictEqual(
+      instance.engineVersion,
+      '17.2',
+      'Engine version argument should be set to 17.2',
+    );
+    assert.strictEqual(
+      instance.engine,
+      'postgres',
+      'Engine argument should be set to postgres',
+    );
+    assert.strictEqual(
+      instance.storageEncrypted,
+      true,
+      'Storage encrypted argument should be set to true',
+    );
+    assert.strictEqual(
+      instance.publiclyAccessible,
+      false,
+      'Publicly accessible argument should be set to false',
+    );
   });
 
   it('should create subnet group in the correct VPC', async () => {

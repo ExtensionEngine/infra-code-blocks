@@ -14,7 +14,7 @@ interface DatabaseTestConfig {
   tags: {
     Project: string;
     Environment: string;
-  }
+  };
   dbName: string;
   dbUsername: string;
   dbPassword: string;

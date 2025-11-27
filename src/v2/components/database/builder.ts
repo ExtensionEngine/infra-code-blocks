@@ -4,7 +4,10 @@ import * as awsx from '@pulumi/awsx';
 import { Database } from '.';
 
 export namespace DatabaseBuilder {
-  export type Config = Omit<Database.Args, 'vpc' | 'enableMonitoring' | 'customParameterGroupArgs' | 'kms'>;
+  export type Config = Omit<
+    Database.Args,
+    'vpc' | 'enableMonitoring' | 'customParameterGroupArgs' | 'kms'
+  >;
 }
 
 export class DatabaseBuilder {
@@ -33,7 +36,7 @@ export class DatabaseBuilder {
 
     return this;
   }
-  
+
   public createFromSnapshot(snapshotIdentifier: string): this {
     this._snapshotIdentifier = snapshotIdentifier;
 
@@ -81,7 +84,10 @@ export class DatabaseBuilder {
     }
 
     if (this._customParameterGroupArgs && this._config?.parameterGroupName) {
-      console.warn('You provided both customParameterGroupArgs and parameterGroupName, so the latter will be ignored.')
+      console.warn(
+        `You provided both customParameterGroupArgs and parameterGroupName,
+        so the latter will be ignored.`,
+      );
     }
 
     return new Database(

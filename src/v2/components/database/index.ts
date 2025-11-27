@@ -72,7 +72,10 @@ export class Database extends pulumi.ComponentResource {
 
     const vpc = pulumi.output(argsWithDefaults.vpc);
     this.dbSubnetGroup = this.createSubnetGroup(vpc.isolatedSubnetIds);
-    this.dbSecurityGroup = this.createSecurityGroup(vpc.vpcId, vpc.vpc.cidrBlock);
+    this.dbSecurityGroup = this.createSecurityGroup(
+      vpc.vpcId,
+      vpc.vpc.cidrBlock,
+    );
 
     this.kms = kms || this.createEncryptionKey();
     this.password = new Password(
@@ -95,7 +98,9 @@ export class Database extends pulumi.ComponentResource {
     this.registerOutputs();
   }
 
-  private createSubnetGroup(isolatedSubnetIds: awsx.ec2.Vpc['isolatedSubnetIds']) {
+  private createSubnetGroup(
+    isolatedSubnetIds: awsx.ec2.Vpc['isolatedSubnetIds'],
+  ) {
     const dbSubnetGroup = new aws.rds.SubnetGroup(
       `${this.name}-subnet-group`,
       {
@@ -109,7 +114,8 @@ export class Database extends pulumi.ComponentResource {
 
   private createSecurityGroup(
     vpcId: awsx.ec2.Vpc['vpcId'],
-    vpcCidrBlock: pulumi.Input<string>) {
+    vpcCidrBlock: pulumi.Input<string>,
+  ) {
     const dbSecurityGroup = new aws.ec2.SecurityGroup(
       `${this.name}-security-group`,
       {
@@ -184,7 +190,9 @@ export class Database extends pulumi.ComponentResource {
     const encryptedSnapshotCopy = new aws.rds.SnapshotCopy(
       `${this.name}-encrypted-snapshot-copy`,
       {
-        sourceDbSnapshotIdentifier: pulumi.output(snapshot).apply(snapshot => snapshot.dbSnapshotArn),
+        sourceDbSnapshotIdentifier: pulumi
+          .output(snapshot)
+          .apply(snapshot => snapshot.dbSnapshotArn),
         targetDbSnapshotIdentifier: `${snapshotIdentifier}-encrypted-copy`,
         kmsKeyId: this.kms.arn,
       },
@@ -194,15 +202,13 @@ export class Database extends pulumi.ComponentResource {
   }
 
   private createParameterGroup(
-    customParameterGroupArgs: pulumi.Input<aws.rds.ParameterGroupArgs>
+    customParameterGroupArgs: pulumi.Input<aws.rds.ParameterGroupArgs>,
   ) {
     return pulumi.output(customParameterGroupArgs).apply(args => {
-      return new aws.rds.ParameterGroup(
-        `${this.name}-parameter-group`,
-        args,
-        { parent: this }
-      );
-    })
+      return new aws.rds.ParameterGroup(`${this.name}-parameter-group`, args, {
+        parent: this,
+      });
+    });
   }
 
   private createDatabaseInstance(args: Database.Args) {
@@ -218,10 +224,9 @@ export class Database extends pulumi.ComponentResource {
           }
         : {};
 
-    const parameterGroupName =
-      this.parameterGroup
-        ? this.parameterGroup.name
-        : argsWithDefaults.parameterGroupName;
+    const parameterGroupName = this.parameterGroup
+      ? this.parameterGroup.name
+      : argsWithDefaults.parameterGroupName;
 
     const instance = new awsNative.rds.DbInstance(
       `${this.name}-rds`,
@@ -254,7 +259,7 @@ export class Database extends pulumi.ComponentResource {
         ...monitoringOptions,
         tags: [
           ...Object.entries({ ...commonTags, ...argsWithDefaults.tags }).map(
-            ([key, value]) => ({ key, value })
+            ([key, value]) => ({ key, value }),
           ),
         ],
       },

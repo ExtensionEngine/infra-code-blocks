@@ -6,8 +6,8 @@ export function testDbWithCustomKms(ctx: DatabaseTestContext) {
   it('should properly configure kms', () => {
     const dbWithCustomKms = ctx.outputs.dbWithCustomKms.value;
     const customKms = ctx.outputs.customKms.value;
-    
-    assert.ok(dbWithCustomKms.kms,'Kms should exist');
+
+    assert.ok(dbWithCustomKms.kms, 'Kms should exist');
     assert.strictEqual(
       dbWithCustomKms.instance.kmsKeyId,
       customKms.arn,

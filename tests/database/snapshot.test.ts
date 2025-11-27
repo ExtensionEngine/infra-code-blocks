@@ -7,7 +7,10 @@ export function testDbFromSnapshot(ctx: DatabaseTestContext) {
     const dbFromSnapshot = ctx.outputs.dbFromSnapshot.value;
     const snapshot = ctx.outputs.snapshot.value;
 
-    assert.ok(dbFromSnapshot.instance.dbSnapshotIdentifier,'Db snapshot identifier should exist');
+    assert.ok(
+      dbFromSnapshot.instance.dbSnapshotIdentifier,
+      'Db snapshot identifier should exist',
+    );
 
     assert.strictEqual(
       dbFromSnapshot.encryptedSnapshotCopy.sourceDbSnapshotIdentifier,

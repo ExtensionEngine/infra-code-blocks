@@ -292,13 +292,9 @@ describe('Build output', () => {
       });
 
       it('should have configure method', () => {
-        expect(builder.configure).type.toBeCallableWith(
-          'dbdb',
-          'username',
-          {
-            password: 'password',
-          }
-        );
+        expect(builder.configure).type.toBeCallableWith('dbdb', 'username', {
+          password: 'password',
+        });
       });
 
       it('should have createFromSnapshot method', () => {
@@ -317,13 +313,13 @@ describe('Build output', () => {
 
       it('should have withCustomParameterGroup method', () => {
         expect(builder.withCustomParameterGroup).type.toBeCallableWith({
-          family: 'custom-family'
+          family: 'custom-family',
         });
       });
 
       it('should have withCustomKms method', () => {
         expect(builder.withCustomKms).type.toBeCallableWith(
-          new aws.kms.Key('kmsKey')
+          new aws.kms.Key('kmsKey'),
         );
       });
     });

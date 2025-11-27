@@ -6,7 +6,7 @@ import { it } from 'node:test';
 export function testDbWithCustomParamGroup(ctx: DatabaseTestContext) {
   it('should properly configure parameter group', () => {
     const dbWithCustomParamGroup = ctx.outputs.dbWithCustomParamGroup.value;
-    
+
     assert.ok(
       dbWithCustomParamGroup.parameterGroup,
       'Parameter group should exist',

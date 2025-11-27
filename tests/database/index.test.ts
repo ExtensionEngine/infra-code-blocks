@@ -44,7 +44,8 @@ describe('Database component deployment', () => {
 
   describe('Default database', () => testDefaultDb(ctx));
   describe('Database with monitoring', () => testDbWithMonitoring(ctx));
-  describe('Database with custom parameter group', () => testDbWithCustomParamGroup(ctx));
+  describe('Database with custom parameter group', () =>
+    testDbWithCustomParamGroup(ctx));
   describe('Database with custom kms key', () => testDbWithCustomKms(ctx));
   describe('Database from snapshot', () => testDbFromSnapshot(ctx));
 });
