@@ -7,8 +7,8 @@ import { commonTags } from '../../../constants';
 
 export namespace Database {
   export type Args = {
-    dbName: pulumi.Input<string>;
-    username: pulumi.Input<string>;
+    dbName?: pulumi.Input<string>;
+    username?: pulumi.Input<string>;
     password?: pulumi.Input<string>;
     vpc: pulumi.Input<awsx.ec2.Vpc>;
     kms?: aws.kms.Key;
@@ -22,7 +22,7 @@ export namespace Database {
     autoMinorVersionUpgrade?: pulumi.Input<boolean>;
     parameterGroupName?: pulumi.Input<string>;
     customParameterGroupArgs?: pulumi.Input<aws.rds.ParameterGroupArgs>;
-    snapshotIdentifier?: pulumi.Input<string>;
+    snapshotIdentifier?: string;
     engineVersion?: pulumi.Input<string>;
     tags?: pulumi.Input<{
       [key: string]: pulumi.Input<string>;
@@ -177,10 +177,14 @@ export class Database extends pulumi.ComponentResource {
   private createEncryptedSnapshotCopy(
     snapshotIdentifier: NonNullable<Database.Args['snapshotIdentifier']>,
   ) {
+    const snapshot = aws.rds.getSnapshot({
+      dbSnapshotIdentifier: snapshotIdentifier,
+    });
+
     const encryptedSnapshotCopy = new aws.rds.SnapshotCopy(
       `${this.name}-encrypted-snapshot-copy`,
       {
-        sourceDbSnapshotIdentifier: snapshotIdentifier,
+        sourceDbSnapshotIdentifier: pulumi.output(snapshot).apply(snapshot => snapshot.dbSnapshotArn),
         targetDbSnapshotIdentifier: `${snapshotIdentifier}-encrypted-copy`,
         kmsKeyId: this.kms.arn,
       },

@@ -14,6 +14,7 @@ export class DatabaseBuilder {
   private _enableMonitoring?: Database.Args['enableMonitoring'];
   private _customParameterGroupArgs?: Database.Args['customParameterGroupArgs'];
   private _kms?: Database.Args['kms'];
+  private _snapshotIdentifier?: Database.Args['snapshotIdentifier'];
 
   constructor(name: string) {
     this._name = name;
@@ -29,6 +30,12 @@ export class DatabaseBuilder {
       username,
       ...config,
     };
+
+    return this;
+  }
+  
+  public createFromSnapshot(snapshotIdentifier: string): this {
+    this._snapshotIdentifier = snapshotIdentifier;
 
     return this;
   }
@@ -60,9 +67,10 @@ export class DatabaseBuilder {
   }
 
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
-    if (!this._config) {
+    if (!this._config && !this._snapshotIdentifier) {
       throw new Error(
-        'Database is not configured. Make sure to call DatabaseBuilder.configure().',
+        `Database is not configured. Make sure to call DatabaseBuilder.configure()
+        or create it from a snapshot with DatabaseBuilder.createFromSnapshot().`,
       );
     }
 
@@ -72,7 +80,7 @@ export class DatabaseBuilder {
       );
     }
 
-    if (this._customParameterGroupArgs && this._config.parameterGroupName) {
+    if (this._customParameterGroupArgs && this._config?.parameterGroupName) {
       console.warn('You provided both customParameterGroupArgs and parameterGroupName, so the latter will be ignored.')
     }
 
@@ -84,6 +92,7 @@ export class DatabaseBuilder {
         enableMonitoring: this._enableMonitoring,
         customParameterGroupArgs: this._customParameterGroupArgs,
         kms: this._kms,
+        snapshotIdentifier: this._snapshotIdentifier,
       },
       opts,
     );
