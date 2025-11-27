@@ -11,6 +11,7 @@ import { RDSClient } from '@aws-sdk/client-rds';
 import { testDbWithCustomKms } from './kms.test';
 import { testDbWithCustomParamGroup } from './parameter-group.test';
 import { testDbWithMonitoring } from './monitoring.test';
+import { testDbFromSnapshot } from './snapshot.test';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -47,4 +48,5 @@ describe('Database component deployment', () => {
   describe('Database with monitoring', () => testDbWithMonitoring(ctx));
   describe('Database with custom parameter group', () => testDbWithCustomParamGroup(ctx));
   describe('Database with custom kms key', () => testDbWithCustomKms(ctx));
+  describe('Database from snapshot', () => testDbFromSnapshot(ctx));
 });

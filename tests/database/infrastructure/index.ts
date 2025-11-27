@@ -1,4 +1,5 @@
 import * as aws from '@pulumi/aws';
+import * as pulumi from '@pulumi/pulumi';
 import { next as studion } from '@studion/infra-code-blocks';
 import * as config from './config';
 
@@ -64,6 +65,25 @@ const dbWithCustomKms = new studion.DatabaseBuilder(
   .withCustomKms(customKms)
   .build();
 
+
+const snapshot = new aws.rds.Snapshot(
+    `${config.appName}-snapshot`,
+  {
+    dbInstanceIdentifier: defaultDb.instance.dbInstanceIdentifier as unknown as string,
+    dbSnapshotIdentifier: `${config.appName}-snap-db`,
+    tags: config.tags,
+  }
+);
+
+const dbFromSnapshot = snapshot.id.apply(snapId => {
+  return new studion.DatabaseBuilder(
+    `${config.appName}-snap-database`
+    )
+    .createFromSnapshot(snapId)
+    .withVpc(vpc.vpc)
+    .build();
+});
+
 export {
   vpc,
   defaultDb,
@@ -71,4 +91,6 @@ export {
   dbWithCustomParamGroup,
   customKms,
   dbWithCustomKms,
+  snapshot,
+  dbFromSnapshot,
 };
