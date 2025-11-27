@@ -37,7 +37,7 @@ type DatabaseArgs = {
   autoMinorVersionUpgrade?: pulumi.Input<boolean>;
   parameterGroupName?: pulumi.Input<string>;
   customParameterGroupArgs?: pulumi.Input<aws.rds.ParameterGroupArgs>;
-  snapshotIdentifier?: pulumi.Input<string>;
+  snapshotIdentifier?: string;
   engineVersion?: pulumi.Input<string>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
