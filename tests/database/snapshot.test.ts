@@ -19,7 +19,7 @@ export function testDbFromSnapshot(ctx: DatabaseTestContext) {
     );
     assert.strictEqual(
       dbFromSnapshot.encryptedSnapshotCopy.targetDbSnapshotIdentifier,
-      `${dbFromSnapshot.instance.dbSnapshotIdentifier}-encrypted-copy`,
+      dbFromSnapshot.instance.dbSnapshotIdentifier,
       'Encrtyped snapshot copy should have the correct target db snapshot identifier',
     );
     assert.strictEqual(
