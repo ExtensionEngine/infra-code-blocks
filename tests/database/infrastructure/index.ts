@@ -20,7 +20,6 @@ const dbWithMonitoring = new studion.DatabaseBuilder(
     password: config.dbPassword,
     tags: config.tags,
     applyImmediately: true,
-    deleteAutomatedBackups: true,
   })
   .withVpc(vpc.vpc)
   .withMonitoring()
@@ -33,7 +32,6 @@ const dbWithCustomParamGroup = new studion.DatabaseBuilder(
     password: config.dbPassword,
     tags: config.tags,
     applyImmediately: true,
-    deleteAutomatedBackups: true,
   })
   .withVpc(vpc.vpc)
   .withCustomParameterGroup({

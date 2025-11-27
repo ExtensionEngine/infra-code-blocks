@@ -13,7 +13,6 @@ export namespace Database {
     vpc: pulumi.Input<awsx.ec2.Vpc>;
     multiAz?: pulumi.Input<boolean>;
     applyImmediately?: pulumi.Input<boolean>;
-    deleteAutomatedBackups?: pulumi.Input<boolean>;
     allocatedStorage?: pulumi.Input<string>;
     maxAllocatedStorage?: pulumi.Input<number>;
     instanceClass?: pulumi.Input<string>;
@@ -33,7 +32,6 @@ export namespace Database {
 const defaults = {
   multiAz: false,
   applyImmediately: false,
-  deleteAutomatedBackups: false,
   allocatedStorage: '20',
   maxAllocatedStorage: 100,
   instanceClass: 'db.t4g.micro',
@@ -222,6 +220,7 @@ export class Database extends pulumi.ComponentResource {
     const instance = new awsNative.rds.DbInstance(
       `${this.name}-rds`,
       {
+        dbInstanceIdentifier: `${this.name}-db-instance`,
         engine: 'postgres',
         engineVersion: argsWithDefaults.engineVersion,
         dbInstanceClass: argsWithDefaults.instanceClass,
@@ -236,7 +235,6 @@ export class Database extends pulumi.ComponentResource {
         applyImmediately: argsWithDefaults.applyImmediately,
         allowMajorVersionUpgrade: argsWithDefaults.allowMajorVersionUpgrade,
         autoMinorVersionUpgrade: argsWithDefaults.autoMinorVersionUpgrade,
-        deleteAutomatedBackups: argsWithDefaults.deleteAutomatedBackups,
         kmsKeyId: this.kms.arn,
         storageEncrypted: true,
         publiclyAccessible: false,

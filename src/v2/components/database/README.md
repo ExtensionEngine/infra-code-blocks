@@ -28,7 +28,6 @@ type DatabaseArgs = {
   vpc: pulumi.Input<awsx.ec2.Vpc>;
   multiAz?: pulumi.Input<boolean>;
   applyImmediately?: pulumi.Input<boolean>;
-  deleteAutomatedBackups?: pulumi.Input<boolean>;
   allocatedStorage?: pulumi.Input<string>;
   maxAllocatedStorage?: pulumi.Input<number>;
   instanceClass?: pulumi.Input<string>;
