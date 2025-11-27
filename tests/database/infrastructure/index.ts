@@ -1,3 +1,4 @@
+import * as aws from '@pulumi/aws';
 import { next as studion } from '@studion/infra-code-blocks';
 import * as config from './config';
 
@@ -39,4 +40,35 @@ const dbWithCustomParamGroup = new studion.DatabaseBuilder(
   })
   .build();
 
-export { vpc, defaultDb, dbWithMonitoring, dbWithCustomParamGroup };
+const customKms = new aws.kms.Key(
+  `${config.appName}-custom-kms-key`,
+  {
+    description: `${config.appName} RDS encryption key`,
+    customerMasterKeySpec: 'SYMMETRIC_DEFAULT',
+    isEnabled: true,
+    keyUsage: 'ENCRYPT_DECRYPT',
+    multiRegion: false,
+    enableKeyRotation: true,
+    tags: config.tags,
+  }
+);
+
+const dbWithCustomKms = new studion.DatabaseBuilder(
+    `${config.appName}-w-kms-key`
+  )
+  .configure(config.dbName, config.dbUsername, {
+    password: config.dbPassword,
+    tags: config.tags,
+  })
+  .withVpc(vpc.vpc)
+  .withCustomKms(customKms)
+  .build();
+
+export {
+  vpc,
+  defaultDb,
+  dbWithMonitoring,
+  dbWithCustomParamGroup,
+  customKms,
+  dbWithCustomKms,
+};

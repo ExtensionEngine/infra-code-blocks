@@ -26,6 +26,7 @@ type DatabaseArgs = {
   username: pulumi.Input<string>;
   password?: pulumi.Input<string>;
   vpc: pulumi.Input<awsx.ec2.Vpc>;
+  kms?: aws.kms.Key;
   multiAz?: pulumi.Input<boolean>;
   applyImmediately?: pulumi.Input<boolean>;
   allocatedStorage?: pulumi.Input<string>;

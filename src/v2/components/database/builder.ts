@@ -4,7 +4,7 @@ import * as awsx from '@pulumi/awsx';
 import { Database } from '.';
 
 export namespace DatabaseBuilder {
-  export type Config = Omit<Database.Args, 'vpc' | 'enableMonitoring' | 'customParameterGroupArgs'>;
+  export type Config = Omit<Database.Args, 'vpc' | 'enableMonitoring' | 'customParameterGroupArgs' | 'kms'>;
 }
 
 export class DatabaseBuilder {
@@ -13,6 +13,7 @@ export class DatabaseBuilder {
   private _vpc?: Database.Args['vpc'];
   private _enableMonitoring?: Database.Args['enableMonitoring'];
   private _customParameterGroupArgs?: Database.Args['customParameterGroupArgs'];
+  private _kms?: Database.Args['kms'];
 
   constructor(name: string) {
     this._name = name;
@@ -52,6 +53,12 @@ export class DatabaseBuilder {
     return this;
   }
 
+  public withCustomKms(kms: aws.kms.Key): this {
+    this._kms = kms;
+
+    return this;
+  }
+
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
     if (!this._config) {
       throw new Error(
@@ -76,6 +83,7 @@ export class DatabaseBuilder {
         vpc: this._vpc,
         enableMonitoring: this._enableMonitoring,
         customParameterGroupArgs: this._customParameterGroupArgs,
+        kms: this._kms,
       },
       opts,
     );

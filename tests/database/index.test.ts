@@ -8,6 +8,7 @@ import { IAMClient } from '@aws-sdk/client-iam';
 import { InlineProgramArgs } from '@pulumi/pulumi/automation';
 import { KMSClient } from '@aws-sdk/client-kms';
 import { RDSClient } from '@aws-sdk/client-rds';
+import { testDbWithCustomKms } from './kms.test';
 import { testDbWithCustomParamGroup } from './parameter-group.test';
 import { testDbWithMonitoring } from './monitoring.test';
 
@@ -45,4 +46,5 @@ describe('Database component deployment', () => {
 
   describe('Database with monitoring', () => testDbWithMonitoring(ctx));
   describe('Database with custom parameter group', () => testDbWithCustomParamGroup(ctx));
+  describe('Database with custom kms key', () => testDbWithCustomKms(ctx));
 });

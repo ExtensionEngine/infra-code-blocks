@@ -11,6 +11,7 @@ export namespace Database {
     username: pulumi.Input<string>;
     password?: pulumi.Input<string>;
     vpc: pulumi.Input<awsx.ec2.Vpc>;
+    kms?: aws.kms.Key;
     multiAz?: pulumi.Input<boolean>;
     applyImmediately?: pulumi.Input<boolean>;
     allocatedStorage?: pulumi.Input<string>;
@@ -66,13 +67,14 @@ export class Database extends pulumi.ComponentResource {
       enableMonitoring,
       snapshotIdentifier,
       customParameterGroupArgs,
+      kms,
     } = argsWithDefaults;
 
     const vpc = pulumi.output(argsWithDefaults.vpc);
     this.dbSubnetGroup = this.createSubnetGroup(vpc.isolatedSubnetIds);
     this.dbSecurityGroup = this.createSecurityGroup(vpc.vpcId, vpc.vpc.cidrBlock);
 
-    this.kms = this.createEncryptionKey();
+    this.kms = kms || this.createEncryptionKey();
     this.password = new Password(
       `${this.name}-database-password`,
       { value: args.password },
