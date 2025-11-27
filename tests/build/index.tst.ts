@@ -301,6 +301,10 @@ describe('Build output', () => {
         );
       });
 
+      it('should have createFromSnapshot method', () => {
+        expect(builder.createFromSnapshot).type.toBeCallableWith('snapshot-id');
+      });
+
       it('should have withVpc method', () => {
         expect(builder.withVpc).type.toBeCallableWith(
           new awsx.ec2.Vpc('vpcName'),
@@ -315,6 +319,12 @@ describe('Build output', () => {
         expect(builder.withCustomParameterGroup).type.toBeCallableWith({
           family: 'custom-family'
         });
+      });
+
+      it('should have withCustomKms method', () => {
+        expect(builder.withCustomKms).type.toBeCallableWith(
+          new aws.kms.Key('kmsKey')
+        );
       });
     });
   });
