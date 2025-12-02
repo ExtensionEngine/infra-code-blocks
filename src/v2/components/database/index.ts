@@ -11,18 +11,18 @@ export namespace Database {
     username?: pulumi.Input<string>;
     password?: pulumi.Input<string>;
     vpc: pulumi.Input<awsx.ec2.Vpc>;
-    kms?: aws.kms.Key;
     multiAz?: pulumi.Input<boolean>;
     applyImmediately?: pulumi.Input<boolean>;
     allocatedStorage?: pulumi.Input<string>;
     maxAllocatedStorage?: pulumi.Input<number>;
     instanceClass?: pulumi.Input<string>;
-    enableMonitoring?: pulumi.Input<boolean>;
     allowMajorVersionUpgrade?: pulumi.Input<boolean>;
     autoMinorVersionUpgrade?: pulumi.Input<boolean>;
+    kmsKeyId?: pulumi.Input<string>;
     parameterGroupName?: pulumi.Input<string>;
     customParameterGroupArgs?: pulumi.Input<aws.rds.ParameterGroupArgs>;
-    snapshotIdentifier?: string;
+    snapshotIdentifier?: pulumi.Input<string>;
+    enableMonitoring?: pulumi.Input<boolean>;
     engineVersion?: pulumi.Input<string>;
     tags?: pulumi.Input<{
       [key: string]: pulumi.Input<string>;
@@ -45,13 +45,13 @@ const defaults = {
 export class Database extends pulumi.ComponentResource {
   name: string;
   instance: awsNative.rds.DbInstance;
-  kms: aws.kms.Key;
   dbSubnetGroup: aws.rds.SubnetGroup;
   dbSecurityGroup: aws.ec2.SecurityGroup;
   password: Password;
   encryptedSnapshotCopy?: aws.rds.SnapshotCopy;
   monitoringRole?: aws.iam.Role;
-  parameterGroup?: pulumi.Output<aws.rds.ParameterGroup>;
+  kmsKeyId: pulumi.Input<string>;
+  parameterGroupName?: pulumi.Input<string>;
 
   constructor(
     name: string,
@@ -64,10 +64,11 @@ export class Database extends pulumi.ComponentResource {
 
     const argsWithDefaults = Object.assign({}, defaults, args);
     const {
-      enableMonitoring,
+      kmsKeyId,
       snapshotIdentifier,
+      enableMonitoring,
+      parameterGroupName,
       customParameterGroupArgs,
-      kms,
     } = argsWithDefaults;
 
     const vpc = pulumi.output(argsWithDefaults.vpc);
@@ -77,22 +78,27 @@ export class Database extends pulumi.ComponentResource {
       vpc.vpc.cidrBlock,
     );
 
-    this.kms = kms || this.createEncryptionKey();
     this.password = new Password(
       `${this.name}-database-password`,
       { value: args.password },
       { parent: this },
     );
+
+    this.kmsKeyId = kmsKeyId || this.createEncryptionKey().arn;
+
+    this.parameterGroupName = customParameterGroupArgs
+      ? this.createParameterGroup(customParameterGroupArgs).name
+      : parameterGroupName;
+
     if (enableMonitoring) {
       this.monitoringRole = this.createMonitoringRole();
     }
+
     if (snapshotIdentifier) {
       this.encryptedSnapshotCopy =
         this.createEncryptedSnapshotCopy(snapshotIdentifier);
     }
-    if (customParameterGroupArgs) {
-      this.parameterGroup = this.createParameterGroup(customParameterGroupArgs);
-    }
+
     this.instance = this.createDatabaseInstance(args);
 
     this.registerOutputs();
@@ -181,20 +187,23 @@ export class Database extends pulumi.ComponentResource {
   }
 
   private createEncryptedSnapshotCopy(
-    snapshotIdentifier: NonNullable<Database.Args['snapshotIdentifier']>,
+    snapshotIdentifier: pulumi.Input<string>,
   ) {
-    const snapshot = aws.rds.getSnapshot({
-      dbSnapshotIdentifier: snapshotIdentifier,
-    });
+    const sourceDbSnapshotIdentifier = pulumi
+      .output(snapshotIdentifier)
+      .apply(snapshotIdentifier =>
+        aws.rds.getSnapshot({
+          dbSnapshotIdentifier: snapshotIdentifier,
+        }),
+      )
+      .apply(snapshot => snapshot.dbSnapshotArn);
 
     const encryptedSnapshotCopy = new aws.rds.SnapshotCopy(
       `${this.name}-encrypted-snapshot-copy`,
       {
-        sourceDbSnapshotIdentifier: pulumi
-          .output(snapshot)
-          .apply(snapshot => snapshot.dbSnapshotArn),
+        sourceDbSnapshotIdentifier,
         targetDbSnapshotIdentifier: `${snapshotIdentifier}-encrypted-copy`,
-        kmsKeyId: this.kms.arn,
+        kmsKeyId: this.kmsKeyId,
       },
       { parent: this },
     );
@@ -204,11 +213,17 @@ export class Database extends pulumi.ComponentResource {
   private createParameterGroup(
     customParameterGroupArgs: pulumi.Input<aws.rds.ParameterGroupArgs>,
   ) {
-    return pulumi.output(customParameterGroupArgs).apply(args => {
-      return new aws.rds.ParameterGroup(`${this.name}-parameter-group`, args, {
-        parent: this,
+    const parameterGroup = pulumi
+      .output(customParameterGroupArgs)
+      .apply(args => {
+        return new aws.rds.ParameterGroup(
+          `${this.name}-parameter-group`,
+          args,
+          { parent: this },
+        );
       });
-    });
+
+    return parameterGroup;
   }
 
   private createDatabaseInstance(args: Database.Args) {
@@ -223,10 +238,6 @@ export class Database extends pulumi.ComponentResource {
             performanceInsightsRetentionPeriod: 7,
           }
         : {};
-
-    const parameterGroupName = this.parameterGroup
-      ? this.parameterGroup.name
-      : argsWithDefaults.parameterGroupName;
 
     const instance = new awsNative.rds.DbInstance(
       `${this.name}-rds`,
@@ -246,14 +257,14 @@ export class Database extends pulumi.ComponentResource {
         applyImmediately: argsWithDefaults.applyImmediately,
         allowMajorVersionUpgrade: argsWithDefaults.allowMajorVersionUpgrade,
         autoMinorVersionUpgrade: argsWithDefaults.autoMinorVersionUpgrade,
-        kmsKeyId: this.kms.arn,
+        kmsKeyId: this.kmsKeyId,
         storageEncrypted: true,
         publiclyAccessible: false,
         preferredMaintenanceWindow: 'Mon:07:00-Mon:07:30',
         preferredBackupWindow: '06:00-06:30',
         backupRetentionPeriod: 14,
         caCertificateIdentifier: 'rds-ca-rsa2048-g1',
-        dbParameterGroupName: parameterGroupName,
+        dbParameterGroupName: this.parameterGroupName,
         dbSnapshotIdentifier:
           this.encryptedSnapshotCopy?.targetDbSnapshotIdentifier,
         ...monitoringOptions,
