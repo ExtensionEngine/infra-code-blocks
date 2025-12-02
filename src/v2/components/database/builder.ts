@@ -1,119 +1,119 @@
-import { Database } from '.';
 import * as pulumi from '@pulumi/pulumi';
+import * as aws from '@pulumi/aws';
+import * as awsx from '@pulumi/awsx';
+import { Database } from '.';
+
+export namespace DatabaseBuilder {
+  export type Config = Omit<
+    Database.Args,
+    | 'vpc'
+    | 'enableMonitoring'
+    | 'parameterGroupName'
+    | 'customParameterGroupArgs'
+    | 'kmsKeyId'
+    | 'snapshotIdentifier'
+  >;
+}
 
 export class DatabaseBuilder {
-  private name: string;
-  private instanceConfig?: Database.Instance;
-  private credentialsConfig?: Database.Credentials;
-  private storageConfig?: Database.Storage;
-  private vpc?: Database.Args['vpc'];
-  private enableMonitoring?: Database.Args['enableMonitoring'];
-  private snapshotIdentifier?: Database.Args['snapshotIdentifier'];
-  private kmsKeyId?: Database.Args['kmsKeyId'];
-  private parameterGroupName?: Database.Args['parameterGroupName'];
-  private tags?: Database.Args['tags'];
+  private _name: string;
+  private _config?: DatabaseBuilder.Config;
+  private _vpc?: Database.Args['vpc'];
+  private _enableMonitoring?: Database.Args['enableMonitoring'];
+  private _parameterGroupName?: Database.Args['parameterGroupName'];
+  private _customParameterGroupArgs?: Database.Args['customParameterGroupArgs'];
+  private _kmsKeyId?: Database.Args['kmsKeyId'];
+  private _snapshotIdentifier?: Database.Args['snapshotIdentifier'];
 
   constructor(name: string) {
-    this.name = name;
+    this._name = name;
   }
 
-  public withInstance(instanceConfig: Database.Instance = {}): this {
-    this.instanceConfig = instanceConfig;
+  public configure(
+    dbName: DatabaseBuilder.Config['dbName'],
+    username: DatabaseBuilder.Config['username'],
+    config: Omit<DatabaseBuilder.Config, 'dbName' | 'username'> = {},
+  ): this {
+    this._config = {
+      dbName,
+      username,
+      ...config,
+    };
 
     return this;
   }
 
-  public withCredentials(credentialsConfig: Database.Credentials = {}): this {
-    this.credentialsConfig = credentialsConfig;
-
-    return this;
-  }
-
-  public withStorage(storageConfig: Database.Storage = {}): this {
-    this.storageConfig = storageConfig;
-
-    return this;
-  }
-
-  public withVpc(vpc: Database.Args['vpc']): this {
-    this.vpc = pulumi.output(vpc);
+  public withVpc(vpc: pulumi.Input<awsx.ec2.Vpc>): this {
+    this._vpc = pulumi.output(vpc);
 
     return this;
   }
 
   public withMonitoring(): this {
-    this.enableMonitoring = true;
+    this._enableMonitoring = true;
 
     return this;
   }
 
-  public withSnapshot(
-    snapshotIdentifier: Database.Args['snapshotIdentifier'],
+  public createFromSnapshot(snapshotIdentifier: pulumi.Input<string>): this {
+    this._snapshotIdentifier = snapshotIdentifier;
+
+    return this;
+  }
+
+  public useExistingParameterGroup(
+    parameterGroupName: pulumi.Input<string>,
   ): this {
-    this.snapshotIdentifier = snapshotIdentifier;
+    this._parameterGroupName = parameterGroupName;
 
     return this;
   }
 
-  public withKms(kmsKeyId: Database.Args['kmsKeyId']): this {
-    this.kmsKeyId = kmsKeyId;
-
-    return this;
-  }
-
-  public withParameterGroup(
-    parameterGroupName: Database.Args['parameterGroupName'],
+  public withCustomParameterGroup(
+    customParameterGroupArgs: pulumi.Input<aws.rds.ParameterGroupArgs>,
   ): this {
-    this.parameterGroupName = parameterGroupName;
+    this._customParameterGroupArgs = customParameterGroupArgs;
 
     return this;
   }
 
-  public withTags(tags: Database.Args['tags']): this {
-    this.tags = tags;
+  public useExitingKms(kmsKeyId: pulumi.Input<string>): this {
+    this._kmsKeyId = kmsKeyId;
 
     return this;
   }
 
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
-    if (!this.snapshotIdentifier && !this.instanceConfig?.dbName) {
+    if (!this._config && !this._snapshotIdentifier) {
       throw new Error(
-        'DbName not provided. Make sure to call DatabaseBuilder.withInstance() and set dbName.',
+        `Database is not configured. Make sure to call DatabaseBuilder.configure()
+        or create it from a snapshot with DatabaseBuilder.createFromSnapshot().`,
       );
     }
 
-    if (!this.snapshotIdentifier && !this.credentialsConfig?.username) {
-      throw new Error(
-        'Username not provided. Make sure to call DatabaseBuilder.withCredentials() and set username.',
-      );
-    }
-
-    if (this.snapshotIdentifier && this.instanceConfig?.dbName) {
-      throw new Error(`You can't set dbName when using snapshotIdentifier.`);
-    }
-
-    if (this.snapshotIdentifier && this.credentialsConfig?.username) {
-      throw new Error(`You can't set username when using snapshotIdentifier.`);
-    }
-
-    if (!this.vpc) {
+    if (!this._vpc) {
       throw new Error(
         'VPC not provided. Make sure to call DatabaseBuilder.withVpc().',
       );
     }
 
+    if (this._parameterGroupName && this._customParameterGroupArgs) {
+      throw new Error(
+        `You can't both use existing parameter group and create a custom one.
+        Make sure to call either DatabaseBuilder.useExistingParameterGroup()
+        or DatabaseBuilder.withCustomParameterGroup(), but not both.`,
+      );
+    }
+
     return new Database(
-      this.name,
+      this._name,
       {
-        ...this.instanceConfig,
-        ...this.credentialsConfig,
-        ...this.storageConfig,
-        vpc: this.vpc,
-        enableMonitoring: this.enableMonitoring,
-        snapshotIdentifier: this.snapshotIdentifier,
-        kmsKeyId: this.kmsKeyId,
-        parameterGroupName: this.parameterGroupName,
-        tags: this.tags,
+        ...this._config,
+        vpc: this._vpc,
+        enableMonitoring: this._enableMonitoring,
+        snapshotIdentifier: this._snapshotIdentifier,
+        parameterGroupName: this._parameterGroupName,
+        kmsKeyId: this._kmsKeyId,
       },
       opts,
     );
