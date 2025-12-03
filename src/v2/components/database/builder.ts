@@ -77,7 +77,7 @@ export class DatabaseBuilder {
     return this;
   }
 
-  public useExitingKms(kmsKeyId: pulumi.Input<string>): this {
+  public useExistingKms(kmsKeyId: pulumi.Input<string>): this {
     this._kmsKeyId = kmsKeyId;
 
     return this;
