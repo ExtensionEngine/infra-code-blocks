@@ -8,7 +8,6 @@ export namespace DatabaseBuilder {
     Database.Args,
     | 'vpc'
     | 'enableMonitoring'
-    | 'parameterGroupName'
     | 'customParameterGroupArgs'
     | 'kmsKeyId'
     | 'snapshotIdentifier'
@@ -20,7 +19,6 @@ export class DatabaseBuilder {
   private config?: DatabaseBuilder.Config;
   private vpc?: Database.Args['vpc'];
   private enableMonitoring?: Database.Args['enableMonitoring'];
-  private parameterGroupName?: Database.Args['parameterGroupName'];
   private kmsKeyId?: Database.Args['kmsKeyId'];
   private snapshotIdentifier?: Database.Args['snapshotIdentifier'];
 
@@ -60,14 +58,6 @@ export class DatabaseBuilder {
     return this;
   }
 
-  public useExistingParameterGroup(
-    parameterGroupName: pulumi.Input<string>,
-  ): this {
-    this.parameterGroupName = parameterGroupName;
-
-    return this;
-  }
-
   public useExistingKms(kmsKeyId: pulumi.Input<string>): this {
     this.kmsKeyId = kmsKeyId;
 
@@ -95,7 +85,6 @@ export class DatabaseBuilder {
         vpc: this.vpc,
         enableMonitoring: this.enableMonitoring,
         snapshotIdentifier: this.snapshotIdentifier,
-        parameterGroupName: this.parameterGroupName,
         kmsKeyId: this.kmsKeyId,
       },
       opts,
