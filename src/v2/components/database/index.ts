@@ -49,7 +49,7 @@ export class Database extends pulumi.ComponentResource {
   password: Password;
   encryptedSnapshotCopy?: aws.rds.SnapshotCopy;
   monitoringRole?: aws.iam.Role;
-  kmsKeyId: pulumi.Input<string>;
+  kmsKeyId: pulumi.Output<string>;
 
   constructor(
     name: string,
@@ -80,7 +80,9 @@ export class Database extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    this.kmsKeyId = kmsKeyId || this.createEncryptionKey().arn;
+    this.kmsKeyId = kmsKeyId
+      ? pulumi.output(kmsKeyId)
+      : this.createEncryptionKey().arn;
 
     if (enableMonitoring) {
       this.monitoringRole = this.createMonitoringRole();
