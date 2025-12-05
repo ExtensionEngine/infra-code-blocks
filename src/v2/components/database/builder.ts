@@ -16,16 +16,16 @@ export namespace DatabaseBuilder {
 }
 
 export class DatabaseBuilder {
-  private _name: string;
-  private _config?: DatabaseBuilder.Config;
-  private _vpc?: Database.Args['vpc'];
-  private _enableMonitoring?: Database.Args['enableMonitoring'];
-  private _parameterGroupName?: Database.Args['parameterGroupName'];
-  private _kmsKeyId?: Database.Args['kmsKeyId'];
-  private _snapshotIdentifier?: Database.Args['snapshotIdentifier'];
+  private name: string;
+  private config?: DatabaseBuilder.Config;
+  private vpc?: Database.Args['vpc'];
+  private enableMonitoring?: Database.Args['enableMonitoring'];
+  private parameterGroupName?: Database.Args['parameterGroupName'];
+  private kmsKeyId?: Database.Args['kmsKeyId'];
+  private snapshotIdentifier?: Database.Args['snapshotIdentifier'];
 
   constructor(name: string) {
-    this._name = name;
+    this.name = name;
   }
 
   public configure(
@@ -33,7 +33,7 @@ export class DatabaseBuilder {
     username: DatabaseBuilder.Config['username'],
     config: Omit<DatabaseBuilder.Config, 'dbName' | 'username'> = {},
   ): this {
-    this._config = {
+    this.config = {
       dbName,
       username,
       ...config,
@@ -43,19 +43,19 @@ export class DatabaseBuilder {
   }
 
   public withVpc(vpc: pulumi.Input<awsx.ec2.Vpc>): this {
-    this._vpc = pulumi.output(vpc);
+    this.vpc = pulumi.output(vpc);
 
     return this;
   }
 
   public withMonitoring(): this {
-    this._enableMonitoring = true;
+    this.enableMonitoring = true;
 
     return this;
   }
 
   public createFromSnapshot(snapshotIdentifier: pulumi.Input<string>): this {
-    this._snapshotIdentifier = snapshotIdentifier;
+    this.snapshotIdentifier = snapshotIdentifier;
 
     return this;
   }
@@ -63,40 +63,40 @@ export class DatabaseBuilder {
   public useExistingParameterGroup(
     parameterGroupName: pulumi.Input<string>,
   ): this {
-    this._parameterGroupName = parameterGroupName;
+    this.parameterGroupName = parameterGroupName;
 
     return this;
   }
 
   public useExistingKms(kmsKeyId: pulumi.Input<string>): this {
-    this._kmsKeyId = kmsKeyId;
+    this.kmsKeyId = kmsKeyId;
 
     return this;
   }
 
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
-    if (!this._config && !this._snapshotIdentifier) {
+    if (!this.config && !this.snapshotIdentifier) {
       throw new Error(
         `Database is not configured. Make sure to call DatabaseBuilder.configure()
         or create it from a snapshot with DatabaseBuilder.createFromSnapshot().`,
       );
     }
 
-    if (!this._vpc) {
+    if (!this.vpc) {
       throw new Error(
         'VPC not provided. Make sure to call DatabaseBuilder.withVpc().',
       );
     }
 
     return new Database(
-      this._name,
+      this.name,
       {
-        ...this._config,
-        vpc: this._vpc,
-        enableMonitoring: this._enableMonitoring,
-        snapshotIdentifier: this._snapshotIdentifier,
-        parameterGroupName: this._parameterGroupName,
-        kmsKeyId: this._kmsKeyId,
+        ...this.config,
+        vpc: this.vpc,
+        enableMonitoring: this.enableMonitoring,
+        snapshotIdentifier: this.snapshotIdentifier,
+        parameterGroupName: this.parameterGroupName,
+        kmsKeyId: this.kmsKeyId,
       },
       opts,
     );
