@@ -20,7 +20,7 @@ export class Password extends pulumi.ComponentResource {
     const optsWithDefauls = pulumi.mergeOptions(opts, {
       additionalSecretOutputs: ['value'],
     });
-    super('studion:Password', name, {}, optsWithDefauls);
+    super('studion:LegacyPassword', name, {}, optsWithDefauls);
 
     this.name = name;
     if (args.value) {
