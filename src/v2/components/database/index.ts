@@ -6,23 +6,41 @@ import { Password } from '../../../components/password';
 import { commonTags } from '../../../constants';
 
 export namespace Database {
-  export type Args = {
+  export type Instance = {
     dbName?: pulumi.Input<string>;
-    username?: pulumi.Input<string>;
-    password?: pulumi.Input<string>;
-    vpc: pulumi.Input<awsx.ec2.Vpc>;
-    multiAz?: pulumi.Input<boolean>;
-    applyImmediately?: pulumi.Input<boolean>;
-    allocatedStorage?: pulumi.Input<string>;
-    maxAllocatedStorage?: pulumi.Input<number>;
+    engineVersion?: pulumi.Input<string>;
     instanceClass?: pulumi.Input<string>;
     allowMajorVersionUpgrade?: pulumi.Input<boolean>;
     autoMinorVersionUpgrade?: pulumi.Input<boolean>;
+  };
+
+  export type Networking = {
+    vpc: pulumi.Input<awsx.ec2.Vpc>;
+    multiAz?: pulumi.Input<boolean>;
+  };
+
+  export type Credentials = {
+    username?: pulumi.Input<string>;
+    password?: pulumi.Input<string>;
+  };
+
+  export type Storage = {
+    allocatedStorage?: pulumi.Input<string>;
+    maxAllocatedStorage?: pulumi.Input<number>;
     kmsKeyId?: pulumi.Input<string>;
-    parameterGroupName?: pulumi.Input<string>;
     snapshotIdentifier?: pulumi.Input<string>;
+  };
+
+  export type Monitoring = {
     enableMonitoring?: pulumi.Input<boolean>;
-    engineVersion?: pulumi.Input<string>;
+    applyImmediately?: pulumi.Input<boolean>;
+  };
+
+  export type ParameterGroup = {
+    parameterGroupName?: pulumi.Input<string>;
+  };
+
+  export type Args = Instance & Networking & Credentials & Storage & Monitoring & ParameterGroup & {
     tags?: pulumi.Input<{
       [key: string]: pulumi.Input<string>;
     }>;
