@@ -8,7 +8,6 @@ export namespace DatabaseBuilder {
     Database.Args,
     | 'vpc'
     | 'enableMonitoring'
-    | 'customParameterGroupArgs'
     | 'kmsKeyId'
     | 'snapshotIdentifier'
   >;
@@ -52,23 +51,22 @@ export class DatabaseBuilder {
     return this;
   }
 
-  public createFromSnapshot(snapshotIdentifier: pulumi.Input<string>): this {
+  public withSnapshot(snapshotIdentifier: pulumi.Input<string>): this {
     this.snapshotIdentifier = snapshotIdentifier;
 
     return this;
   }
 
-  public useExistingKms(kmsKeyId: pulumi.Input<string>): this {
+  public withKms(kmsKeyId: pulumi.Input<string>): this {
     this.kmsKeyId = kmsKeyId;
 
     return this;
   }
 
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
-    if (!this.config && !this.snapshotIdentifier) {
+    if (!this.config) {
       throw new Error(
-        `Database is not configured. Make sure to call DatabaseBuilder.configure()
-        or create it from a snapshot with DatabaseBuilder.createFromSnapshot().`,
+        `Database is not configured. Make sure to call DatabaseBuilder.configure().`,
       );
     }
 
