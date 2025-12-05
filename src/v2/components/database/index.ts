@@ -40,11 +40,16 @@ export namespace Database {
     parameterGroupName?: pulumi.Input<string>;
   };
 
-  export type Args = Instance & Networking & Credentials & Storage & Monitoring & ParameterGroup & {
-    tags?: pulumi.Input<{
-      [key: string]: pulumi.Input<string>;
-    }>;
-  };
+  export type Args = Instance &
+    Networking &
+    Credentials &
+    Storage &
+    Monitoring &
+    ParameterGroup & {
+      tags?: pulumi.Input<{
+        [key: string]: pulumi.Input<string>;
+      }>;
+    };
 }
 
 const defaults = {
@@ -80,12 +85,8 @@ export class Database extends pulumi.ComponentResource {
     this.name = name;
 
     const argsWithDefaults = Object.assign({}, defaults, args);
-    const {
-      vpc,
-      kmsKeyId,
-      enableMonitoring,
-      snapshotIdentifier,
-    } = argsWithDefaults;
+    const { vpc, kmsKeyId, enableMonitoring, snapshotIdentifier } =
+      argsWithDefaults;
 
     this.vpc = pulumi.output(vpc);
     this.dbSubnetGroup = this.createSubnetGroup();
@@ -162,22 +163,24 @@ export class Database extends pulumi.ComponentResource {
   }
 
   private createMonitoringRole() {
-    const monitoringRole = new aws.iam.Role(`${this.name}-rds-monitoring`, {
-      assumeRolePolicy: {
-        Version: '2012-10-17',
-        Statement: [
-          {
-            Action: 'sts:AssumeRole',
-            Effect: 'Allow',
-            Principal: {
-              Service: 'monitoring.rds.amazonaws.com',
+    const monitoringRole = new aws.iam.Role(
+      `${this.name}-rds-monitoring`,
+      {
+        assumeRolePolicy: {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Action: 'sts:AssumeRole',
+              Effect: 'Allow',
+              Principal: {
+                Service: 'monitoring.rds.amazonaws.com',
+              },
             },
-          },
-        ],
+          ],
+        },
       },
-    },
-    { parent: this },
-  );
+      { parent: this },
+    );
 
     new aws.iam.RolePolicyAttachment(
       `${this.name}-rds-monitoring-role-attachment`,
