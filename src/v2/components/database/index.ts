@@ -20,7 +20,6 @@ export namespace Database {
     autoMinorVersionUpgrade?: pulumi.Input<boolean>;
     kmsKeyId?: pulumi.Input<string>;
     parameterGroupName?: pulumi.Input<string>;
-    customParameterGroupArgs?: pulumi.Input<aws.rds.ParameterGroupArgs>;
     snapshotIdentifier?: pulumi.Input<string>;
     enableMonitoring?: pulumi.Input<boolean>;
     engineVersion?: pulumi.Input<string>;
@@ -51,7 +50,6 @@ export class Database extends pulumi.ComponentResource {
   encryptedSnapshotCopy?: aws.rds.SnapshotCopy;
   monitoringRole?: aws.iam.Role;
   kmsKeyId: pulumi.Input<string>;
-  parameterGroupName?: pulumi.Input<string>;
 
   constructor(
     name: string,
@@ -67,8 +65,6 @@ export class Database extends pulumi.ComponentResource {
       kmsKeyId,
       snapshotIdentifier,
       enableMonitoring,
-      parameterGroupName,
-      customParameterGroupArgs,
     } = argsWithDefaults;
 
     const vpc = pulumi.output(argsWithDefaults.vpc);
@@ -85,10 +81,6 @@ export class Database extends pulumi.ComponentResource {
     );
 
     this.kmsKeyId = kmsKeyId || this.createEncryptionKey().arn;
-
-    this.parameterGroupName = customParameterGroupArgs
-      ? this.createParameterGroup(customParameterGroupArgs).name
-      : parameterGroupName;
 
     if (enableMonitoring) {
       this.monitoringRole = this.createMonitoringRole();
@@ -210,22 +202,6 @@ export class Database extends pulumi.ComponentResource {
     return encryptedSnapshotCopy;
   }
 
-  private createParameterGroup(
-    customParameterGroupArgs: pulumi.Input<aws.rds.ParameterGroupArgs>,
-  ) {
-    const parameterGroup = pulumi
-      .output(customParameterGroupArgs)
-      .apply(args => {
-        return new aws.rds.ParameterGroup(
-          `${this.name}-parameter-group`,
-          args,
-          { parent: this },
-        );
-      });
-
-    return parameterGroup;
-  }
-
   private createDatabaseInstance(args: Database.Args) {
     const argsWithDefaults = Object.assign({}, defaults, args);
 
@@ -264,7 +240,7 @@ export class Database extends pulumi.ComponentResource {
         preferredBackupWindow: '06:00-06:30',
         backupRetentionPeriod: 14,
         caCertificateIdentifier: 'rds-ca-rsa2048-g1',
-        dbParameterGroupName: this.parameterGroupName,
+        dbParameterGroupName: argsWithDefaults.parameterGroupName,
         dbSnapshotIdentifier:
           this.encryptedSnapshotCopy?.targetDbSnapshotIdentifier,
         ...monitoringOptions,
