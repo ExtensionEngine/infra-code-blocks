@@ -101,7 +101,7 @@ export class Database extends pulumi.ComponentResource {
   private createSubnetGroup(
     isolatedSubnetIds: awsx.ec2.Vpc['isolatedSubnetIds'],
   ) {
-    const dbSubnetGroup = new aws.rds.SubnetGroup(
+    return new aws.rds.SubnetGroup(
       `${this.name}-subnet-group`,
       {
         subnetIds: isolatedSubnetIds,
@@ -109,14 +109,13 @@ export class Database extends pulumi.ComponentResource {
       },
       { parent: this },
     );
-    return dbSubnetGroup;
   }
 
   private createSecurityGroup(
     vpcId: awsx.ec2.Vpc['vpcId'],
     vpcCidrBlock: pulumi.Input<string>,
   ) {
-    const dbSecurityGroup = new aws.ec2.SecurityGroup(
+    return new aws.ec2.SecurityGroup(
       `${this.name}-security-group`,
       {
         vpcId,
@@ -132,11 +131,10 @@ export class Database extends pulumi.ComponentResource {
       },
       { parent: this },
     );
-    return dbSecurityGroup;
   }
 
   private createEncryptionKey() {
-    const kms = new aws.kms.Key(
+    return new aws.kms.Key(
       `${this.name}-rds-key`,
       {
         description: `${this.name} RDS encryption key`,
@@ -149,7 +147,6 @@ export class Database extends pulumi.ComponentResource {
       },
       { parent: this },
     );
-    return kms;
   }
 
   private createMonitoringRole() {
@@ -166,7 +163,9 @@ export class Database extends pulumi.ComponentResource {
           },
         ],
       },
-    });
+    },
+    { parent: this },
+  );
 
     new aws.iam.RolePolicyAttachment(
       `${this.name}-rds-monitoring-role-attachment`,
@@ -175,6 +174,7 @@ export class Database extends pulumi.ComponentResource {
         policyArn:
           'arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole',
       },
+      { parent: this },
     );
 
     return monitoringRole;
@@ -189,8 +189,7 @@ export class Database extends pulumi.ComponentResource {
         aws.rds.getSnapshot({
           dbSnapshotIdentifier: snapshotIdentifier,
         }),
-      )
-      .apply(snapshot => snapshot.dbSnapshotArn);
+      ).dbSnapshotArn;
 
     const encryptedSnapshotCopy = new aws.rds.SnapshotCopy(
       `${this.name}-encrypted-snapshot-copy`,
