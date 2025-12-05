@@ -91,7 +91,7 @@ export class Database extends pulumi.ComponentResource {
         this.createEncryptedSnapshotCopy(snapshotIdentifier);
     }
 
-    this.instance = this.createDatabaseInstance(args);
+    this.instance = this.createDatabaseInstance(argsWithDefaults);
 
     this.registerOutputs();
   }
@@ -203,10 +203,8 @@ export class Database extends pulumi.ComponentResource {
   }
 
   private createDatabaseInstance(args: Database.Args) {
-    const argsWithDefaults = Object.assign({}, defaults, args);
-
     const monitoringOptions =
-      argsWithDefaults.enableMonitoring && this.monitoringRole
+      args.enableMonitoring && this.monitoringRole
         ? {
             monitoringInterval: 60,
             monitoringRoleArn: this.monitoringRole.arn,
@@ -220,19 +218,19 @@ export class Database extends pulumi.ComponentResource {
       {
         dbInstanceIdentifier: `${this.name}-db-instance`,
         engine: 'postgres',
-        engineVersion: argsWithDefaults.engineVersion,
-        dbInstanceClass: argsWithDefaults.instanceClass,
-        dbName: argsWithDefaults.dbName,
-        masterUsername: argsWithDefaults.username,
+        engineVersion: args.engineVersion,
+        dbInstanceClass: args.instanceClass,
+        dbName: args.dbName,
+        masterUsername: args.username,
         masterUserPassword: this.password.value,
         dbSubnetGroupName: this.dbSubnetGroup.name,
         vpcSecurityGroups: [this.dbSecurityGroup.id],
-        allocatedStorage: argsWithDefaults.allocatedStorage,
-        maxAllocatedStorage: argsWithDefaults.maxAllocatedStorage,
-        multiAz: argsWithDefaults.multiAz,
-        applyImmediately: argsWithDefaults.applyImmediately,
-        allowMajorVersionUpgrade: argsWithDefaults.allowMajorVersionUpgrade,
-        autoMinorVersionUpgrade: argsWithDefaults.autoMinorVersionUpgrade,
+        allocatedStorage: args.allocatedStorage,
+        maxAllocatedStorage: args.maxAllocatedStorage,
+        multiAz: args.multiAz,
+        applyImmediately: args.applyImmediately,
+        allowMajorVersionUpgrade: args.allowMajorVersionUpgrade,
+        autoMinorVersionUpgrade: args.autoMinorVersionUpgrade,
         kmsKeyId: this.kmsKeyId,
         storageEncrypted: true,
         publiclyAccessible: false,
@@ -240,12 +238,12 @@ export class Database extends pulumi.ComponentResource {
         preferredBackupWindow: '06:00-06:30',
         backupRetentionPeriod: 14,
         caCertificateIdentifier: 'rds-ca-rsa2048-g1',
-        dbParameterGroupName: argsWithDefaults.parameterGroupName,
+        dbParameterGroupName: args.parameterGroupName,
         dbSnapshotIdentifier:
           this.encryptedSnapshotCopy?.targetDbSnapshotIdentifier,
         ...monitoringOptions,
         tags: [
-          ...Object.entries({ ...commonTags, ...argsWithDefaults.tags }).map(
+          ...Object.entries({ ...commonTags, ...args.tags }).map(
             ([key, value]) => ({ key, value }),
           ),
         ],
