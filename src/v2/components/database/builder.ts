@@ -21,7 +21,6 @@ export class DatabaseBuilder {
   private _vpc?: Database.Args['vpc'];
   private _enableMonitoring?: Database.Args['enableMonitoring'];
   private _parameterGroupName?: Database.Args['parameterGroupName'];
-  private _customParameterGroupArgs?: Database.Args['customParameterGroupArgs'];
   private _kmsKeyId?: Database.Args['kmsKeyId'];
   private _snapshotIdentifier?: Database.Args['snapshotIdentifier'];
 
@@ -69,14 +68,6 @@ export class DatabaseBuilder {
     return this;
   }
 
-  public withCustomParameterGroup(
-    customParameterGroupArgs: pulumi.Input<aws.rds.ParameterGroupArgs>,
-  ): this {
-    this._customParameterGroupArgs = customParameterGroupArgs;
-
-    return this;
-  }
-
   public useExistingKms(kmsKeyId: pulumi.Input<string>): this {
     this._kmsKeyId = kmsKeyId;
 
@@ -94,14 +85,6 @@ export class DatabaseBuilder {
     if (!this._vpc) {
       throw new Error(
         'VPC not provided. Make sure to call DatabaseBuilder.withVpc().',
-      );
-    }
-
-    if (this._parameterGroupName && this._customParameterGroupArgs) {
-      throw new Error(
-        `You can't both use existing parameter group and create a custom one.
-        Make sure to call either DatabaseBuilder.useExistingParameterGroup()
-        or DatabaseBuilder.withCustomParameterGroup(), but not both.`,
       );
     }
 
