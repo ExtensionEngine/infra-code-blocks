@@ -44,12 +44,13 @@ const defaults = {
 export class Database extends pulumi.ComponentResource {
   name: string;
   instance: awsNative.rds.DbInstance;
+  vpc: pulumi.Output<awsx.ec2.Vpc>;
   dbSubnetGroup: aws.rds.SubnetGroup;
   dbSecurityGroup: aws.ec2.SecurityGroup;
   password: Password;
-  encryptedSnapshotCopy?: aws.rds.SnapshotCopy;
-  monitoringRole?: aws.iam.Role;
   kmsKeyId: pulumi.Output<string>;
+  monitoringRole?: aws.iam.Role;
+  encryptedSnapshotCopy?: aws.rds.SnapshotCopy;
 
   constructor(
     name: string,
@@ -62,17 +63,15 @@ export class Database extends pulumi.ComponentResource {
 
     const argsWithDefaults = Object.assign({}, defaults, args);
     const {
+      vpc,
       kmsKeyId,
-      snapshotIdentifier,
       enableMonitoring,
+      snapshotIdentifier,
     } = argsWithDefaults;
 
-    const vpc = pulumi.output(argsWithDefaults.vpc);
-    this.dbSubnetGroup = this.createSubnetGroup(vpc.isolatedSubnetIds);
-    this.dbSecurityGroup = this.createSecurityGroup(
-      vpc.vpcId,
-      vpc.vpc.cidrBlock,
-    );
+    this.vpc = pulumi.output(vpc);
+    this.dbSubnetGroup = this.createSubnetGroup();
+    this.dbSecurityGroup = this.createSecurityGroup();
 
     this.password = new Password(
       `${this.name}-database-password`,
@@ -98,33 +97,28 @@ export class Database extends pulumi.ComponentResource {
     this.registerOutputs();
   }
 
-  private createSubnetGroup(
-    isolatedSubnetIds: awsx.ec2.Vpc['isolatedSubnetIds'],
-  ) {
+  private createSubnetGroup() {
     return new aws.rds.SubnetGroup(
       `${this.name}-subnet-group`,
       {
-        subnetIds: isolatedSubnetIds,
+        subnetIds: this.vpc.isolatedSubnetIds,
         tags: commonTags,
       },
       { parent: this },
     );
   }
 
-  private createSecurityGroup(
-    vpcId: awsx.ec2.Vpc['vpcId'],
-    vpcCidrBlock: pulumi.Input<string>,
-  ) {
+  private createSecurityGroup() {
     return new aws.ec2.SecurityGroup(
       `${this.name}-security-group`,
       {
-        vpcId,
+        vpcId: this.vpc.vpcId,
         ingress: [
           {
             protocol: 'tcp',
             fromPort: 5432,
             toPort: 5432,
-            cidrBlocks: [vpcCidrBlock],
+            cidrBlocks: [this.vpc.vpc.cidrBlock],
           },
         ],
         tags: commonTags,
