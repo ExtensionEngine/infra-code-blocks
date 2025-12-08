@@ -258,4 +258,64 @@ describe('Build output', () => {
       });
     });
   });
+
+  describe('Database', () => {
+    it('should export Database', () => {
+      expect(studion).type.toHaveProperty('Database');
+    });
+
+    it('should export DatabaseBuilder', () => {
+      expect(studion).type.toHaveProperty('DatabaseBuilder');
+    });
+
+    describe('Instantiation', () => {
+      const { Database, DatabaseBuilder } = studion;
+
+      it('should construct Database', () => {
+        expect(Database).type.toBeConstructableWith('db-test', {
+          vpc: new awsx.ec2.Vpc('vpcName'),
+          dbName: 'dbName',
+          username: 'username',
+        });
+      });
+
+      it('should construct DatabaseBuilder', () => {
+        expect(DatabaseBuilder).type.toBeConstructableWith('db-test');
+      });
+    });
+
+    describe('Builder', () => {
+      const builder = new studion.DatabaseBuilder('db-test');
+
+      it('should have build method', () => {
+        expect(builder.build).type.toBeCallableWith();
+      });
+
+      it('should have withConfiguration method', () => {
+        expect(builder.withConfiguration).type.toBeCallableWith({
+          dbName: 'dbName',
+          username: 'username',
+          password: 'password',
+        });
+      });
+
+      it('should have withVpc method', () => {
+        expect(builder.withVpc).type.toBeCallableWith(
+          new awsx.ec2.Vpc('vpcName'),
+        );
+      });
+
+      it('should have withMonitoring method', () => {
+        expect(builder.withMonitoring).type.toBeCallableWith();
+      });
+
+      it('should have withSnapshot method', () => {
+        expect(builder.withSnapshot).type.toBeCallableWith('snapshot-id');
+      });
+
+      it('should have withKms method', () => {
+        expect(builder.withKms).type.toBeCallableWith('kms-key-id');
+      });
+    });
+  });
 });
