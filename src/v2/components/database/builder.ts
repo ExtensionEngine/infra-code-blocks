@@ -22,16 +22,8 @@ export class DatabaseBuilder {
     this.name = name;
   }
 
-  public configure(
-    dbName: DatabaseBuilder.Config['dbName'],
-    username: DatabaseBuilder.Config['username'],
-    config: Omit<DatabaseBuilder.Config, 'dbName' | 'username'> = {},
-  ): this {
-    this.config = {
-      dbName,
-      username,
-      ...config,
-    };
+  public withConfiguration(config: DatabaseBuilder.Config = {}): this {
+    this.config = config;
 
     return this;
   }
@@ -63,13 +55,22 @@ export class DatabaseBuilder {
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
     if (!this.config) {
       throw new Error(
-        `Database is not configured. Make sure to call DatabaseBuilder.configure().`,
+        `Database is not configured. Make sure to call DatabaseBuilder.withConfiguration().`,
       );
     }
 
     if (!this.vpc) {
       throw new Error(
         'VPC not provided. Make sure to call DatabaseBuilder.withVpc().',
+      );
+    }
+
+    if (
+      this.snapshotIdentifier &&
+      (this.config.dbName || this.config.username)
+    ) {
+      throw new Error(
+        `You can't set dbName or username when using snapshotIdentifier.`,
       );
     }
 
