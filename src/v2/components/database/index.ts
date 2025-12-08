@@ -206,7 +206,7 @@ export class Database extends pulumi.ComponentResource {
         }),
       ).dbSnapshotArn;
 
-    const encryptedSnapshotCopy = new aws.rds.SnapshotCopy(
+    return new aws.rds.SnapshotCopy(
       `${this.name}-encrypted-snapshot-copy`,
       {
         sourceDbSnapshotIdentifier,
@@ -215,7 +215,6 @@ export class Database extends pulumi.ComponentResource {
       },
       { parent: this },
     );
-    return encryptedSnapshotCopy;
   }
 
   private createDatabaseInstance(args: Database.Args) {
