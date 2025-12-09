@@ -13,7 +13,18 @@ const certificate = new studion.AcmCertificate(`${appName}-certificate`, {
   hostedZoneId: hostedZone.zoneId,
 });
 
+const subDomainName = `app.${process.env.DOMAIN_NAME!}`;
+const sanCertificate = new studion.AcmCertificate(
+  `${appName}-certificate-san`,
+  {
+    domain: subDomainName,
+    subjectAlternativeNames: [`api.${subDomainName}`, `test.${subDomainName}`],
+    hostedZoneId: hostedZone.zoneId,
+  },
+);
+
 module.exports = {
   certificate,
+  sanCertificate,
   hostedZone,
 };
