@@ -9,7 +9,7 @@ const domainName = process.env.DOMAIN_NAME!;
 const hostedZone = pulumi.output(
   aws.route53
     .getZone({
-      name: `${domainName}`,
+      name: domainName,
       privateZone: false,
     })
     .catch(() => {
