@@ -94,7 +94,7 @@ describe('ACM Certificate component deployment', () => {
     assert.ok(domainValidation, 'Should have domain validation options');
     assert.ok(
       domainValidation.ResourceRecord,
-      'Should have resource record for validation',
+      'Validation resource record should exists',
     );
 
     const recordsResult = await ctx.clients.route53.send(
@@ -108,10 +108,7 @@ describe('ACM Certificate component deployment', () => {
       record => record.Name === domainValidation.ResourceRecord?.Name,
     );
 
-    assert.ok(
-      validationRecord,
-      'Validation record should exist with correct name',
-    );
+    assert.ok(validationRecord, 'Validation record should exist');
     assert.strictEqual(
       validationRecord.TTL,
       600,
