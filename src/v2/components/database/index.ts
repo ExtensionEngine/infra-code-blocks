@@ -245,11 +245,13 @@ export class Database extends pulumi.ComponentResource {
         dbSnapshotIdentifier:
           this.encryptedSnapshotCopy?.targetDbSnapshotIdentifier,
         ...monitoringOptions,
-        tags: [
-          ...Object.entries({ ...commonTags, ...args.tags }).map(
-            ([key, value]) => ({ key, value }),
-          ),
-        ],
+        tags: pulumi
+          .output(args.tags)
+          .apply(tags => [
+            ...Object.entries({ ...commonTags, ...tags }).map(
+              ([key, value]) => ({ key, value }),
+            ),
+          ]),
       },
       { parent: this, dependsOn: [this.password] },
     );
