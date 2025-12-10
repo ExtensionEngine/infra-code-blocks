@@ -2,21 +2,23 @@ import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import { commonTags } from '../../../constants';
 
-export type AcmCertificateArgs = {
-  domain: pulumi.Input<string>;
-  /**
-   * Additional domains/subdomains to be included in this certificate.
-   */
-  subjectAlternativeNames?: pulumi.Input<string>[];
-  hostedZoneId: pulumi.Input<string>;
-};
+export namespace AcmCertificate {
+  export type Args = {
+    domain: pulumi.Input<string>;
+    /**
+     * Additional domains/subdomains to be included in this certificate.
+     */
+    subjectAlternativeNames?: pulumi.Input<string>[];
+    hostedZoneId: pulumi.Input<string>;
+  };
+}
 
 export class AcmCertificate extends pulumi.ComponentResource {
   certificate: aws.acm.Certificate;
 
   constructor(
     name: string,
-    args: AcmCertificateArgs,
+    args: AcmCertificate.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:acm:Certificate', name, {}, opts);
@@ -38,8 +40,8 @@ export class AcmCertificate extends pulumi.ComponentResource {
   }
 
   private createCertificationValidationRecords(
-    domainName: AcmCertificateArgs['domain'],
-    hostedZoneId: AcmCertificateArgs['hostedZoneId'],
+    domainName: AcmCertificate.Args['domain'],
+    hostedZoneId: AcmCertificate.Args['hostedZoneId'],
   ) {
     this.certificate.domainValidationOptions.apply(domains => {
       const validationRecords = domains.map(
