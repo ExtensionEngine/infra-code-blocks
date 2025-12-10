@@ -4,10 +4,14 @@ import * as config from './config';
 const vpc = new studion.Vpc(`${config.appName}-vpc`, {});
 
 const defaultDb = new studion.DatabaseBuilder(`${config.appName}-default`)
-  .withConfiguration({
+  .withInstance({
     dbName: config.dbName,
+  })
+  .withCredentials({
     username: config.dbUsername,
     password: config.dbPassword,
+  })
+  .withConfiguration({
     tags: config.tags,
   })
   .withVpc(vpc.vpc)
