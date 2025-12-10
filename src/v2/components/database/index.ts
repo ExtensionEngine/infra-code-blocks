@@ -21,7 +21,7 @@ export namespace Database {
   };
 
   export type Storage = {
-    allocatedStorage?: pulumi.Input<string>;
+    allocatedStorage?: pulumi.Input<number>;
     maxAllocatedStorage?: pulumi.Input<number>;
     kmsKeyId?: pulumi.Input<string>;
   };
@@ -43,7 +43,7 @@ export namespace Database {
 const defaults = {
   multiAz: false,
   applyImmediately: false,
-  allocatedStorage: '20',
+  allocatedStorage: 20,
   maxAllocatedStorage: 100,
   instanceClass: 'db.t4g.micro',
   enableMonitoring: false,
@@ -228,7 +228,7 @@ export class Database extends pulumi.ComponentResource {
         masterUserPassword: this.password.value,
         dbSubnetGroupName: this.dbSubnetGroup.name,
         vpcSecurityGroups: [this.dbSecurityGroup.id],
-        allocatedStorage: args.allocatedStorage,
+        allocatedStorage: args.allocatedStorage?.toString(),
         maxAllocatedStorage: args.maxAllocatedStorage,
         multiAz: args.multiAz,
         applyImmediately: args.applyImmediately,
