@@ -20,18 +20,18 @@ const programArgs: InlineProgramArgs = {
 
 describe('ACM Certificate component deployment', () => {
   const region = process.env.AWS_REGION;
-  const domainName = process.env.DOMAIN_NAME;
-  if (!region || !domainName) {
+  const domainName = process.env.ICB_DOMAIN_NAME;
+  const hostedZoneId = process.env.ICB_HOSTED_ZONE_ID;
+  if (!region || !domainName || !hostedZoneId) {
     throw new Error(
-      'AWS_REGION and DOMAIN_NAME environment variables are required',
+      'AWS_REGION, ICB_DOMAIN_NAME and ICB_HOSTED_ZONE_ID environment variables are required',
     );
   }
 
   const ctx: AcmCertificateTestContext = {
     outputs: {},
     config: {
-      certificateName: 'acm-cert-test-cert',
-      subDomainName: `app.${process.env.DOMAIN_NAME!}`,
+      subDomainName: `app.${domainName}`,
       exponentialBackOffConfig: {
         delayFirstAttempt: true,
         numOfAttempts: 5,
