@@ -6,7 +6,7 @@ import { Database } from '.';
 export namespace DatabaseBuilder {
   export type InstanceConfig = Database.Instance;
   export type CredentialsConfig = Database.Credentials;
-  export type StorageConfig = Omit<Database.Storage, 'kmsKeyId'>;
+  export type StorageConfig = Database.Storage;
   export type Config = Omit<
     Database.Args,
     | keyof Database.Instance
@@ -14,7 +14,6 @@ export namespace DatabaseBuilder {
     | keyof Database.Storage
     | 'vpc'
     | 'enableMonitoring'
-    | 'kmsKeyId'
     | 'snapshotIdentifier'
   >;
 }
@@ -27,7 +26,6 @@ export class DatabaseBuilder {
   private storageConfig?: DatabaseBuilder.StorageConfig;
   private vpc?: Database.Args['vpc'];
   private enableMonitoring?: Database.Args['enableMonitoring'];
-  private kmsKeyId?: Database.Args['kmsKeyId'];
   private snapshotIdentifier?: Database.Args['snapshotIdentifier'];
 
   constructor(name: string) {
@@ -82,12 +80,6 @@ export class DatabaseBuilder {
     return this;
   }
 
-  public withKms(kmsKeyId: Database.Args['kmsKeyId']): this {
-    this.kmsKeyId = kmsKeyId;
-
-    return this;
-  }
-
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
     if (!this.snapshotIdentifier && !this.instanceConfig?.dbName) {
       throw new Error(
@@ -125,7 +117,6 @@ export class DatabaseBuilder {
         vpc: this.vpc,
         enableMonitoring: this.enableMonitoring,
         snapshotIdentifier: this.snapshotIdentifier,
-        kmsKeyId: this.kmsKeyId,
       },
       opts,
     );
