@@ -184,7 +184,7 @@ export class Database extends pulumi.ComponentResource {
   }
 
   private createEncryptedSnapshotCopy(
-    snapshotIdentifier: pulumi.Input<string>,
+    snapshotIdentifier: Database.Args['snapshotIdentifier'],
   ) {
     const sourceDbSnapshotIdentifier = pulumi
       .output(snapshotIdentifier)
@@ -198,7 +198,7 @@ export class Database extends pulumi.ComponentResource {
       `${this.name}-encrypted-snapshot-copy`,
       {
         sourceDbSnapshotIdentifier,
-        targetDbSnapshotIdentifier: `${snapshotIdentifier}-encrypted-copy`,
+        targetDbSnapshotIdentifier: pulumi.interpolate`${snapshotIdentifier}-encrypted-copy`,
         kmsKeyId: this.kmsKeyId,
       },
       { parent: this },
