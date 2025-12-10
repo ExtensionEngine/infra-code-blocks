@@ -34,12 +34,12 @@ export class AcmCertificate extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    this.createCertificationValidationRecords(args.domain, args.hostedZoneId);
+    this.createCertValidationRecords(args.domain, args.hostedZoneId);
 
     this.registerOutputs();
   }
 
-  private createCertificationValidationRecords(
+  private createCertValidationRecords(
     domainName: AcmCertificate.Args['domain'],
     hostedZoneId: AcmCertificate.Args['hostedZoneId'],
   ) {
