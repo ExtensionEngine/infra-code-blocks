@@ -15,7 +15,7 @@ export class AcmCertificate extends pulumi.ComponentResource {
     args: AcmCertificateArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:acm:LegacyCertificate', name, {}, opts);
+    super('studion:acm:Certificate', name, {}, opts);
 
     this.certificate = new aws.acm.Certificate(
       `${args.domain}-certificate`,
