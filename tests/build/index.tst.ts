@@ -293,9 +293,26 @@ describe('Build output', () => {
 
       it('should have withConfiguration method', () => {
         expect(builder.withConfiguration).type.toBeCallableWith({
+          applyImmediately: true,
+        });
+      });
+
+      it('should have withInstance method', () => {
+        expect(builder.withInstance).type.toBeCallableWith({
           dbName: 'dbName',
+        });
+      });
+
+      it('should have withCredentials method', () => {
+        expect(builder.withCredentials).type.toBeCallableWith({
           username: 'username',
           password: 'password',
+        });
+      });
+
+      it('should have withStorage method', () => {
+        expect(builder.withStorage).type.toBeCallableWith({
+          kmsKeyId: 'kms-key-id',
         });
       });
 
@@ -311,10 +328,6 @@ describe('Build output', () => {
 
       it('should have withSnapshot method', () => {
         expect(builder.withSnapshot).type.toBeCallableWith('snapshot-id');
-      });
-
-      it('should have withKms method', () => {
-        expect(builder.withKms).type.toBeCallableWith('kms-key-id');
       });
     });
   });
