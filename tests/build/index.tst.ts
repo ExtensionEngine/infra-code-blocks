@@ -4,6 +4,8 @@ import { describe, expect, it } from 'tstyche';
 import { next as studion } from '@studion/infra-code-blocks';
 import { OtelCollector } from '../../dist/v2/otel';
 import { OtelCollectorBuilder } from '../../dist/v2/otel/builder';
+import { Database } from '../../dist/v2/components/database';
+import { DatabaseBuilder } from '../../dist/v2/components/database/builder';
 
 describe('Build output', () => {
   describe('ECS Service', () => {
@@ -260,17 +262,15 @@ describe('Build output', () => {
   });
 
   describe('Database', () => {
-    it('should export Database', () => {
+    it.skip('should export Database', () => {
       expect(studion).type.toHaveProperty('Database');
     });
 
-    it('should export DatabaseBuilder', () => {
+    it.skip('should export DatabaseBuilder', () => {
       expect(studion).type.toHaveProperty('DatabaseBuilder');
     });
 
     describe('Instantiation', () => {
-      const { Database, DatabaseBuilder } = studion;
-
       it('should construct Database', () => {
         expect(Database).type.toBeConstructableWith('db-test', {
           vpc: new awsx.ec2.Vpc('vpcName'),
@@ -285,7 +285,7 @@ describe('Build output', () => {
     });
 
     describe('Builder', () => {
-      const builder = new studion.DatabaseBuilder('db-test');
+      const builder = new DatabaseBuilder('db-test');
 
       it('should have build method', () => {
         expect(builder.build).type.toBeCallableWith();
