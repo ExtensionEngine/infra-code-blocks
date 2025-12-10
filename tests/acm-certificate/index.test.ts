@@ -21,10 +21,9 @@ const programArgs: InlineProgramArgs = {
 describe('ACM Certificate component deployment', () => {
   const region = process.env.AWS_REGION;
   const domainName = process.env.DOMAIN_NAME;
-  const hostedZoneName = process.env.HOSTED_ZONE_NAME;
-  if (!region || !domainName || !hostedZoneName) {
+  if (!region || !domainName) {
     throw new Error(
-      'AWS_REGION, DOMAIN_NAME and HOSTED_ZONE_NAME environment variables are required',
+      'AWS_REGION and DOMAIN_NAME environment variables are required',
     );
   }
 

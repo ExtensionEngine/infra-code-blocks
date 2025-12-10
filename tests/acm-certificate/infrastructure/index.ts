@@ -1,15 +1,33 @@
 import { next as studion } from '@studion/infra-code-blocks';
 import * as aws from '@pulumi/aws';
+import * as pulumi from '@pulumi/pulumi';
 
 const appName = 'acm-certificate-test';
 
-const hostedZone = aws.route53.getZoneOutput({
-  name: process.env.HOSTED_ZONE_NAME,
-  privateZone: false,
-});
+const domainName = process.env.DOMAIN_NAME!;
+
+const hostedZone = pulumi.output(
+  aws.route53
+    .getZone({
+      name: `${domainName}aa`,
+      privateZone: false,
+    })
+    .catch(() => {
+      const hostedZoneId = process.env.HOSTED_ZONE_ID;
+      if (!hostedZoneId) {
+        throw new Error(
+          'HOSTED_ZONE_ID environment variable is required when hosted zone cannot be found by domain name',
+        );
+      }
+      return aws.route53.getZone({
+        zoneId: hostedZoneId,
+        privateZone: false,
+      });
+    }),
+);
 
 const certificate = new studion.AcmCertificate(`${appName}-certificate`, {
-  domain: process.env.DOMAIN_NAME!,
+  domain: domainName,
   hostedZoneId: hostedZone.zoneId,
 });
 
