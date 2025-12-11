@@ -93,11 +93,11 @@ export class DatabaseBuilder {
       );
     }
 
-    if (this.snapshotIdentifier && !this.instanceConfig?.dbName) {
+    if (this.snapshotIdentifier && this.instanceConfig?.dbName) {
       throw new Error(`You can't set dbName when using snapshotIdentifier.`);
     }
 
-    if (this.snapshotIdentifier && !this.credentialsConfig?.username) {
+    if (this.snapshotIdentifier && this.credentialsConfig?.username) {
       throw new Error(`You can't set username when using snapshotIdentifier.`);
     }
 
