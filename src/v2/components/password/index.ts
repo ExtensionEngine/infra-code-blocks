@@ -3,9 +3,11 @@ import * as pulumi from '@pulumi/pulumi';
 import * as random from '@pulumi/random';
 import { commonTags } from '../../../constants';
 
-export type PasswordArgs = {
-  value?: pulumi.Input<string>;
-};
+export namespace Password {
+  export type Args = {
+    value?: pulumi.Input<string>;
+  };
+}
 
 export class Password extends pulumi.ComponentResource {
   name: string;
@@ -14,7 +16,7 @@ export class Password extends pulumi.ComponentResource {
 
   constructor(
     name: string,
-    args: PasswordArgs,
+    args: Password.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     const optsWithDefauls = pulumi.mergeOptions(opts, {
