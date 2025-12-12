@@ -1,6 +1,6 @@
 import { it } from 'node:test';
 import { RedisTestContext } from './test-context';
-import * as assert from 'node:assert';
+import assert = require('node:assert');
 import { GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import Redis from 'ioredis';
 import { backOff } from 'exponential-backoff';
