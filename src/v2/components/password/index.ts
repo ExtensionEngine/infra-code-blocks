@@ -16,7 +16,7 @@ export class Password extends pulumi.ComponentResource {
 
   constructor(
     name: string,
-    args: Password.Args,
+    args: Password.Args = {},
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     const optsWithDefauls = pulumi.mergeOptions(opts, {
