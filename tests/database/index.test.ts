@@ -1,5 +1,6 @@
 import { describe, before, after } from 'node:test';
 import * as automation from '../automation';
+import { cleanupSnapshots } from './utils/cleanup-snapshots';
 import * as config from './infrastructure/config';
 import { DatabaseTestContext } from './test-context';
 import { EC2Client } from '@aws-sdk/client-ec2';
@@ -37,4 +38,5 @@ describe('Database component deployment', () => {
   after(() => automation.destroy(programArgs));
 
   describe('Default database', () => testDefaultDb(ctx));
+  after(() => cleanupSnapshots(ctx));
 });
