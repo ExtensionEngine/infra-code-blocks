@@ -20,6 +20,7 @@ async function deleteSnapshot(
 ) {
   const describeCommand = new DescribeDBSnapshotsCommand({
     DBInstanceIdentifier,
+    SnapshotType: 'manual',
   });
   const { DBSnapshots } = await ctx.clients.rds.send(describeCommand);
 
