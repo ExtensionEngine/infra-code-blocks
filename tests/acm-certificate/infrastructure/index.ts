@@ -13,7 +13,4 @@ const certificate = new studion.AcmCertificate(`${appName}-certificate`, {
   hostedZoneId: hostedZone.zoneId,
 });
 
-module.exports = {
-  certificate,
-  hostedZone,
-};
+export { certificate, hostedZone };
