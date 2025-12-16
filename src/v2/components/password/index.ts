@@ -19,14 +19,11 @@ export class Password extends pulumi.ComponentResource {
     args: Password.Args = {},
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    const optsWithDefauls = pulumi.mergeOptions(opts, {
-      additionalSecretOutputs: ['value'],
-    });
-    super('studion:Password', name, {}, optsWithDefauls);
+    super('studion:Password', name, {}, opts);
 
     this.name = name;
     if (args.value) {
-      this.value = pulumi.output(args.value);
+      this.value = pulumi.secret(args.value);
     } else {
       const password = new random.RandomPassword(
         `${this.name}-random-password`,
