@@ -1,7 +1,5 @@
-import * as pulumi from '@pulumi/pulumi';
-import * as aws from '@pulumi/aws';
-import * as awsx from '@pulumi/awsx';
 import { Database } from '.';
+import * as pulumi from '@pulumi/pulumi';
 
 export namespace DatabaseBuilder {
   export type InstanceConfig = Database.Instance;
