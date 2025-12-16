@@ -24,8 +24,4 @@ const sanCertificate = new studion.AcmCertificate(
   },
 );
 
-module.exports = {
-  certificate,
-  sanCertificate,
-  hostedZone,
-};
+export { certificate, sanCertificate, hostedZone };
