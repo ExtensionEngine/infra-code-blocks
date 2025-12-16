@@ -107,4 +107,16 @@ describe('Password component deployment', () => {
       'Password should match custom value',
     );
   });
+
+  it('should have password value as a secret', async () => {
+    console.log('outputs1', await automation.getOutputs(programArgs));
+    const autoGeneratePasswordValue = ctx.outputs.autoGeneratePasswordValue;
+    assert.ok(
+      autoGeneratePasswordValue.secret,
+      'Auto-generated password should be a secret',
+    );
+
+    const customPasswordValue = ctx.outputs.customPasswordValue;
+    assert.ok(customPasswordValue.secret, 'Custom password should be a secret');
+  });
 });
