@@ -24,7 +24,6 @@ export namespace Database {
   export type Storage = {
     allocatedStorage?: pulumi.Input<number>;
     maxAllocatedStorage?: pulumi.Input<number>;
-    kmsKeyId?: pulumi.Input<string>;
   };
 
   export type Args = Instance &
@@ -34,6 +33,7 @@ export namespace Database {
       enableMonitoring?: pulumi.Input<boolean>;
       snapshotIdentifier?: pulumi.Input<string>;
       parameterGroupName?: pulumi.Input<string>;
+      kmsKeyId?: pulumi.Input<string>;
       tags?: pulumi.Input<{
         [key: string]: pulumi.Input<string>;
       }>;
