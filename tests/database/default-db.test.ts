@@ -55,7 +55,7 @@ export function testDefaultDb(ctx: DatabaseTestContext) {
     );
     assert.strictEqual(
       instance.allocatedStorage,
-      20,
+      '20',
       'Allocated storage argument should be set to 20',
     );
     assert.strictEqual(
