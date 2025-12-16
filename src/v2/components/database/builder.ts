@@ -1,17 +1,11 @@
 import { Database } from '.';
 import * as pulumi from '@pulumi/pulumi';
 
-export namespace DatabaseBuilder {
-  export type InstanceConfig = Database.Instance;
-  export type CredentialsConfig = Database.Credentials;
-  export type StorageConfig = Omit<Database.Storage, 'kmsKeyId'>;
-}
-
 export class DatabaseBuilder {
   private name: string;
-  private instanceConfig?: DatabaseBuilder.InstanceConfig;
-  private credentialsConfig?: DatabaseBuilder.CredentialsConfig;
-  private storageConfig?: DatabaseBuilder.StorageConfig;
+  private instanceConfig?: Database.Instance;
+  private credentialsConfig?: Database.Credentials;
+  private storageConfig?: Database.Storage;
   private vpc?: Database.Args['vpc'];
   private enableMonitoring?: Database.Args['enableMonitoring'];
   private snapshotIdentifier?: Database.Args['snapshotIdentifier'];
@@ -23,23 +17,19 @@ export class DatabaseBuilder {
     this.name = name;
   }
 
-  public withInstance(
-    instanceConfig: DatabaseBuilder.InstanceConfig = {},
-  ): this {
+  public withInstance(instanceConfig: Database.Instance = {}): this {
     this.instanceConfig = instanceConfig;
 
     return this;
   }
 
-  public withCredentials(
-    credentialsConfig: DatabaseBuilder.CredentialsConfig = {},
-  ): this {
+  public withCredentials(credentialsConfig: Database.Credentials = {}): this {
     this.credentialsConfig = credentialsConfig;
 
     return this;
   }
 
-  public withStorage(storageConfig: DatabaseBuilder.StorageConfig = {}): this {
+  public withStorage(storageConfig: Database.Storage = {}): this {
     this.storageConfig = storageConfig;
 
     return this;
