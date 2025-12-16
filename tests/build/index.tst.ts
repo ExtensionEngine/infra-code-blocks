@@ -312,7 +312,8 @@ describe('Build output', () => {
 
       it('should have withStorage method', () => {
         expect(builder.withStorage).type.toBeCallableWith({
-          kmsKeyId: 'kms-key-id',
+          allocatedStorage: 50,
+          maxAllocatedStorage: 200,
         });
       });
 
@@ -328,6 +329,16 @@ describe('Build output', () => {
 
       it('should have withSnapshot method', () => {
         expect(builder.withSnapshot).type.toBeCallableWith('snapshot-id');
+      });
+
+      it('should have withKms method', () => {
+        expect(builder.withKms).type.toBeCallableWith('kms-key-id');
+      });
+
+      it('should have withParameterGroup method', () => {
+        expect(builder.withParameterGroup).type.toBeCallableWith(
+          'parameter-group-name',
+        );
       });
     });
   });
