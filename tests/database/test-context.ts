@@ -9,14 +9,8 @@ interface ConfigContext {
 
 interface DatabaseTestConfig {
   appName: string;
-  stackName: string;
-  tags: {
-    Project: string;
-    Environment: string;
-  };
   dbName: string;
   dbUsername: string;
-  dbPassword: string;
 }
 
 interface PulumiProgramContext {

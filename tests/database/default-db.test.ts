@@ -42,11 +42,6 @@ export function testDefaultDb(ctx: DatabaseTestContext) {
       ctx.config.dbUsername,
       'Database instance should have correct master username',
     );
-    assert.strictEqual(
-      instance.masterUserPassword,
-      ctx.config.dbPassword,
-      'Database instance should have correct master user password',
-    );
 
     assert.strictEqual(
       instance.multiAz,
