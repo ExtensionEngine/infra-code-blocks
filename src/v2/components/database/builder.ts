@@ -6,7 +6,7 @@ import { Database } from '.';
 export namespace DatabaseBuilder {
   export type InstanceConfig = Database.Instance;
   export type CredentialsConfig = Database.Credentials;
-  export type StorageConfig = Database.Storage;
+  export type StorageConfig = Omit<Database.Storage, 'kmsKeyId'>;
   export type Config = Omit<
     Database.Args,
     | keyof Database.Instance
@@ -15,6 +15,7 @@ export namespace DatabaseBuilder {
     | 'vpc'
     | 'enableMonitoring'
     | 'snapshotIdentifier'
+    | 'parameterGroupName'
   >;
 }
 
@@ -27,6 +28,8 @@ export class DatabaseBuilder {
   private vpc?: Database.Args['vpc'];
   private enableMonitoring?: Database.Args['enableMonitoring'];
   private snapshotIdentifier?: Database.Args['snapshotIdentifier'];
+  private kmsKeyId?: Database.Args['kmsKeyId'];
+  private parameterGroupName?: Database.Args['parameterGroupName'];
 
   constructor(name: string) {
     this.name = name;
@@ -80,6 +83,20 @@ export class DatabaseBuilder {
     return this;
   }
 
+  public withKms(kmsKeyId: Database.Args['kmsKeyId']): this {
+    this.kmsKeyId = kmsKeyId;
+
+    return this;
+  }
+
+  public withParameterGroup(
+    parameterGroupName: Database.Args['parameterGroupName'],
+  ): this {
+    this.parameterGroupName = parameterGroupName;
+
+    return this;
+  }
+
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
     if (!this.snapshotIdentifier && !this.instanceConfig?.dbName) {
       throw new Error(
@@ -117,6 +134,8 @@ export class DatabaseBuilder {
         vpc: this.vpc,
         enableMonitoring: this.enableMonitoring,
         snapshotIdentifier: this.snapshotIdentifier,
+        kmsKeyId: this.kmsKeyId,
+        parameterGroupName: this.parameterGroupName,
       },
       opts,
     );
