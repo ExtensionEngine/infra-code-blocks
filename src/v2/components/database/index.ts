@@ -13,6 +13,7 @@ export namespace Database {
     instanceClass?: pulumi.Input<string>;
     allowMajorVersionUpgrade?: pulumi.Input<boolean>;
     autoMinorVersionUpgrade?: pulumi.Input<boolean>;
+    applyImmediately?: pulumi.Input<boolean>;
   };
 
   export type Credentials = {
@@ -23,7 +24,6 @@ export namespace Database {
   export type Storage = {
     allocatedStorage?: pulumi.Input<number>;
     maxAllocatedStorage?: pulumi.Input<number>;
-    kmsKeyId?: pulumi.Input<string>;
   };
 
   export type Args = Instance &
@@ -31,9 +31,9 @@ export namespace Database {
     Storage & {
       vpc: pulumi.Input<awsx.ec2.Vpc>;
       enableMonitoring?: pulumi.Input<boolean>;
-      applyImmediately?: pulumi.Input<boolean>;
       snapshotIdentifier?: pulumi.Input<string>;
       parameterGroupName?: pulumi.Input<string>;
+      kmsKeyId?: pulumi.Input<string>;
       tags?: pulumi.Input<{
         [key: string]: pulumi.Input<string>;
       }>;
