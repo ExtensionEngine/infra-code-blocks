@@ -109,7 +109,6 @@ describe('Password component deployment', () => {
   });
 
   it('should have password value as a secret', async () => {
-    console.log('outputs1', await automation.getOutputs(programArgs));
     const autoGeneratePasswordValue = ctx.outputs.autoGeneratePasswordValue;
     assert.ok(
       autoGeneratePasswordValue.secret,
