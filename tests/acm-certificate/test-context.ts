@@ -3,6 +3,7 @@ import { ACMClient } from '@aws-sdk/client-acm';
 import { Route53Client } from '@aws-sdk/client-route-53';
 
 interface AcmCertificateTestConfig {
+  subDomainName: string;
   exponentialBackOffConfig: {
     delayFirstAttempt: boolean;
     numOfAttempts: number;
