@@ -13,6 +13,7 @@ export namespace Database {
     instanceClass?: pulumi.Input<string>;
     allowMajorVersionUpgrade?: pulumi.Input<boolean>;
     autoMinorVersionUpgrade?: pulumi.Input<boolean>;
+    applyImmediately?: pulumi.Input<boolean>;
   };
 
   export type Credentials = {
@@ -31,7 +32,6 @@ export namespace Database {
     Storage & {
       vpc: pulumi.Input<awsx.ec2.Vpc>;
       enableMonitoring?: pulumi.Input<boolean>;
-      applyImmediately?: pulumi.Input<boolean>;
       snapshotIdentifier?: pulumi.Input<string>;
       parameterGroupName?: pulumi.Input<string>;
       tags?: pulumi.Input<{
