@@ -12,9 +12,7 @@ const defaultDb = new DatabaseBuilder(`${config.appName}-default`)
     username: config.dbUsername,
     password: config.dbPassword,
   })
-  .withConfiguration({
-    tags: config.tags,
-  })
+  .withTags(config.tags)
   .withVpc(vpc.vpc)
   .build();
 

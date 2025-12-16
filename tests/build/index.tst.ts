@@ -291,12 +291,6 @@ describe('Build output', () => {
         expect(builder.build).type.toBeCallableWith();
       });
 
-      it('should have withConfiguration method', () => {
-        expect(builder.withConfiguration).type.toBeCallableWith({
-          applyImmediately: true,
-        });
-      });
-
       it('should have withInstance method', () => {
         expect(builder.withInstance).type.toBeCallableWith({
           dbName: 'dbName',
@@ -339,6 +333,13 @@ describe('Build output', () => {
         expect(builder.withParameterGroup).type.toBeCallableWith(
           'parameter-group-name',
         );
+      });
+
+      it('should have withTags method', () => {
+        expect(builder.withTags).type.toBeCallableWith({
+          Project: 'db-test',
+          Environment: 'dev',
+        });
       });
     });
   });
