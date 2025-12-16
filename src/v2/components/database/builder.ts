@@ -5,21 +5,10 @@ export namespace DatabaseBuilder {
   export type InstanceConfig = Database.Instance;
   export type CredentialsConfig = Database.Credentials;
   export type StorageConfig = Omit<Database.Storage, 'kmsKeyId'>;
-  export type Config = Omit<
-    Database.Args,
-    | keyof Database.Instance
-    | keyof Database.Credentials
-    | keyof Database.Storage
-    | 'vpc'
-    | 'enableMonitoring'
-    | 'snapshotIdentifier'
-    | 'parameterGroupName'
-  >;
 }
 
 export class DatabaseBuilder {
   private name: string;
-  private config?: DatabaseBuilder.Config;
   private instanceConfig?: DatabaseBuilder.InstanceConfig;
   private credentialsConfig?: DatabaseBuilder.CredentialsConfig;
   private storageConfig?: DatabaseBuilder.StorageConfig;
@@ -28,15 +17,10 @@ export class DatabaseBuilder {
   private snapshotIdentifier?: Database.Args['snapshotIdentifier'];
   private kmsKeyId?: Database.Args['kmsKeyId'];
   private parameterGroupName?: Database.Args['parameterGroupName'];
+  private tags?: Database.Args['tags'];
 
   constructor(name: string) {
     this.name = name;
-  }
-
-  public withConfiguration(config: DatabaseBuilder.Config = {}): this {
-    this.config = config;
-
-    return this;
   }
 
   public withInstance(
@@ -95,6 +79,12 @@ export class DatabaseBuilder {
     return this;
   }
 
+  public withTags(tags: Database.Args['tags']): this {
+    this.tags = tags;
+
+    return this;
+  }
+
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
     if (!this.snapshotIdentifier && !this.instanceConfig?.dbName) {
       throw new Error(
@@ -125,7 +115,6 @@ export class DatabaseBuilder {
     return new Database(
       this.name,
       {
-        ...this.config,
         ...this.instanceConfig,
         ...this.credentialsConfig,
         ...this.storageConfig,
@@ -134,6 +123,7 @@ export class DatabaseBuilder {
         snapshotIdentifier: this.snapshotIdentifier,
         kmsKeyId: this.kmsKeyId,
         parameterGroupName: this.parameterGroupName,
+        tags: this.tags,
       },
       opts,
     );
