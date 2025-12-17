@@ -69,6 +69,9 @@ const snapshot = defaultDb.instance.dbInstanceIdentifier.apply(
 const snapshotDb = snapshot.apply(snapshot => {
   if (!snapshot) return;
   return new DatabaseBuilder(`${config.appName}-snapshot`)
+    .withInstance({
+      applyImmediately: true,
+    })
     .withVpc(vpc.vpc)
     .withTags(config.tags)
     .withSnapshot(snapshot.id)
