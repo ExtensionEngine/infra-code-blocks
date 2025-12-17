@@ -18,7 +18,7 @@ export function testDefaultDb(ctx: DatabaseTestContext) {
     assert.ok(database, 'Database should be defined');
     assert.strictEqual(
       database.name,
-      `${ctx.config.appName}-default`,
+      `${ctx.config.appName}-default-db`,
       'Database should have correct name',
     );
 
