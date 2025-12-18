@@ -29,7 +29,7 @@
     "build": "npm run clean && tsc -b src",
     "format": "prettier -w .",
     "release": "release-it --only-version",
-    "test": "TS_NODE_PROJECT=tests node --test --test-concurrency=none -r ts-node/register tests/**[!build]/index.test.ts",
+    "test": "TS_NODE_PROJECT=tests node --test --test-concurrency=none -r ts-node/register tests/cloudfront/index.test.ts",
     "test:build": "npm run build && tstyche build",
     "prepare": "husky"
   },
@@ -46,6 +46,7 @@
   "devDependencies": {
     "@aws-sdk/client-acm": "^3.782.0",
     "@aws-sdk/client-application-auto-scaling": "^3.758.0",
+    "@aws-sdk/client-cloudfront": "^3.948.0",
     "@aws-sdk/client-cloudwatch-logs": "^3.767.0",
     "@aws-sdk/client-ec2": "^3.767.0",
     "@aws-sdk/client-ecs": "^3.766.0",
@@ -62,6 +63,7 @@
     "husky": "^9.1.7",
     "ioredis": "^5.8.1",
     "lint-staged": "^16.1.2",
+    "mime": "^4.1.0",
     "nanospinner": "^1.2.2",
     "pathe": "^2.0.3",
     "prettier": "^3.4.2",

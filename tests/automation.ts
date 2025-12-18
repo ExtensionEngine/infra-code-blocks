@@ -9,7 +9,8 @@ import { createSpinner } from 'nanospinner';
 export async function deploy(args: InlineProgramArgs): Promise<OutputMap> {
   const spinner = createSpinner('Deploying stack...').start();
   const stack = await LocalWorkspace.createOrSelectStack(args);
-  await stack.setConfig('aws:region', { value: 'us-east-2' });
+  // TODO: accept value from AWS_REGION env once certificate is updated to receive region
+  await stack.setConfig('aws:region', { value: 'us-east-1' });
   const up = await stack.up({ logToStdErr: true });
   spinner.success({ text: 'Stack deployed' });
 
