@@ -62,8 +62,14 @@ jobs:
           role_arn: ${AWS_ROLE_ARN}
       - setup-pulumi
       - node/install
-      - core/run_script:
-          script: 'test'
+      - core/install_dependencies
+      - run:
+          name: Run component tests
+          command: |
+            npm run test
+            CODE=$?
+            echo $CODE
+            exit $CODE
 
 workflows:
   scan-and-test:
@@ -78,4 +84,4 @@ workflows:
       - test-build:
           filters: *change-filters
       - test-components:
-          filters: *trunk-filters
+          filters: *change-filters
