@@ -14,6 +14,7 @@ import {
   VpcState,
 } from '@aws-sdk/client-ec2';
 import { defaults as vpcDefaults } from '../../src/v2/components/vpc';
+import { requireEnv } from '../util';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -21,20 +22,16 @@ const programArgs: InlineProgramArgs = {
   program: () => import('./infrastructure'),
 };
 
+const region = requireEnv('AWS_REGION');
+const ctx: VpcTestContext = {
+  outputs: {},
+  config: {},
+  clients: {
+    ec2: new EC2Client({ region }),
+  },
+};
+
 describe('Vpc component deployment', () => {
-  const region = process.env.AWS_REGION;
-  if (!region) {
-    throw new Error('AWS_REGION environment variable is required');
-  }
-
-  const ctx: VpcTestContext = {
-    outputs: {},
-    config: {},
-    clients: {
-      ec2: new EC2Client({ region }),
-    },
-  };
-
   before(async () => {
     ctx.outputs = await automation.deploy(programArgs);
   });

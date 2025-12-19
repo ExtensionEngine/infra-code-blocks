@@ -21,11 +21,25 @@ import status from 'http-status';
 import * as automation from '../automation';
 import { WebServerTestContext } from './test-context';
 import * as config from './infrastructure/config';
+import { requireEnv } from '../util';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
   projectName: 'icb-test-web-server',
   program: () => import('./infrastructure'),
+};
+
+const region = requireEnv('AWS_REGION');
+const ctx: WebServerTestContext = {
+  outputs: {},
+  config,
+  clients: {
+    ecs: new ECSClient({ region }),
+    ec2: new EC2Client({ region }),
+    elb: new ElasticLoadBalancingV2Client({ region }),
+    acm: new ACMClient({ region }),
+    route53: new Route53Client({ region }),
+  },
 };
 
 class NonRetryableError extends Error {
@@ -36,23 +50,6 @@ class NonRetryableError extends Error {
 }
 
 describe('Web server component deployment', () => {
-  const region = process.env.AWS_REGION;
-  if (!region) {
-    throw new Error('AWS_REGION environment variable is required');
-  }
-
-  const ctx: WebServerTestContext = {
-    outputs: {},
-    config,
-    clients: {
-      ecs: new ECSClient({ region }),
-      ec2: new EC2Client({ region }),
-      elb: new ElasticLoadBalancingV2Client({ region }),
-      acm: new ACMClient({ region }),
-      route53: new Route53Client({ region }),
-    },
-  };
-
   before(async () => {
     ctx.outputs = await automation.deploy(programArgs);
   });
