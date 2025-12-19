@@ -11,6 +11,7 @@ import { RDSClient } from '@aws-sdk/client-rds';
 import { requireEnv } from '../util';
 import { testCustomDb } from './custom-db.test';
 import { testDefaultDb } from './default-db.test';
+import { testSnapshotDb } from './snapshot-db.test';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -39,5 +40,6 @@ describe('Database component deployment', () => {
 
   describe('Default database', () => testDefaultDb(ctx));
   describe('Custom database', () => testCustomDb(ctx));
+  describe('Snapshot database', () => testSnapshotDb(ctx));
   after(() => cleanupSnapshots(ctx));
 });

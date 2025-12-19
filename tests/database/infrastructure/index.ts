@@ -5,7 +5,7 @@ import * as config from './config';
 
 const vpc = new studion.Vpc(`${config.appName}-vpc`, {});
 
-const defaultDb = new DatabaseBuilder(`${config.appName}-default`)
+const defaultDb = new DatabaseBuilder(`${config.appName}-default-db`)
   .withInstance({
     dbName: config.dbName,
   })
@@ -15,7 +15,7 @@ const defaultDb = new DatabaseBuilder(`${config.appName}-default`)
   .withVpc(vpc.vpc)
   .build();
 
-const kms = new aws.kms.Key(`${config.appName}-kms`, {
+const kms = new aws.kms.Key(`${config.appName}-kms-key`, {
   description: `${config.appName} RDS encryption key`,
   customerMasterKeySpec: 'SYMMETRIC_DEFAULT',
   isEnabled: true,
@@ -33,7 +33,7 @@ const paramGroup = new aws.rds.ParameterGroup(
   },
 );
 
-const customDb = new DatabaseBuilder(`${config.appName}-custom`)
+const customDb = new DatabaseBuilder(`${config.appName}-custom-db`)
   .withInstance({
     dbName: config.dbName,
     applyImmediately: config.applyImmediately,
@@ -55,4 +55,27 @@ const customDb = new DatabaseBuilder(`${config.appName}-custom`)
   .withTags(config.tags)
   .build();
 
-export { vpc, defaultDb, kms, paramGroup, customDb };
+const snapshot = defaultDb.instance.dbInstanceIdentifier.apply(
+  dbInstanceIdentifier => {
+    if (!dbInstanceIdentifier) return;
+    return new aws.rds.Snapshot(`${config.appName}-snapshot`, {
+      dbInstanceIdentifier: dbInstanceIdentifier,
+      dbSnapshotIdentifier: `${config.appName}-snapshot-id`,
+      tags: config.tags,
+    });
+  },
+);
+
+const snapshotDb = snapshot.apply(snapshot => {
+  if (!snapshot) return;
+  return new DatabaseBuilder(`${config.appName}-snapshot-db`)
+    .withInstance({
+      applyImmediately: true,
+    })
+    .withVpc(vpc.vpc)
+    .withTags(config.tags)
+    .withSnapshot(snapshot.id)
+    .build();
+});
+
+export { vpc, defaultDb, kms, paramGroup, customDb, snapshot, snapshotDb };
