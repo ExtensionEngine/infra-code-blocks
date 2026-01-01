@@ -124,7 +124,7 @@ describe('Web server component deployment', () => {
     );
     assert.strictEqual(
       algorithmAttribute?.Value,
-      'round_robin',
+      'least_outstanding_requests',
       'Target group should use least_outstanding_requests algorithm',
     );
   });
