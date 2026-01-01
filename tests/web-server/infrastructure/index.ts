@@ -66,7 +66,6 @@ const hostedZone = aws.route53.getZoneOutput({
   privateZone: false,
 });
 
-// TODO: wildcard
 const webServerWithDomain = new studion.WebServerBuilder(`web-server-domain`)
   .configureWebServer('nginxdemos/nginx-hello:plain-text', 8080)
   .configureEcs(ecs)

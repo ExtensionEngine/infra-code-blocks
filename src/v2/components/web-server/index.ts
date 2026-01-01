@@ -44,9 +44,13 @@ export namespace WebServer {
        * The domain which will be used to access the service.
        * The domain or subdomain must belong to the provided hostedZone.
        */
-      // TODO: document this better
       domain?: pulumi.Input<string>;
       hostedZoneId?: pulumi.Input<string>;
+      /**
+       * If provided without `domain` argument, Route53 A records will be created for the certificate's
+       * primary domain and all subject alternative names (SANs).
+       * If `domain` argument is also provided, only a single A record for that domain will be created.
+       */
       certificate?: pulumi.Input<AcmCertificate>;
       /**
        * Path for the load balancer target group health check request.
