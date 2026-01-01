@@ -9,6 +9,7 @@ export namespace WebServerLoadBalancer {
     port: pulumi.Input<number>;
     certificate?: pulumi.Input<aws.acm.Certificate>;
     healthCheckPath?: pulumi.Input<string>;
+    loadBalancingAlgorithmType?: pulumi.Input<string>;
   };
 }
 
@@ -58,7 +59,8 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
 
     this.name = name;
     const vpc = pulumi.output(args.vpc);
-    const { port, certificate, healthCheckPath } = args;
+    const { port, certificate, healthCheckPath, loadBalancingAlgorithmType } =
+      args;
 
     this.securityGroup = this.createLbSecurityGroup(vpc.vpcId);
 
@@ -80,6 +82,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
       port,
       vpc.vpcId,
       healthCheckPath,
+      loadBalancingAlgorithmType,
     );
     this.httpListener = this.createLbHttpListener(
       this.lb,
@@ -158,6 +161,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
     port: pulumi.Input<number>,
     vpcId: awsx.ec2.Vpc['vpcId'],
     healthCheckPath: pulumi.Input<string> | undefined,
+    loadBalancingAlgorithmType?: pulumi.Input<string>,
   ): aws.lb.TargetGroup {
     return new aws.lb.TargetGroup(
       `${this.name}-tg`,
@@ -167,6 +171,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
         protocol: 'HTTP',
         targetType: 'ip',
         vpcId,
+        loadBalancingAlgorithmType,
         healthCheck: {
           healthyThreshold: 3,
           unhealthyThreshold: 2,

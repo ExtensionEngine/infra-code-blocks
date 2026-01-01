@@ -59,6 +59,7 @@ const webServer = new studion.WebServerBuilder(webServerName)
   .withVpc(project.vpc)
   .withOtelCollector(otelCollector)
   .withCustomHealthCheckPath(healthCheckPath)
+  .withLoadBalancingAlgorithm('least_outstanding_requests')
   .build({ parent: cluster });
 
 const hostedZone = aws.route53.getZoneOutput({

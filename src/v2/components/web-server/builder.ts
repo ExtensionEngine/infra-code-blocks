@@ -28,6 +28,7 @@ export class WebServerBuilder {
   private _hostedZoneId?: pulumi.Input<string>;
   private _certificate?: pulumi.Input<AcmCertificate>;
   private _healthCheckPath?: pulumi.Input<string>;
+  private _loadBalancingAlgorithmType?: pulumi.Input<string>;
   private _otelCollector?: pulumi.Input<OtelCollector>;
   private _initContainers: pulumi.Input<WebServer.InitContainer>[] = [];
   private _sidecarContainers: pulumi.Input<WebServer.SidecarContainer>[] = [];
@@ -126,6 +127,12 @@ export class WebServerBuilder {
     return this;
   }
 
+  public withLoadBalancingAlgorithm(algorithm: pulumi.Input<string>) {
+    this._loadBalancingAlgorithmType = algorithm;
+
+    return this;
+  }
+
   public build(opts: pulumi.ComponentResourceOptions = {}): WebServer {
     if (!this._container) {
       throw new Error(
@@ -154,6 +161,7 @@ export class WebServerBuilder {
         hostedZoneId: this._hostedZoneId,
         certificate: this._certificate,
         healthCheckPath: this._healthCheckPath,
+        loadBalancingAlgorithmType: this._loadBalancingAlgorithmType,
         otelCollector: this._otelCollector,
         initContainers: this._initContainers,
         sidecarContainers: this._sidecarContainers,

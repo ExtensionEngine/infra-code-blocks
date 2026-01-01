@@ -57,6 +57,7 @@ export namespace WebServer {
        * "/healthcheck"
        */
       healthCheckPath?: pulumi.Input<string>;
+      loadBalancingAlgorithmType?: pulumi.Input<string>;
       initContainers?: pulumi.Input<pulumi.Input<WebServer.InitContainer>[]>;
       sidecarContainers?: pulumi.Input<
         pulumi.Input<WebServer.SidecarContainer>[]
@@ -110,6 +111,7 @@ export class WebServer extends pulumi.ComponentResource {
         port: args.port,
         certificate: this.certificate?.certificate,
         healthCheckPath: args.healthCheckPath,
+        loadBalancingAlgorithmType: args.loadBalancingAlgorithmType,
       },
       { parent: this },
     );

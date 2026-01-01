@@ -12,6 +12,7 @@ import {
   DescribeLoadBalancersCommand,
   DescribeTargetGroupsCommand,
   DescribeListenersCommand,
+  DescribeTargetGroupAttributesCommand,
 } from '@aws-sdk/client-elastic-load-balancing-v2';
 import { ACMClient } from '@aws-sdk/client-acm';
 import { Route53Client } from '@aws-sdk/client-route-53';
@@ -97,7 +98,7 @@ describe('Web server component deployment', () => {
     );
   });
 
-  it('should create target group with correct health check path', async () => {
+  it('should create target group with the correct configuration', async () => {
     const webServer = ctx.outputs.webServer.value;
 
     const command = new DescribeTargetGroupsCommand({
@@ -112,6 +113,19 @@ describe('Web server component deployment', () => {
       tg.HealthCheckPath,
       ctx.config.healthCheckPath,
       'Target group should have correct health check path',
+    );
+
+    const attributesCommand = new DescribeTargetGroupAttributesCommand({
+      TargetGroupArn: webServer.lb.targetGroup.arn,
+    });
+    const attributesResponse = await ctx.clients.elb.send(attributesCommand);
+    const algorithmAttribute = attributesResponse.Attributes?.find(
+      attr => attr.Key === 'load_balancing.algorithm.type',
+    );
+    assert.strictEqual(
+      algorithmAttribute?.Value,
+      'round_robin',
+      'Target group should use least_outstanding_requests algorithm',
     );
   });
 
