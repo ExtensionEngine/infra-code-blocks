@@ -7,7 +7,7 @@ export namespace WebServerLoadBalancer {
   export type Args = {
     vpc: pulumi.Input<awsx.ec2.Vpc>;
     port: pulumi.Input<number>;
-    certificate?: aws.acm.Certificate;
+    certificate?: pulumi.Input<aws.acm.Certificate>;
     healthCheckPath?: pulumi.Input<string>;
   };
 }
@@ -88,7 +88,11 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
     );
     this.tlsListener =
       certificate &&
-      this.createLbTlsListener(this.lb, this.targetGroup, certificate);
+      this.createLbTlsListener(
+        this.lb,
+        this.targetGroup,
+        pulumi.output(certificate),
+      );
 
     this.registerOutputs();
   }
@@ -96,7 +100,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
   private createLbTlsListener(
     lb: aws.lb.LoadBalancer,
     lbTargetGroup: aws.lb.TargetGroup,
-    certificate: aws.acm.Certificate,
+    certificate: pulumi.Output<aws.acm.Certificate>,
   ): aws.lb.Listener {
     return new aws.lb.Listener(
       `${this.name}-listener-443`,
