@@ -21,6 +21,7 @@ import status from 'http-status';
 import * as automation from '../automation';
 import { WebServerTestContext } from './test-context';
 import * as config from './infrastructure/config';
+import { testWebServerWithDomain } from './domain.test';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -37,8 +38,12 @@ class NonRetryableError extends Error {
 
 describe('Web server component deployment', () => {
   const region = process.env.AWS_REGION;
-  if (!region) {
-    throw new Error('AWS_REGION environment variable is required');
+  const domainName = process.env.ICB_DOMAIN_NAME;
+  const hostedZoneId = process.env.ICB_HOSTED_ZONE_ID;
+  if (!region || !domainName || !hostedZoneId) {
+    throw new Error(
+      'AWS_REGION, ICB_DOMAIN_NAME and ICB_HOSTED_ZONE_ID environment variables are required',
+    );
   }
 
   const ctx: WebServerTestContext = {
@@ -330,4 +335,6 @@ describe('Web server component deployment', () => {
       },
     );
   });
+
+  describe('With domain', () => testWebServerWithDomain(ctx));
 });
