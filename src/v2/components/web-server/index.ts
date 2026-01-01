@@ -38,8 +38,6 @@ export namespace WebServer {
 
   export type Args = EcsConfig &
     Container & {
-      // TODO: Automatically use subnet IDs from passed `vpc`
-      publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
       /**
        * The domain which will be used to access the service.
        * The domain or subdomain must belong to the provided hostedZone.

@@ -11,7 +11,6 @@ export namespace WebServerBuilder {
   export type Args = Omit<
     WebServer.Args,
     | 'vpc'
-    | 'publicSubnetIds'
     | 'cluster'
     | 'volumes'
     | 'domain'
@@ -151,7 +150,6 @@ export class WebServerBuilder {
         ...this._container,
         vpc: this._vpc,
         volumes: this._volumes,
-        publicSubnetIds: this._vpc.publicSubnetIds,
         domain: this._domain,
         hostedZoneId: this._hostedZoneId,
         certificate: this._certificate,
