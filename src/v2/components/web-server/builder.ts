@@ -3,6 +3,7 @@ import * as awsx from '@pulumi/awsx';
 import { EcsService } from '../ecs-service';
 import { WebServer } from '.';
 import { OtelCollector } from '../../otel';
+import { AcmCertificate } from '../acm-certificate';
 
 export namespace WebServerBuilder {
   export type EcsConfig = Omit<WebServer.EcsConfig, 'vpc' | 'volumes'>;
@@ -26,6 +27,7 @@ export class WebServerBuilder {
   private _ecsConfig?: WebServerBuilder.EcsConfig;
   private _domain?: pulumi.Input<string>;
   private _hostedZoneId?: pulumi.Input<string>;
+  private _certificate?: pulumi.Input<AcmCertificate>;
   private _healthCheckPath?: pulumi.Input<string>;
   private _otelCollector?: pulumi.Input<OtelCollector>;
   private _initContainers: pulumi.Input<WebServer.InitContainer>[] = [];
@@ -87,6 +89,18 @@ export class WebServerBuilder {
     return this;
   }
 
+  public withCertificate(
+    certificate: WebServerBuilder.Args['certificate'],
+    hostedZoneId: pulumi.Input<string>,
+    domain?: pulumi.Input<string>,
+  ): this {
+    this._certificate = certificate;
+    this._hostedZoneId = hostedZoneId;
+    this._domain = domain;
+
+    return this;
+  }
+
   public withInitContainer(container: WebServer.InitContainer): this {
     this._initContainers.push(container);
 
@@ -140,6 +154,7 @@ export class WebServerBuilder {
         publicSubnetIds: this._vpc.publicSubnetIds,
         domain: this._domain,
         hostedZoneId: this._hostedZoneId,
+        certificate: this._certificate,
         healthCheckPath: this._healthCheckPath,
         otelCollector: this._otelCollector,
         initContainers: this._initContainers,
