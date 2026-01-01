@@ -121,18 +121,14 @@ export class WebServer extends pulumi.ComponentResource {
     this.ecsConfig = this.createEcsConfig(args);
     this.volumes = this.getVolumes(args);
 
-    // TODO: Move output mapping to createEcsService
-    this.service = pulumi
-      .all([this.initContainers, this.sidecarContainers])
-      .apply(([initContainers, sidecarContainers]) => {
-        return this.createEcsService(
-          this.container,
-          this.lb,
-          this.ecsConfig,
-          this.volumes,
-          [...initContainers, ...sidecarContainers],
-        );
-      });
+    this.service = this.createEcsService(
+      this.container,
+      this.lb,
+      this.ecsConfig,
+      this.volumes,
+      this.initContainers,
+      this.sidecarContainers,
+    );
 
     if (this.certificate) {
       const dnsResult = this.createDnsRecords(
@@ -288,40 +284,49 @@ export class WebServer extends pulumi.ComponentResource {
     lb: WebServerLoadBalancer,
     ecsConfig: WebServer.EcsConfig,
     volumes?: pulumi.Output<EcsService.PersistentStorageVolume[]>,
-    containers?: EcsService.Container[],
-  ): EcsService {
-    return new EcsService(
-      `${this.name}-ecs`,
-      {
-        ...ecsConfig,
-        volumes,
-        containers: [
+    initContainers?: pulumi.Output<EcsService.Container[]>,
+    sidecarContainers?: pulumi.Output<EcsService.Container[]>,
+  ): pulumi.Output<EcsService> {
+    return pulumi
+      .all([
+        initContainers || pulumi.output([]),
+        sidecarContainers || pulumi.output([]),
+      ])
+      .apply(([inits, sidecars]) => {
+        return new EcsService(
+          `${this.name}-ecs`,
           {
-            ...webServerContainer,
-            name: this.name,
-            portMappings: [
-              EcsService.createTcpPortMapping(webServerContainer.port),
+            ...ecsConfig,
+            volumes,
+            containers: [
+              {
+                ...webServerContainer,
+                name: this.name,
+                portMappings: [
+                  EcsService.createTcpPortMapping(webServerContainer.port),
+                ],
+                essential: true,
+              },
+              ...inits,
+              ...sidecars,
             ],
-            essential: true,
+            enableServiceAutoDiscovery: false,
+            loadBalancers: [
+              {
+                containerName: this.name,
+                containerPort: webServerContainer.port,
+                targetGroupArn: lb.targetGroup.arn,
+              },
+            ],
+            assignPublicIp: true,
+            securityGroup: this.serviceSecurityGroup,
           },
-          ...(containers || []),
-        ],
-        enableServiceAutoDiscovery: false,
-        loadBalancers: [
           {
-            containerName: this.name,
-            containerPort: webServerContainer.port,
-            targetGroupArn: lb.targetGroup.arn,
+            parent: this,
+            dependsOn: [lb, lb.targetGroup],
           },
-        ],
-        assignPublicIp: true,
-        securityGroup: this.serviceSecurityGroup,
-      },
-      {
-        parent: this,
-        dependsOn: [lb, lb.targetGroup],
-      },
-    );
+        );
+      });
   }
 
   private createDnsRecords(
