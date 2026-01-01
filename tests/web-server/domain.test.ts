@@ -21,7 +21,7 @@ export function testWebServerWithDomain(ctx: WebServerTestContext) {
     await assertDnsARecord(ctx, primary, webServer.lb.lb.dnsName);
   });
 
-  it('web server should be accessible via custom domain over HTTPS', async () => {
+  it('should make web server accessible via custom domain over HTTPS', async () => {
     const { primary } = ctx.config.webServerWithDomainConfig;
     await assertHealthCheckAccessible(ctx, primary);
   });
