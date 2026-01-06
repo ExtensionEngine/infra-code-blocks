@@ -240,7 +240,7 @@ describe('EcsService component deployment', () => {
 
   it('should have security group with proper rules', async () => {
     const ecsService = ctx.outputs.minimalEcsService.value;
-    const project = ctx.outputs.project.value;
+    const vpc = ctx.outputs.vpc.value;
     assert.ok(
       ecsService.securityGroups.length > 0,
       'Should have security groups',
@@ -248,7 +248,7 @@ describe('EcsService component deployment', () => {
 
     const sg = ecsService.securityGroups[0];
     assert.ok(
-      sg.ingress[0].cidrBlocks.includes(project.vpc.vpc.cidrBlock),
+      sg.ingress[0].cidrBlocks.includes(vpc.vpc.vpc.cidrBlock),
       'Ingress rule should allow traffic from VPC CIDR',
     );
     assert.strictEqual(
@@ -260,14 +260,14 @@ describe('EcsService component deployment', () => {
 
   it('should create security group in the correct VPC', async () => {
     const ecsService = ctx.outputs.minimalEcsService.value;
-    const project = ctx.outputs.project.value;
+    const vpc = ctx.outputs.vpc.value;
     assert.ok(
       ecsService.securityGroups.length > 0,
       'Should have security groups',
     );
 
     const sg = ecsService.securityGroups[0];
-    const expectedVpcId = project.vpc.vpcId;
+    const expectedVpcId = vpc.vpc.vpcId;
 
     assert.strictEqual(
       sg.vpcId,

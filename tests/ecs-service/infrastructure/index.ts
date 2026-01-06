@@ -1,6 +1,6 @@
-import * as aws from '@pulumi/aws';
+import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
-import { Project, next as studion } from '@studion/infra-code-blocks';
+import { next as studion } from '@studion/infra-code-blocks';
 
 const appName = 'ecs-test';
 const stackName = pulumi.getStack();
@@ -15,7 +15,7 @@ const sampleServiceContainer = {
   portMappings: [studion.EcsService.createTcpPortMapping(appPort)],
 };
 
-const project = new Project(appName, { services: [] });
+const vpc = new studion.Vpc(`${appName}-vpc`, {});
 
 const cluster = new aws.ecs.Cluster(
   `${appName}-cluster`,
@@ -23,18 +23,18 @@ const cluster = new aws.ecs.Cluster(
     name: `${appName}-cluster-${stackName}`,
     tags,
   },
-  { parent: project },
+  { parent: vpc },
 );
 
 const minimalEcsService = new studion.EcsService(`${appName}-min`, {
   cluster,
-  vpc: project.vpc,
+  vpc: vpc.vpc,
   containers: [sampleServiceContainer],
   tags,
 });
 
 const lbSecurityGroup = new aws.ec2.SecurityGroup(`${appName}-lb-sg`, {
-  vpcId: project.vpc.vpcId,
+  vpcId: vpc.vpc.vpcId,
   ingress: [
     {
       protocol: 'tcp',
@@ -58,7 +58,7 @@ const lb = new aws.lb.LoadBalancer(`${appName}-lb`, {
   internal: false,
   loadBalancerType: 'application',
   securityGroups: [lbSecurityGroup.id],
-  subnets: project.vpc.publicSubnetIds,
+  subnets: vpc.vpc.publicSubnetIds,
   tags,
 });
 
@@ -66,7 +66,7 @@ const targetGroup = new aws.lb.TargetGroup(`${appName}-tg`, {
   port: appPort,
   protocol: 'HTTP',
   targetType: 'ip',
-  vpcId: project.vpc.vpcId,
+  vpcId: vpc.vpc.vpcId,
   healthCheck: {
     path: '/',
     port: 'traffic-port',
@@ -89,7 +89,7 @@ const listener = new aws.lb.Listener(`${appName}-listener`, {
 
 const ecsServiceWithLb = new studion.EcsService(`${appName}-lb`, {
   cluster,
-  vpc: project.vpc,
+  vpc: vpc.vpc,
   containers: [sampleServiceContainer],
   assignPublicIp: true,
   loadBalancers: [
@@ -106,7 +106,7 @@ const lbUrl = pulumi.interpolate`http://${lb.dnsName}`;
 
 const ecsWithDiscovery = new studion.EcsService(`${appName}-sd`, {
   cluster,
-  vpc: project.vpc,
+  vpc: vpc.vpc,
   containers: [sampleServiceContainer],
   enableServiceAutoDiscovery: true,
   tags,
@@ -116,7 +116,7 @@ const ecsServiceWithAutoscaling = new studion.EcsService(
   `${appName}-autoscale`,
   {
     cluster,
-    vpc: project.vpc,
+    vpc: vpc.vpc,
     containers: [sampleServiceContainer],
     autoscaling: {
       enabled: true,
@@ -129,7 +129,7 @@ const ecsServiceWithAutoscaling = new studion.EcsService(
 
 const ecsServiceWithStorage = new studion.EcsService(`${appName}-storage`, {
   cluster,
-  vpc: project.vpc,
+  vpc: vpc.vpc,
   volumes: [{ name: 'data-volume' }],
   containers: [
     {
@@ -166,7 +166,7 @@ const ecsServiceWithEmptyVolumes = new studion.EcsService(
   `${appName}-empty-vol`,
   {
     cluster,
-    vpc: project.vpc,
+    vpc: vpc.vpc,
     containers: [sampleServiceContainer],
     volumes: [],
     tags,
@@ -177,7 +177,7 @@ const ecsServiceWithOutputEmptyVolumes = new studion.EcsService(
   `${appName}-empty-otp-vol`,
   {
     cluster,
-    vpc: project.vpc,
+    vpc: vpc.vpc,
     containers: [sampleServiceContainer],
     volumes: pulumi.output([]),
     tags,
@@ -185,7 +185,7 @@ const ecsServiceWithOutputEmptyVolumes = new studion.EcsService(
 );
 
 module.exports = {
-  project,
+  vpc,
   cluster,
   minimalEcsService,
   ecsServiceWithLb,

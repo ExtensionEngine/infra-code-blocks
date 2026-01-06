@@ -1,7 +1,7 @@
-import * as aws from '@pulumi/aws';
+import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
 import * as upstash from '@upstash/pulumi';
-import { Project, next as studion } from '@studion/infra-code-blocks';
+import { next as studion } from '@studion/infra-code-blocks';
 
 const appName = 'redis-test';
 const stackName = pulumi.getStack();
@@ -10,17 +10,17 @@ const tags = {
   Environment: stackName,
 };
 
-const project = new Project(appName, { services: [] });
+const vpc = new studion.Vpc(`${appName}-vpc`, {});
 
 const defaultElastiCacheRedis = new studion.ElastiCacheRedis(
   `${appName}-default-elasticache`,
-  { vpc: project.vpc },
+  { vpc: vpc.vpc },
 );
 
 const elastiCacheRedis = new studion.ElastiCacheRedis(
   `${appName}-elasticache`,
   {
-    vpc: project.vpc,
+    vpc: vpc.vpc,
     engineVersion: '6.x',
     nodeType: 'cache.t4g.micro',
     parameterGroupName: 'default.redis6.x',
@@ -34,7 +34,7 @@ const cluster = new aws.ecs.Cluster(
     name: `${appName}-cluster-${stackName}`,
     tags,
   },
-  { parent: project },
+  { parent: vpc },
 );
 
 const testClientContainer = {
@@ -97,7 +97,7 @@ const testClientContainer = {
 
 const testClient = new studion.EcsService(`${appName}-ec-client`, {
   cluster,
-  vpc: project.vpc,
+  vpc: vpc.vpc,
   containers: [testClientContainer],
   assignPublicIp: false,
 });
@@ -121,7 +121,7 @@ if (upstashEmail && upstashApiKey) {
 }
 
 module.exports = {
-  project,
+  vpc,
   defaultElastiCacheRedis,
   elastiCacheRedis,
   cluster,
