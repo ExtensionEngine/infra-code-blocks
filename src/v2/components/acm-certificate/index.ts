@@ -10,6 +10,7 @@ export namespace AcmCertificate {
      */
     subjectAlternativeNames?: pulumi.Input<string>[];
     hostedZoneId: pulumi.Input<string>;
+    region?: pulumi.Input<string>;
   };
 }
 
@@ -29,6 +30,7 @@ export class AcmCertificate extends pulumi.ComponentResource {
         domainName: args.domain,
         subjectAlternativeNames: args.subjectAlternativeNames,
         validationMethod: 'DNS',
+        region: args.region,
         tags: commonTags,
       },
       { parent: this },
