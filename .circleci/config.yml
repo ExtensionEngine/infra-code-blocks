@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  core: studion/core@3.0.0
+  core: studion/core@3.1.0
   security: studion/security@2.0.0
   aws-cli: circleci/aws-cli@5.2.0
   node: circleci/node@7.1.0
@@ -64,6 +64,7 @@ jobs:
       - node/install
       - core/run_script:
           script: 'test'
+          no_output_timeout: 30m
 
 workflows:
   scan-and-test:
