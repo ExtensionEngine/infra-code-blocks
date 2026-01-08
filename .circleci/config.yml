@@ -60,6 +60,7 @@ jobs:
       - checkout
       - aws-cli/setup:
           role_arn: ${AWS_ROLE_ARN}
+          session_duration: '7200'
       - setup-pulumi
       - node/install
       - core/run_script:
