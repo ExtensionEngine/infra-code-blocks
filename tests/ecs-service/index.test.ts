@@ -19,6 +19,7 @@ import { testEcsServiceWithLb } from './load-balancer.test';
 import { testEcsServiceWithStorage } from './persistent-storage.test';
 import { testEcsServiceWithServiceDiscovery } from './service-discovery.test';
 import { testEcsServiceWithAutoscaling } from './autoscaling.test';
+import { requireEnv } from '../util';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -26,34 +27,30 @@ const programArgs: InlineProgramArgs = {
   program: () => import('./infrastructure'),
 };
 
+const region = requireEnv('AWS_REGION');
+const ctx: EcsTestContext = {
+  outputs: {},
+  config: {
+    minEcsName: 'ecs-test-min',
+    exponentialBackOffConfig: {
+      delayFirstAttempt: true,
+      numOfAttempts: 5,
+      startingDelay: 1000,
+      timeMultiple: 2,
+      jitter: 'full',
+    },
+  },
+  clients: {
+    ecs: new ECSClient({ region }),
+    ec2: new EC2Client({ region }),
+    elb: new ElasticLoadBalancingV2Client({ region }),
+    sd: new ServiceDiscoveryClient({ region }),
+    appAutoscaling: new ApplicationAutoScalingClient({ region }),
+    efs: new EFSClient({ region }),
+  },
+};
+
 describe('EcsService component deployment', () => {
-  const region = process.env.AWS_REGION;
-  if (!region) {
-    throw new Error('AWS_REGION environment variable is required');
-  }
-
-  const ctx: EcsTestContext = {
-    outputs: {},
-    config: {
-      minEcsName: 'ecs-test-min',
-      exponentialBackOffConfig: {
-        delayFirstAttempt: true,
-        numOfAttempts: 5,
-        startingDelay: 1000,
-        timeMultiple: 2,
-        jitter: 'full',
-      },
-    },
-    clients: {
-      ecs: new ECSClient({ region }),
-      ec2: new EC2Client({ region }),
-      elb: new ElasticLoadBalancingV2Client({ region }),
-      sd: new ServiceDiscoveryClient({ region }),
-      appAutoscaling: new ApplicationAutoScalingClient({ region }),
-      efs: new EFSClient({ region }),
-    },
-  };
-
   before(async () => {
     ctx.outputs = await automation.deploy(programArgs);
   });
