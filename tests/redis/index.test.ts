@@ -9,6 +9,7 @@ import { testUpstashRedis } from './upstash-redis.test';
 import { SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { CloudWatchLogsClient } from '@aws-sdk/client-cloudwatch-logs';
 import { ECSClient } from '@aws-sdk/client-ecs';
+import { requireEnv } from '../util';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -16,38 +17,34 @@ const programArgs: InlineProgramArgs = {
   program: () => import('./infrastructure'),
 };
 
+const region = requireEnv('AWS_REGION');
+const hasUpstashCredentials =
+  process.env.UPSTASH_EMAIL && process.env.UPSTASH_API_KEY;
+const ctx: RedisTestContext = {
+  outputs: {},
+  config: {
+    defaultElastiCacheRedisName: 'redis-test-default-elasticache',
+    elastiCacheRedisName: 'redis-test-elasticache',
+    elastiCacheTestClientName: 'redis-test-ec-client',
+    upstashRedisName: 'redis-test-upstash',
+    exponentialBackOffConfig: {
+      delayFirstAttempt: true,
+      numOfAttempts: 5,
+      startingDelay: 2000,
+      timeMultiple: 2,
+      jitter: 'full',
+    },
+  },
+  clients: {
+    elasticache: new ElastiCacheClient({ region }),
+    ec2: new EC2Client({ region }),
+    secretsManager: new SecretsManagerClient({ region }),
+    ecs: new ECSClient({ region }),
+    cloudwatchLogs: new CloudWatchLogsClient({ region }),
+  },
+};
+
 describe('Redis component deployment', () => {
-  const region = process.env.AWS_REGION;
-  if (!region) {
-    throw new Error('AWS_REGION environment variable is required');
-  }
-
-  const hasUpstashCredentials =
-    process.env.UPSTASH_EMAIL && process.env.UPSTASH_API_KEY;
-  const ctx: RedisTestContext = {
-    outputs: {},
-    config: {
-      defaultElastiCacheRedisName: 'redis-test-default-elasticache',
-      elastiCacheRedisName: 'redis-test-elasticache',
-      elastiCacheTestClientName: 'redis-test-ec-client',
-      upstashRedisName: 'redis-test-upstash',
-      exponentialBackOffConfig: {
-        delayFirstAttempt: true,
-        numOfAttempts: 5,
-        startingDelay: 2000,
-        timeMultiple: 2,
-        jitter: 'full',
-      },
-    },
-    clients: {
-      elasticache: new ElastiCacheClient({ region }),
-      ec2: new EC2Client({ region }),
-      secretsManager: new SecretsManagerClient({ region }),
-      ecs: new ECSClient({ region }),
-      cloudwatchLogs: new CloudWatchLogsClient({ region }),
-    },
-  };
-
   before(async () => {
     ctx.outputs = await automation.deploy(programArgs);
   });
