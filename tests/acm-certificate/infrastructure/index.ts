@@ -12,6 +12,7 @@ const domainName = process.env.ICB_DOMAIN_NAME!;
 const certificate = new studion.AcmCertificate(`${appName}-certificate`, {
   domain: domainName,
   hostedZoneId: hostedZone.zoneId,
+  region: process.env.AWS_REGION,
 });
 
 const subDomainName = `app.${domainName}`;
