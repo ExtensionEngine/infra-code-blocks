@@ -111,7 +111,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
         loadBalancerArn: lb.arn,
         port: 443,
         protocol: 'HTTPS',
-        sslPolicy: 'ELBSecurityPolicy-2016-08',
+        sslPolicy: 'ELBSecurityPolicy-TLS13-1-2-2021-06',
         certificateArn: certificate.arn,
         defaultActions: [
           {
