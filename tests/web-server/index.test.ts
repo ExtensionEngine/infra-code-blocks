@@ -23,11 +23,27 @@ import * as automation from '../automation';
 import { WebServerTestContext } from './test-context';
 import * as config from './infrastructure/config';
 import { testWebServerWithDomain } from './domain.test';
+import { requireEnv } from '../util';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
   projectName: 'icb-test-web-server',
   program: () => import('./infrastructure'),
+};
+
+const region = requireEnv('AWS_REGION');
+const domainName = requireEnv('ICB_DOMAIN_NAME');
+const hostedZoneId = requireEnv('ICB_HOSTED_ZONE_ID');
+const ctx: WebServerTestContext = {
+  outputs: {},
+  config,
+  clients: {
+    ecs: new ECSClient({ region }),
+    ec2: new EC2Client({ region }),
+    elb: new ElasticLoadBalancingV2Client({ region }),
+    acm: new ACMClient({ region }),
+    route53: new Route53Client({ region }),
+  },
 };
 
 class NonRetryableError extends Error {
@@ -38,27 +54,6 @@ class NonRetryableError extends Error {
 }
 
 describe('Web server component deployment', () => {
-  const region = process.env.AWS_REGION;
-  const domainName = process.env.ICB_DOMAIN_NAME;
-  const hostedZoneId = process.env.ICB_HOSTED_ZONE_ID;
-  if (!region || !domainName || !hostedZoneId) {
-    throw new Error(
-      'AWS_REGION, ICB_DOMAIN_NAME and ICB_HOSTED_ZONE_ID environment variables are required',
-    );
-  }
-
-  const ctx: WebServerTestContext = {
-    outputs: {},
-    config,
-    clients: {
-      ecs: new ECSClient({ region }),
-      ec2: new EC2Client({ region }),
-      elb: new ElasticLoadBalancingV2Client({ region }),
-      acm: new ACMClient({ region }),
-      route53: new Route53Client({ region }),
-    },
-  };
-
   before(async () => {
     ctx.outputs = await automation.deploy(programArgs);
   });
