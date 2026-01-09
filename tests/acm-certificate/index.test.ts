@@ -11,6 +11,7 @@ import {
 import { ListResourceRecordSetsCommand } from '@aws-sdk/client-route-53';
 import { AcmCertificateTestContext } from './test-context';
 import { describe, it, before, after } from 'node:test';
+import { requireEnv } from '../util';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -18,34 +19,29 @@ const programArgs: InlineProgramArgs = {
   program: () => import('./infrastructure'),
 };
 
+const region = requireEnv('AWS_REGION');
+const domainName = requireEnv('ICB_DOMAIN_NAME');
+const hostedZoneId = requireEnv('ICB_HOSTED_ZONE_ID');
+
+const ctx: AcmCertificateTestContext = {
+  outputs: {},
+  config: {
+    subDomainName: `app.${domainName}`,
+    exponentialBackOffConfig: {
+      delayFirstAttempt: true,
+      numOfAttempts: 5,
+      startingDelay: 2000,
+      timeMultiple: 1.5,
+      jitter: 'full',
+    },
+  },
+  clients: {
+    acm: new ACMClient({ region }),
+    route53: new Route53Client({ region }),
+  },
+};
+
 describe('ACM Certificate component deployment', () => {
-  const region = process.env.AWS_REGION;
-  const domainName = process.env.ICB_DOMAIN_NAME;
-  const hostedZoneId = process.env.ICB_HOSTED_ZONE_ID;
-  if (!region || !domainName || !hostedZoneId) {
-    throw new Error(
-      'AWS_REGION, ICB_DOMAIN_NAME and ICB_HOSTED_ZONE_ID environment variables are required',
-    );
-  }
-
-  const ctx: AcmCertificateTestContext = {
-    outputs: {},
-    config: {
-      subDomainName: `app.${domainName}`,
-      exponentialBackOffConfig: {
-        delayFirstAttempt: true,
-        numOfAttempts: 5,
-        startingDelay: 2000,
-        timeMultiple: 1.5,
-        jitter: 'full',
-      },
-    },
-    clients: {
-      acm: new ACMClient({ region }),
-      route53: new Route53Client({ region }),
-    },
-  };
-
   before(async () => {
     ctx.outputs = await automation.deploy(programArgs);
   });
