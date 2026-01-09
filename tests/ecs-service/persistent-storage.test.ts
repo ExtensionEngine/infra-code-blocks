@@ -51,7 +51,7 @@ export function testEcsServiceWithStorage(ctx: EcsTestContext) {
 
   it('should create security group for EFS with correct rules', async () => {
     const ecsServiceWithStorage = ctx.outputs.ecsServiceWithStorage.value;
-    const vpc = ctx.outputs.project.value.vpc;
+    const vpc = ctx.outputs.vpc.value.vpc;
 
     const describeMountTargetsCommand = new DescribeMountTargetsCommand({
       FileSystemId: ecsServiceWithStorage.persistentStorage.fileSystem.id,
@@ -119,7 +119,7 @@ export function testEcsServiceWithStorage(ctx: EcsTestContext) {
 
   it('should create mount targets in all private subnets', async () => {
     const ecsServiceWithStorage = ctx.outputs.ecsServiceWithStorage.value;
-    const vpc = ctx.outputs.project.value.vpc;
+    const vpc = ctx.outputs.vpc.value.vpc;
 
     const command = new DescribeMountTargetsCommand({
       FileSystemId: ecsServiceWithStorage.persistentStorage.fileSystem.id,

@@ -1,5 +1,5 @@
-import { Project, next as studion } from '@studion/infra-code-blocks';
-import * as aws from '@pulumi/aws';
+import { next as studion } from '@studion/infra-code-blocks';
+import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
 import {
   webServerName,
@@ -10,7 +10,7 @@ import {
 } from './config';
 
 const stackName = pulumi.getStack();
-const project: Project = new Project(webServerName, { services: [] });
+const vpc = new studion.Vpc(`${webServerName}-vpc`, {});
 const tags = { Env: stackName, Project: webServerName };
 const init = {
   name: 'init',
@@ -56,7 +56,7 @@ const webServer = new studion.WebServerBuilder(webServerName)
   .configureEcs(ecs)
   .withInitContainer(init)
   .withSidecarContainer(sidecar)
-  .withVpc(project.vpc)
+  .withVpc(vpc.vpc)
   .withOtelCollector(otelCollector)
   .withCustomHealthCheckPath(healthCheckPath)
   .withLoadBalancingAlgorithm('least_outstanding_requests')
@@ -70,7 +70,7 @@ const hostedZone = aws.route53.getZoneOutput({
 const webServerWithDomain = new studion.WebServerBuilder(`web-server-domain`)
   .configureWebServer('nginxdemos/nginx-hello:plain-text', 8080)
   .configureEcs(ecs)
-  .withVpc(project.vpc)
+  .withVpc(vpc.vpc)
   .withCustomHealthCheckPath(healthCheckPath)
   .withCustomDomain(webServerWithDomainConfig.primary, hostedZone.zoneId)
   .build({ parent: cluster });
@@ -88,7 +88,7 @@ const webServerWithSanCertificate = new studion.WebServerBuilder(
 )
   .configureWebServer('nginxdemos/nginx-hello:plain-text', 8080)
   .configureEcs(ecs)
-  .withVpc(project.vpc)
+  .withVpc(vpc.vpc)
   .withCustomHealthCheckPath(healthCheckPath)
   .withCertificate(sanWebServerCert, hostedZone.zoneId)
   .build({ parent: cluster });
@@ -101,7 +101,7 @@ const certWebServer = new studion.AcmCertificate(`${webServerName}-cert`, {
 const webServerWithCertificate = new studion.WebServerBuilder(`web-server-cert`)
   .configureWebServer('nginxdemos/nginx-hello:plain-text', 8080)
   .configureEcs(ecs)
-  .withVpc(project.vpc)
+  .withVpc(vpc.vpc)
   .withCustomHealthCheckPath(healthCheckPath)
   .withCertificate(
     certWebServer,
@@ -111,7 +111,6 @@ const webServerWithCertificate = new studion.WebServerBuilder(`web-server-cert`)
   .build({ parent: cluster });
 
 export {
-  project,
   webServer,
   otelCollector,
   webServerWithSanCertificate,

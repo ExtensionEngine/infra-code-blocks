@@ -104,7 +104,7 @@ export function testElastiCacheRedis(ctx: RedisTestContext) {
 
   it('should create a subnet group in the correct VPC', async () => {
     const redis = ctx.outputs.elastiCacheRedis.value;
-    const project = ctx.outputs.project.value;
+    const vpc = ctx.outputs.vpc.value;
     const subnetGroupName = redis.subnetGroup.name;
 
     const command = new DescribeCacheSubnetGroupsCommand({
@@ -118,7 +118,7 @@ export function testElastiCacheRedis(ctx: RedisTestContext) {
     const [subnetGroup] = CacheSubnetGroups;
     assert.strictEqual(
       subnetGroup.VpcId,
-      project.vpc.vpcId,
+      vpc.vpc.vpcId,
       'Subnet group should be in the correct VPC',
     );
     assert.ok(
@@ -129,7 +129,7 @@ export function testElastiCacheRedis(ctx: RedisTestContext) {
 
   it('should create a security group with correct ingress rules', async () => {
     const redis = ctx.outputs.elastiCacheRedis.value;
-    const project = ctx.outputs.project.value;
+    const vpc = ctx.outputs.vpc.value;
     const sgId = redis.securityGroup.id;
 
     const command = new DescribeSecurityGroupsCommand({
@@ -143,7 +143,7 @@ export function testElastiCacheRedis(ctx: RedisTestContext) {
     const [securityGroup] = SecurityGroups;
     assert.strictEqual(
       securityGroup.VpcId,
-      project.vpc.vpcId,
+      vpc.vpc.vpcId,
       'Security group should be in the correct VPC',
     );
 

@@ -1,5 +1,5 @@
 import { next as studion } from '@studion/infra-code-blocks';
-import * as aws from '@pulumi/aws';
+import * as aws from '@pulumi/aws-v7';
 
 const appName = 'acm-certificate-test';
 
