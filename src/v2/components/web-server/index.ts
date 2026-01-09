@@ -2,7 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 import { commonTags } from '../../../constants';
-import { AcmCertificate } from '../../../components/acm-certificate';
+import { AcmCertificate } from '../acm-certificate';
 import { EcsService } from '../ecs-service';
 import { WebServerLoadBalancer } from './load-balancer';
 import { OtelCollector } from '../../otel';
@@ -38,8 +38,6 @@ export namespace WebServer {
 
   export type Args = EcsConfig &
     Container & {
-      // TODO: Automatically use subnet IDs from passed `vpc`
-      publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
       /**
        * The domain which will be used to access the service.
        * The domain or subdomain must belong to the provided hostedZone.
@@ -47,12 +45,19 @@ export namespace WebServer {
       domain?: pulumi.Input<string>;
       hostedZoneId?: pulumi.Input<string>;
       /**
+       * If provided without `domain` argument, Route53 A records will be created for the certificate's
+       * primary domain and all subject alternative names (SANs).
+       * If `domain` argument is also provided, only a single A record for that domain will be created.
+       */
+      certificate?: pulumi.Input<AcmCertificate>;
+      /**
        * Path for the load balancer target group health check request.
        *
        * @default
        * "/healthcheck"
        */
       healthCheckPath?: pulumi.Input<string>;
+      loadBalancingAlgorithmType?: pulumi.Input<string>;
       initContainers?: pulumi.Input<pulumi.Input<WebServer.InitContainer>[]>;
       sidecarContainers?: pulumi.Input<
         pulumi.Input<WebServer.SidecarContainer>[]
@@ -71,8 +76,9 @@ export class WebServer extends pulumi.ComponentResource {
   initContainers?: pulumi.Output<EcsService.Container[]>;
   sidecarContainers?: pulumi.Output<EcsService.Container[]>;
   volumes?: pulumi.Output<EcsService.PersistentStorageVolume[]>;
-  certificate?: AcmCertificate;
-  dnsRecord?: aws.route53.Record;
+  certificate?: pulumi.Output<AcmCertificate>;
+  dnsRecord?: pulumi.Output<aws.route53.Record>;
+  sanRecords?: pulumi.Output<aws.route53.Record[]>;
 
   constructor(
     name: string,
@@ -80,17 +86,21 @@ export class WebServer extends pulumi.ComponentResource {
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:WebServer', name, args, opts);
+    const { vpc, domain, hostedZoneId, certificate } = args;
 
-    const { vpc, domain, hostedZoneId } = args;
-
-    if (domain && !hostedZoneId) {
+    if ((domain || certificate) && !hostedZoneId) {
       throw new Error(
-        'WebServer:hostedZoneId must be provided when the domain is specified',
+        'WebServer: hostedZoneId must be provided when domain or certificate are provided',
       );
     }
+
     const hasCustomDomain = !!domain && !!hostedZoneId;
-    if (hasCustomDomain) {
-      this.certificate = this.createTlsCertificate({ domain, hostedZoneId });
+    if (certificate) {
+      this.certificate = pulumi.output(certificate);
+    } else if (hasCustomDomain) {
+      this.certificate = pulumi.output(
+        this.createTlsCertificate({ domain, hostedZoneId }),
+      );
     }
 
     this.name = name;
@@ -101,6 +111,7 @@ export class WebServer extends pulumi.ComponentResource {
         port: args.port,
         certificate: this.certificate?.certificate,
         healthCheckPath: args.healthCheckPath,
+        loadBalancingAlgorithmType: args.loadBalancingAlgorithmType,
       },
       { parent: this },
     );
@@ -112,21 +123,23 @@ export class WebServer extends pulumi.ComponentResource {
     this.ecsConfig = this.createEcsConfig(args);
     this.volumes = this.getVolumes(args);
 
-    // TODO: Move output mapping to createEcsService
-    this.service = pulumi
-      .all([this.initContainers, this.sidecarContainers])
-      .apply(([initContainers, sidecarContainers]) => {
-        return this.createEcsService(
-          this.container,
-          this.lb,
-          this.ecsConfig,
-          this.volumes,
-          [...initContainers, ...sidecarContainers],
-        );
-      });
+    this.service = this.createEcsService(
+      this.container,
+      this.lb,
+      this.ecsConfig,
+      this.volumes,
+      this.initContainers,
+      this.sidecarContainers,
+    );
 
-    if (hasCustomDomain) {
-      this.dnsRecord = this.createDnsRecord({ domain, hostedZoneId });
+    if (this.certificate) {
+      const dnsResult = this.createDnsRecords(
+        this.certificate,
+        hostedZoneId!,
+        domain,
+      );
+      this.dnsRecord = dnsResult.primary;
+      this.sanRecords = dnsResult.sans;
     }
 
     this.registerOutputs();
@@ -273,64 +286,124 @@ export class WebServer extends pulumi.ComponentResource {
     lb: WebServerLoadBalancer,
     ecsConfig: WebServer.EcsConfig,
     volumes?: pulumi.Output<EcsService.PersistentStorageVolume[]>,
-    containers?: EcsService.Container[],
-  ): EcsService {
-    return new EcsService(
-      `${this.name}-ecs`,
-      {
-        ...ecsConfig,
-        volumes,
-        containers: [
+    initContainers?: pulumi.Output<EcsService.Container[]>,
+    sidecarContainers?: pulumi.Output<EcsService.Container[]>,
+  ): pulumi.Output<EcsService> {
+    return pulumi
+      .all([
+        initContainers || pulumi.output([]),
+        sidecarContainers || pulumi.output([]),
+      ])
+      .apply(([inits, sidecars]) => {
+        return new EcsService(
+          `${this.name}-ecs`,
           {
-            ...webServerContainer,
-            name: this.name,
-            portMappings: [
-              EcsService.createTcpPortMapping(webServerContainer.port),
+            ...ecsConfig,
+            volumes,
+            containers: [
+              {
+                ...webServerContainer,
+                name: this.name,
+                portMappings: [
+                  EcsService.createTcpPortMapping(webServerContainer.port),
+                ],
+                essential: true,
+              },
+              ...inits,
+              ...sidecars,
             ],
-            essential: true,
+            enableServiceAutoDiscovery: false,
+            loadBalancers: [
+              {
+                containerName: this.name,
+                containerPort: webServerContainer.port,
+                targetGroupArn: lb.targetGroup.arn,
+              },
+            ],
+            assignPublicIp: true,
+            securityGroup: this.serviceSecurityGroup,
           },
-          ...(containers || []),
-        ],
-        enableServiceAutoDiscovery: false,
-        loadBalancers: [
           {
-            containerName: this.name,
-            containerPort: webServerContainer.port,
-            targetGroupArn: lb.targetGroup.arn,
+            parent: this,
+            dependsOn: [lb, lb.targetGroup],
           },
-        ],
-        assignPublicIp: true,
-        securityGroup: this.serviceSecurityGroup,
-      },
-      {
-        parent: this,
-        dependsOn: [lb, lb.targetGroup],
-      },
-    );
+        );
+      });
   }
 
-  private createDnsRecord({
-    domain,
-    hostedZoneId,
-  }: Pick<
-    Required<WebServer.Args>,
-    'domain' | 'hostedZoneId'
-  >): aws.route53.Record {
-    return new aws.route53.Record(
-      `${this.name}-route53-record`,
-      {
-        type: 'A',
-        name: domain,
-        zoneId: hostedZoneId,
-        aliases: [
-          {
-            name: this.lb.lb.dnsName,
-            zoneId: this.lb.lb.zoneId,
-            evaluateTargetHealth: true,
-          },
-        ],
-      },
-      { parent: this },
-    );
+  private createDnsRecords(
+    certificate: pulumi.Output<AcmCertificate>,
+    hostedZoneId: pulumi.Input<string>,
+    domain?: pulumi.Input<string>,
+  ): {
+    primary: pulumi.Output<aws.route53.Record>;
+    sans: pulumi.Output<aws.route53.Record[]>;
+  } {
+    if (domain) {
+      return {
+        primary: pulumi.output(
+          new aws.route53.Record(
+            `${this.name}-route53-record`,
+            {
+              type: 'A',
+              name: domain,
+              zoneId: hostedZoneId,
+              aliases: [
+                {
+                  name: this.lb.lb.dnsName,
+                  zoneId: this.lb.lb.zoneId,
+                  evaluateTargetHealth: true,
+                },
+              ],
+            },
+            { parent: this },
+          ),
+        ),
+
+        sans: pulumi.output([]),
+      };
+    }
+
+    const records = pulumi
+      .all([
+        certificate.certificate.domainName,
+        certificate.certificate.subjectAlternativeNames,
+      ])
+      .apply(([primaryDomain, sans]) => {
+        const allDomains = [
+          primaryDomain,
+          ...(sans || []).filter(san => san !== primaryDomain),
+        ];
+
+        const allRecords = allDomains.map(
+          (domain, index) =>
+            new aws.route53.Record(
+              `${this.name}-route53-record${index === 0 ? '' : `-${index}`}`,
+              {
+                type: 'A',
+                name: domain,
+                zoneId: hostedZoneId,
+                aliases: [
+                  {
+                    name: this.lb.lb.dnsName,
+                    zoneId: this.lb.lb.zoneId,
+                    evaluateTargetHealth: true,
+                  },
+                ],
+              },
+              { parent: this },
+            ),
+        );
+
+        return {
+          primaryRecord: allRecords[0],
+          sanRecords: allRecords.slice(1),
+        };
+      });
+
+    return {
+      primary: records.primaryRecord,
+      sans: records.sanRecords,
+    };
   }
 }

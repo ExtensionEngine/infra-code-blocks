@@ -51,7 +51,6 @@ describe('Build output', () => {
           cluster: new aws.ecs.Cluster('clusterName'),
           image: 'sample/image',
           port: 8080,
-          publicSubnetIds: ['sub-1', 'sub-2', 'sub-3'],
         });
       });
 
