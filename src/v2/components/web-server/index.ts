@@ -90,7 +90,7 @@ export class WebServer extends pulumi.ComponentResource {
 
     if ((domain || certificate) && !hostedZoneId) {
       throw new Error(
-        'WebServer: hostedZoneId must be provided when domain or certificate are provided',
+        'HostedZoneId must be provided when domain or certificate are provided',
       );
     }
 
