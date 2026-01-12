@@ -26,6 +26,7 @@ const hostedZoneId = requireEnv('ICB_HOSTED_ZONE_ID');
 const ctx: AcmCertificateTestContext = {
   outputs: {},
   config: {
+    subDomainName: `app.${domainName}`,
     exponentialBackOffConfig: {
       delayFirstAttempt: true,
       numOfAttempts: 5,
@@ -113,6 +114,29 @@ describe('ACM Certificate component deployment', () => {
       validationRecord.ResourceRecords?.[0]?.Value,
       domainValidation.ResourceRecord?.Value,
       'Validation record should have correct value',
+    );
+  });
+
+  it('should create certificate with subject alternative names', async () => {
+    const sanCertificate = ctx.outputs.sanCertificate.value;
+    const certResult = await ctx.clients.acm.send(
+      new DescribeCertificateCommand({
+        CertificateArn: sanCertificate.certificate.arn,
+      }),
+    );
+    const cert = certResult.Certificate;
+    const sans = new Set(cert?.SubjectAlternativeNames ?? []);
+
+    const expectedDomains = new Set([
+      ctx.config.subDomainName,
+      `api.${ctx.config.subDomainName}`,
+      `test.${ctx.config.subDomainName}`,
+    ]);
+
+    assert.deepStrictEqual(
+      sans,
+      expectedDomains,
+      'Certificate should include all expected domains',
     );
   });
 });
