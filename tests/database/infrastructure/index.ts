@@ -1,6 +1,6 @@
 import * as aws from '@pulumi/aws';
-import { next as studion } from '@studion/infra-code-blocks';
 import * as config from './config';
+import { next as studion } from '@studion/infra-code-blocks';
 
 const vpc = new studion.Vpc(`${config.appName}-vpc`, {});
 
