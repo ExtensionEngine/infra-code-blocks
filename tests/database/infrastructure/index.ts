@@ -1,7 +1,7 @@
 import * as aws from '@pulumi/aws';
+import * as config from './config';
 import { next as studion } from '@studion/infra-code-blocks';
 import { DatabaseBuilder } from '../../../dist/v2/components/database/builder';
-import * as config from './config';
 
 const vpc = new studion.Vpc(`${config.appName}-vpc`, {});
 
