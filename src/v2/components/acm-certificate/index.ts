@@ -5,6 +5,10 @@ import { commonTags } from '../../../constants';
 export namespace AcmCertificate {
   export type Args = {
     domain: pulumi.Input<string>;
+    /**
+     * Additional domains/subdomains to be included in this certificate.
+     */
+    subjectAlternativeNames?: pulumi.Input<string>[];
     hostedZoneId: pulumi.Input<string>;
   };
 }
@@ -21,36 +25,51 @@ export class AcmCertificate extends pulumi.ComponentResource {
 
     this.certificate = new aws.acm.Certificate(
       `${args.domain}-certificate`,
-      { domainName: args.domain, validationMethod: 'DNS', tags: commonTags },
-      { parent: this },
-    );
-
-    const certificateValidationDomain = new aws.route53.Record(
-      `${args.domain}-cert-validation-domain`,
       {
-        name: this.certificate.domainValidationOptions[0].resourceRecordName,
-        type: this.certificate.domainValidationOptions[0].resourceRecordType,
-        zoneId: args.hostedZoneId,
-        records: [
-          this.certificate.domainValidationOptions[0].resourceRecordValue,
-        ],
-        ttl: 600,
-      },
-      {
-        parent: this,
-        deleteBeforeReplace: true,
-      },
-    );
-
-    const certificateValidation = new aws.acm.CertificateValidation(
-      `${args.domain}-cert-validation`,
-      {
-        certificateArn: this.certificate.arn,
-        validationRecordFqdns: [certificateValidationDomain.fqdn],
+        domainName: args.domain,
+        subjectAlternativeNames: args.subjectAlternativeNames,
+        validationMethod: 'DNS',
+        tags: commonTags,
       },
       { parent: this },
     );
+
+    this.createCertValidationRecords(args.domain, args.hostedZoneId);
 
     this.registerOutputs();
+  }
+
+  private createCertValidationRecords(
+    domainName: AcmCertificate.Args['domain'],
+    hostedZoneId: AcmCertificate.Args['hostedZoneId'],
+  ) {
+    this.certificate.domainValidationOptions.apply(domains => {
+      const validationRecords = domains.map(
+        domain =>
+          new aws.route53.Record(
+            `${domain.domainName}-cert-validation-domain`,
+            {
+              name: domain.resourceRecordName,
+              type: domain.resourceRecordType,
+              zoneId: hostedZoneId,
+              records: [domain.resourceRecordValue],
+              ttl: 600,
+            },
+            {
+              parent: this,
+              deleteBeforeReplace: true,
+            },
+          ),
+      );
+
+      const certificateValidation = new aws.acm.CertificateValidation(
+        `${domainName}-cert-validation`,
+        {
+          certificateArn: this.certificate.arn,
+          validationRecordFqdns: validationRecords.map(record => record.fqdn),
+        },
+        { parent: this },
+      );
+    });
   }
 }
