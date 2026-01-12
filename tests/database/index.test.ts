@@ -36,10 +36,12 @@ describe('Database component deployment', () => {
     ctx.outputs = await automation.deploy(programArgs);
   });
 
-  after(() => automation.destroy(programArgs));
+  after(async () => {
+    await automation.destroy(programArgs);
+    await cleanupSnapshots(ctx);
+  });
 
   describe('Default database', () => testDefaultDb(ctx));
   describe('Custom database', () => testCustomDb(ctx));
   describe('Snapshot database', () => testSnapshotDb(ctx));
-  after(() => cleanupSnapshots(ctx));
 });
