@@ -19,3 +19,11 @@ export const webServerWithCertificateConfig = {
   primary: `test.${baseDomain}`,
   sans: [`test.api.${baseDomain}`, `test.app.${baseDomain}`],
 };
+
+export const exponentialBackOffConfig = {
+  delayFirstAttempt: true,
+  numOfAttempts: 10,
+  startingDelay: 2000,
+  timeMultiple: 2,
+  jitter: 'full' as const,
+};

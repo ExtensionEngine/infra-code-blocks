@@ -138,23 +138,14 @@ async function assertHealthCheckAccessible(
   ctx: WebServerTestContext,
   domain: string,
 ) {
-  return backOff(
-    async () => {
-      const response = await request(
-        `https://${domain}${ctx.config.healthCheckPath}`,
-      );
-      assert.strictEqual(
-        response.statusCode,
-        status.OK,
-        `Should receive 200 from ${domain}`,
-      );
-    },
-    {
-      delayFirstAttempt: true,
-      numOfAttempts: 10,
-      startingDelay: 2000,
-      timeMultiple: 2,
-      jitter: 'full',
-    },
-  );
+  return backOff(async () => {
+    const response = await request(
+      `https://${domain}${ctx.config.healthCheckPath}`,
+    );
+    assert.strictEqual(
+      response.statusCode,
+      status.OK,
+      `Should receive 200 from ${domain}`,
+    );
+  }, ctx.config.exponentialBackOffConfig);
 }
