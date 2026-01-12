@@ -1,6 +1,9 @@
 export const webServerName = 'web-server-test';
 export const healthCheckPath = '/healthcheck';
 
+export const webServerImageName = 'nginxdemos/nginx-hello:plain-text';
+export const webServerPort = 8080;
+
 const baseDomain = process.env.ICB_DOMAIN_NAME!;
 
 export const webServerWithDomainConfig = {
