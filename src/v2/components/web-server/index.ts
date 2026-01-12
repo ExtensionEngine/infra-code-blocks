@@ -340,26 +340,25 @@ export class WebServer extends pulumi.ComponentResource {
     sans: pulumi.Output<aws.route53.Record[]>;
   } {
     if (domain) {
-      return {
-        primary: pulumi.output(
-          new aws.route53.Record(
-            `${this.name}-route53-record`,
+      const record = new aws.route53.Record(
+        `${this.name}-route53-record`,
+        {
+          type: 'A',
+          name: domain,
+          zoneId: hostedZoneId,
+          aliases: [
             {
-              type: 'A',
-              name: domain,
-              zoneId: hostedZoneId,
-              aliases: [
-                {
-                  name: this.lb.lb.dnsName,
-                  zoneId: this.lb.lb.zoneId,
-                  evaluateTargetHealth: true,
-                },
-              ],
+              name: this.lb.lb.dnsName,
+              zoneId: this.lb.lb.zoneId,
+              evaluateTargetHealth: true,
             },
-            { parent: this },
-          ),
-        ),
+          ],
+        },
+        { parent: this },
+      );
 
+      return {
+        primary: pulumi.output(record),
         sans: pulumi.output([]),
       };
     }
