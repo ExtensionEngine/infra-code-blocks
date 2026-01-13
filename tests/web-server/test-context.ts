@@ -5,10 +5,33 @@ import { ElasticLoadBalancingV2Client } from '@aws-sdk/client-elastic-load-balan
 import { ACMClient } from '@aws-sdk/client-acm';
 import { Route53Client } from '@aws-sdk/client-route-53';
 
-interface ConfigContext {
-  config: {
-    [key: string]: any;
+interface WebServerTestConfig {
+  webServerName: string;
+  healthCheckPath: string;
+  webServerImageName: string;
+  webServerPort: number;
+  webServerWithDomainConfig: {
+    primary: string;
   };
+  webServerWithSanCertificateConfig: {
+    primary: string;
+    sans: string[];
+  };
+  webServerWithCertificateConfig: {
+    primary: string;
+    sans: string[];
+  };
+  exponentialBackOffConfig: {
+    delayFirstAttempt: boolean;
+    numOfAttempts: number;
+    startingDelay: number;
+    timeMultiple: number;
+    jitter: 'full' | 'none';
+  };
+}
+
+interface ConfigContext {
+  config: WebServerTestConfig;
 }
 
 interface PulumiProgramContext {
