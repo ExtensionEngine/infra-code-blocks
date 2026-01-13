@@ -17,7 +17,12 @@ export function testWebServerWithDomain(ctx: WebServerTestContext) {
     const webServer = ctx.outputs.webServerWithDomain.value;
     const { primary } = ctx.config.webServerWithDomainConfig;
 
-    assert.ok(webServer.dnsRecord, 'DNS record should be configured');
+    assert.ok(webServer.dnsRecords, 'DNS records should be configured');
+    assert.strictEqual(
+      webServer.dnsRecords.length,
+      1,
+      'Should have exactly one DNS record',
+    );
     await assertDnsARecord(ctx, primary, webServer.lb.lb.dnsName);
   });
 
@@ -35,8 +40,12 @@ export function testWebServerWithDomain(ctx: WebServerTestContext) {
     const webServer = ctx.outputs.webServerWithSanCertificate.value;
     const { primary, sans } = ctx.config.webServerWithSanCertificateConfig;
 
-    assert.ok(webServer.dnsRecord, 'Primary DNS record should exist');
-    assert.ok(webServer.sanRecords, 'SAN records should exist');
+    assert.ok(webServer.dnsRecords, 'DNS records should exist');
+    assert.strictEqual(
+      webServer.dnsRecords.length,
+      1 + sans.length,
+      `Should have ${1 + sans.length} DNS records (1 primary + ${sans.length} SANs)`,
+    );
 
     await assertDnsARecord(ctx, primary, webServer.lb.lb.dnsName);
 
@@ -63,7 +72,12 @@ export function testWebServerWithDomain(ctx: WebServerTestContext) {
     const webServer = ctx.outputs.webServerWithCertificate.value;
     const { primary } = ctx.config.webServerWithCertificateConfig;
 
-    assert.ok(webServer.dnsRecord, 'DNS record should exist');
+    assert.ok(webServer.dnsRecords, 'DNS records should exist');
+    assert.strictEqual(
+      webServer.dnsRecords.length,
+      1,
+      'Should have exactly one DNS record',
+    );
     await assertDnsARecord(ctx, primary, webServer.lb.lb.dnsName);
   });
 
@@ -138,23 +152,14 @@ async function assertHealthCheckAccessible(
   ctx: WebServerTestContext,
   domain: string,
 ) {
-  return backOff(
-    async () => {
-      const response = await request(
-        `https://${domain}${ctx.config.healthCheckPath}`,
-      );
-      assert.strictEqual(
-        response.statusCode,
-        status.OK,
-        `Should receive 200 from ${domain}`,
-      );
-    },
-    {
-      delayFirstAttempt: true,
-      numOfAttempts: 10,
-      startingDelay: 2000,
-      timeMultiple: 2,
-      jitter: 'full',
-    },
-  );
+  return backOff(async () => {
+    const response = await request(
+      `https://${domain}${ctx.config.healthCheckPath}`,
+    );
+    assert.strictEqual(
+      response.statusCode,
+      status.OK,
+      `Should receive 200 from ${domain}`,
+    );
+  }, ctx.config.exponentialBackOffConfig);
 }

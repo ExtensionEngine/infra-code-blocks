@@ -7,6 +7,7 @@ import {
   webServerWithDomainConfig,
   webServerWithSanCertificateConfig,
   webServerWithCertificateConfig,
+  webServerImageName,
 } from './config';
 
 const stackName = pulumi.getStack();
@@ -52,7 +53,7 @@ const ecs = {
 };
 
 const webServer = new studion.WebServerBuilder(webServerName)
-  .configureWebServer('nginxdemos/nginx-hello:plain-text', 8080)
+  .configureWebServer(webServerImageName, 8080)
   .configureEcs(ecs)
   .withInitContainer(init)
   .withSidecarContainer(sidecar)
@@ -68,7 +69,7 @@ const hostedZone = aws.route53.getZoneOutput({
 });
 
 const webServerWithDomain = new studion.WebServerBuilder(`web-server-domain`)
-  .configureWebServer('nginxdemos/nginx-hello:plain-text', 8080)
+  .configureWebServer(webServerImageName, 8080)
   .configureEcs(ecs)
   .withVpc(vpc.vpc)
   .withCustomHealthCheckPath(healthCheckPath)
@@ -86,7 +87,7 @@ const sanWebServerCert = new studion.AcmCertificate(
 const webServerWithSanCertificate = new studion.WebServerBuilder(
   `web-server-san`,
 )
-  .configureWebServer('nginxdemos/nginx-hello:plain-text', 8080)
+  .configureWebServer(webServerImageName, 8080)
   .configureEcs(ecs)
   .withVpc(vpc.vpc)
   .withCustomHealthCheckPath(healthCheckPath)
@@ -99,7 +100,7 @@ const certWebServer = new studion.AcmCertificate(`${webServerName}-cert`, {
   hostedZoneId: hostedZone.zoneId,
 });
 const webServerWithCertificate = new studion.WebServerBuilder(`web-server-cert`)
-  .configureWebServer('nginxdemos/nginx-hello:plain-text', 8080)
+  .configureWebServer(webServerImageName, 8080)
   .configureEcs(ecs)
   .withVpc(vpc.vpc)
   .withCustomHealthCheckPath(healthCheckPath)
