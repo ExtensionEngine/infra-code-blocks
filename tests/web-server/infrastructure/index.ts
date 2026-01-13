@@ -1,5 +1,5 @@
-import { Project, next as studion } from '@studion/infra-code-blocks';
-import * as aws from '@pulumi/aws';
+import { next as studion } from '@studion/infra-code-blocks';
+import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
 import {
   webServerName,

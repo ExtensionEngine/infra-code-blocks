@@ -1,6 +1,6 @@
-import * as aws from '@pulumi/aws';
+import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
-import { Project, next as studion } from '@studion/infra-code-blocks';
+import { next as studion } from '@studion/infra-code-blocks';
 
 const appName = 'ecs-test';
 const stackName = pulumi.getStack();

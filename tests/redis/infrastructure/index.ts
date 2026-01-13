@@ -1,7 +1,7 @@
-import * as aws from '@pulumi/aws';
+import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
 import * as upstash from '@upstash/pulumi';
-import { Project, next as studion } from '@studion/infra-code-blocks';
+import { next as studion } from '@studion/infra-code-blocks';
 
 const appName = 'redis-test';
 const stackName = pulumi.getStack();
