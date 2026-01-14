@@ -1,5 +1,5 @@
 import * as pulumi from '@pulumi/pulumi';
-import * as aws from '@pulumi/aws';
+import * as aws from '@pulumi/aws-v7';
 import * as yaml from 'yaml';
 import { EcsService } from '../components/ecs-service';
 import { OTLPReceiver } from './otlp-receiver';

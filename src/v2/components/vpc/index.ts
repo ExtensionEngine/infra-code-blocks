@@ -1,7 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
-import * as awsx from '@pulumi/awsx';
+import * as awsx from '@pulumi/awsx-v3';
 import { commonTags } from '../../../constants';
-import { enums } from '@pulumi/awsx/types';
+import { enums } from '@pulumi/awsx-v3/types';
 
 export type VpcArgs = {
   /**

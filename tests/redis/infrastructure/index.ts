@@ -1,7 +1,7 @@
-import * as aws from '@pulumi/aws';
+import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
 import * as upstash from '@upstash/pulumi';
-import { Project, next as studion } from '@studion/infra-code-blocks';
+import { next as studion } from '@studion/infra-code-blocks';
 
 const appName = 'redis-test';
 const stackName = pulumi.getStack();
@@ -10,22 +10,29 @@ const tags = {
   Environment: stackName,
 };
 
-const project = new Project(appName, { services: [] });
+const parent = new pulumi.ComponentResource(
+  'studion:elasticache:TestGroup',
+  `${appName}-root`,
+);
+
+const vpc = new studion.Vpc(`${appName}-vpc`, {}, { parent });
 
 const defaultElastiCacheRedis = new studion.ElastiCacheRedis(
   `${appName}-default-elasticache`,
-  { vpc: project.vpc },
+  { vpc: vpc.vpc },
+  { parent },
 );
 
 const elastiCacheRedis = new studion.ElastiCacheRedis(
   `${appName}-elasticache`,
   {
-    vpc: project.vpc,
+    vpc: vpc.vpc,
     engineVersion: '6.x',
     nodeType: 'cache.t4g.micro',
     parameterGroupName: 'default.redis6.x',
     tags,
   },
+  { parent },
 );
 
 const cluster = new aws.ecs.Cluster(
@@ -34,7 +41,7 @@ const cluster = new aws.ecs.Cluster(
     name: `${appName}-cluster-${stackName}`,
     tags,
   },
-  { parent: project },
+  { parent },
 );
 
 const testClientContainer = {
@@ -95,12 +102,16 @@ const testClientContainer = {
   essential: true,
 };
 
-const testClient = new studion.EcsService(`${appName}-ec-client`, {
-  cluster,
-  vpc: project.vpc,
-  containers: [testClientContainer],
-  assignPublicIp: false,
-});
+const testClient = new studion.EcsService(
+  `${appName}-ec-client`,
+  {
+    cluster,
+    vpc: vpc.vpc,
+    containers: [testClientContainer],
+    assignPublicIp: false,
+  },
+  { parent },
+);
 
 let upstashRedis: studion.UpstashRedis | undefined;
 const upstashEmail = process.env.UPSTASH_EMAIL;
@@ -116,12 +127,12 @@ if (upstashEmail && upstashApiKey) {
     {
       dbName: `${appName}-upstash`,
     },
-    { provider: upstashProvider },
+    { provider: upstashProvider, parent },
   );
 }
 
 module.exports = {
-  project,
+  vpc,
   defaultElastiCacheRedis,
   elastiCacheRedis,
   cluster,
