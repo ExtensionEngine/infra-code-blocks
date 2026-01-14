@@ -13,7 +13,6 @@ const domainName = process.env.ICB_DOMAIN_NAME!;
 const certificate = new studion.AcmCertificate(`${appName}-certificate`, {
   domain: domainName,
   hostedZoneId: hostedZone.zoneId,
-  region: process.env.AWS_REGION,
 });
 
 const subDomainName = `app.${domainName}`;
@@ -32,4 +31,4 @@ const regionCertificate = new studion.AcmCertificate(`${appName}-region-cert`, {
   region: alternateRegion,
 });
 
-export { certificate, sanCertificate, hostedZone, regionCertificate };
+export { certificate, sanCertificate, regionCertificate, hostedZone };
