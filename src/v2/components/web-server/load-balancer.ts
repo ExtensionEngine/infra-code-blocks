@@ -1,14 +1,15 @@
 import * as pulumi from '@pulumi/pulumi';
-import * as aws from '@pulumi/aws';
-import * as awsx from '@pulumi/awsx';
+import * as aws from '@pulumi/aws-v7';
+import * as awsx from '@pulumi/awsx-v3';
 import { commonTags } from '../../../constants';
 
 export namespace WebServerLoadBalancer {
   export type Args = {
     vpc: pulumi.Input<awsx.ec2.Vpc>;
     port: pulumi.Input<number>;
-    certificate?: aws.acm.Certificate;
+    certificate?: pulumi.Input<aws.acm.Certificate>;
     healthCheckPath?: pulumi.Input<string>;
+    loadBalancingAlgorithmType?: pulumi.Input<string>;
   };
 }
 
@@ -58,7 +59,8 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
 
     this.name = name;
     const vpc = pulumi.output(args.vpc);
-    const { port, certificate, healthCheckPath } = args;
+    const { port, certificate, healthCheckPath, loadBalancingAlgorithmType } =
+      args;
 
     this.securityGroup = this.createLbSecurityGroup(vpc.vpcId);
 
@@ -80,6 +82,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
       port,
       vpc.vpcId,
       healthCheckPath,
+      loadBalancingAlgorithmType,
     );
     this.httpListener = this.createLbHttpListener(
       this.lb,
@@ -88,7 +91,11 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
     );
     this.tlsListener =
       certificate &&
-      this.createLbTlsListener(this.lb, this.targetGroup, certificate);
+      this.createLbTlsListener(
+        this.lb,
+        this.targetGroup,
+        pulumi.output(certificate),
+      );
 
     this.registerOutputs();
   }
@@ -96,7 +103,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
   private createLbTlsListener(
     lb: aws.lb.LoadBalancer,
     lbTargetGroup: aws.lb.TargetGroup,
-    certificate: aws.acm.Certificate,
+    certificate: pulumi.Output<aws.acm.Certificate>,
   ): aws.lb.Listener {
     return new aws.lb.Listener(
       `${this.name}-listener-443`,
@@ -104,7 +111,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
         loadBalancerArn: lb.arn,
         port: 443,
         protocol: 'HTTPS',
-        sslPolicy: 'ELBSecurityPolicy-2016-08',
+        sslPolicy: 'ELBSecurityPolicy-TLS13-1-2-2021-06',
         certificateArn: certificate.arn,
         defaultActions: [
           {
@@ -154,6 +161,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
     port: pulumi.Input<number>,
     vpcId: awsx.ec2.Vpc['vpcId'],
     healthCheckPath: pulumi.Input<string> | undefined,
+    loadBalancingAlgorithmType?: pulumi.Input<string>,
   ): aws.lb.TargetGroup {
     return new aws.lb.TargetGroup(
       `${this.name}-tg`,
@@ -163,6 +171,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
         protocol: 'HTTP',
         targetType: 'ip',
         vpcId,
+        loadBalancingAlgorithmType,
         healthCheck: {
           healthyThreshold: 3,
           unhealthyThreshold: 2,

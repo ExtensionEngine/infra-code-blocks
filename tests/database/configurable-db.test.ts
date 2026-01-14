@@ -7,80 +7,80 @@ import { DatabaseTestContext } from './test-context';
 import { it } from 'node:test';
 import { ListTagsForResourceCommand } from '@aws-sdk/client-rds';
 
-export function testCustomDb(ctx: DatabaseTestContext) {
+export function testConfigurableDb(ctx: DatabaseTestContext) {
   it('should properly configure instance', () => {
-    const customDb = ctx.outputs.customDb.value;
+    const configurableDb = ctx.outputs.configurableDb.value;
 
     assert.strictEqual(
-      customDb.instance.applyImmediately,
+      configurableDb.instance.applyImmediately,
       ctx.config.applyImmediately,
       'Apply immediately argument should be set correctly',
     );
     assert.strictEqual(
-      customDb.instance.allowMajorVersionUpgrade,
+      configurableDb.instance.allowMajorVersionUpgrade,
       ctx.config.allowMajorVersionUpgrade,
       'Allow major version upgrade argument should be set correctly',
     );
     assert.strictEqual(
-      customDb.instance.autoMinorVersionUpgrade,
+      configurableDb.instance.autoMinorVersionUpgrade,
       ctx.config.autoMinorVersionUpgrade,
       'Auto minor version upgrade argument should be set correctly',
     );
   });
 
   it('should properly configure password', () => {
-    const customDb = ctx.outputs.customDb.value;
+    const configurableDb = ctx.outputs.configurableDb.value;
 
-    assert.ok(customDb.password, 'Password should exist');
+    assert.ok(configurableDb.password, 'Password should exist');
     assert.strictEqual(
-      customDb.instance.masterUserPassword,
+      configurableDb.instance.masterUserPassword,
       ctx.config.dbPassword,
       'Master user password should be set correctly',
     );
   });
 
   it('should properly configure storage', () => {
-    const customDb = ctx.outputs.customDb.value;
+    const configurableDb = ctx.outputs.configurableDb.value;
 
     assert.strictEqual(
-      customDb.instance.allocatedStorage,
+      configurableDb.instance.allocatedStorage,
       ctx.config.allocatedStorage.toString(),
       'Allocated storage argument should be set correctly',
     );
     assert.strictEqual(
-      customDb.instance.maxAllocatedStorage,
+      configurableDb.instance.maxAllocatedStorage,
       ctx.config.maxAllocatedStorage,
       'Max allocated storage argument should be set correctly',
     );
   });
 
   it('should properly configure monitoring options', () => {
-    const customDb = ctx.outputs.customDb.value;
+    const configurableDb = ctx.outputs.configurableDb.value;
 
     assert.strictEqual(
-      customDb.instance.enablePerformanceInsights,
+      configurableDb.instance.enablePerformanceInsights,
       true,
       'Performance insights should be enabled',
     );
     assert.strictEqual(
-      customDb.instance.performanceInsightsRetentionPeriod,
+      configurableDb.instance.performanceInsightsRetentionPeriod,
       7,
       'Performance insights retention period should be set correctly',
     );
     assert.strictEqual(
-      customDb.instance.monitoringInterval,
+      configurableDb.instance.monitoringInterval,
       60,
       'Monitoring interval should be set correctly',
     );
     assert.ok(
-      customDb.instance.monitoringRoleArn,
+      configurableDb.instance.monitoringRoleArn,
       'Monitoring role ARN should exist',
     );
   });
 
   it('should create monitoring IAM role and attach correct policy', async () => {
-    const customDb = ctx.outputs.customDb.value;
-    const roleName = customDb.monitoringRole.name;
+    const configurableDb = ctx.outputs.configurableDb.value;
+    const roleName = configurableDb.monitoringRole.name;
 
     const roleCommand = new GetRoleCommand({
       RoleName: roleName,
@@ -105,33 +105,33 @@ export function testCustomDb(ctx: DatabaseTestContext) {
   });
 
   it('should properly configure kms', () => {
-    const customDb = ctx.outputs.customDb.value;
+    const configurableDb = ctx.outputs.configurableDb.value;
     const kms = ctx.outputs.kms.value;
 
-    assert.ok(customDb.kmsKeyId, 'Kms key id should exist');
+    assert.ok(configurableDb.kmsKeyId, 'Kms key id should exist');
     assert.strictEqual(
-      customDb.instance.kmsKeyId,
+      configurableDb.instance.kmsKeyId,
       kms.arn,
       'Kms key id should be set correctly',
     );
   });
 
   it('should properly configure parameter group', () => {
-    const customDb = ctx.outputs.customDb.value;
+    const configurableDb = ctx.outputs.configurableDb.value;
     const paramGroup = ctx.outputs.paramGroup.value;
 
     assert.strictEqual(
-      customDb.instance.dbParameterGroupName,
+      configurableDb.instance.dbParameterGroupName,
       paramGroup.name,
       'Parameter group name should be set correctly',
     );
   });
 
   it('should properly configure tags', async () => {
-    const customDb = ctx.outputs.customDb.value;
+    const configurableDb = ctx.outputs.configurableDb.value;
 
     const command = new ListTagsForResourceCommand({
-      ResourceName: customDb.instance.dbInstanceArn,
+      ResourceName: configurableDb.instance.dbInstanceArn,
     });
     const { TagList } = await ctx.clients.rds.send(command);
     assert.ok(TagList && TagList.length > 0, 'Tags should exist');

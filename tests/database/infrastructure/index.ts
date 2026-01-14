@@ -33,7 +33,7 @@ const paramGroup = new aws.rds.ParameterGroup(
   },
 );
 
-const customDb = new DatabaseBuilder(`${config.appName}-custom-db`)
+const configurableDb = new DatabaseBuilder(`${config.appName}-configurable-db`)
   .withInstance({
     dbName: config.dbName,
     applyImmediately: config.applyImmediately,
@@ -78,4 +78,12 @@ const snapshotDb = snapshot.apply(snapshot => {
     .build();
 });
 
-export { vpc, defaultDb, kms, paramGroup, customDb, snapshot, snapshotDb };
+export {
+  vpc,
+  defaultDb,
+  kms,
+  paramGroup,
+  configurableDb,
+  snapshot,
+  snapshotDb,
+};

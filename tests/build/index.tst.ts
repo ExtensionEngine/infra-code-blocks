@@ -1,5 +1,5 @@
-import * as aws from '@pulumi/aws';
-import * as awsx from '@pulumi/awsx';
+import * as aws from '@pulumi/aws-v7';
+import * as awsx from '@pulumi/awsx-v3';
 import { describe, expect, it } from 'tstyche';
 import { next as studion } from '@studion/infra-code-blocks';
 import { OtelCollector } from '../../dist/v2/otel';
@@ -53,7 +53,6 @@ describe('Build output', () => {
           cluster: new aws.ecs.Cluster('clusterName'),
           image: 'sample/image',
           port: 8080,
-          publicSubnetIds: ['sub-1', 'sub-2', 'sub-3'],
         });
       });
 
