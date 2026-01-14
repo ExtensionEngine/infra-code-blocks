@@ -1,3 +1,4 @@
+import { alternateRegion } from './infrastructure/config';
 import * as assert from 'node:assert';
 import * as automation from '../automation';
 import { InlineProgramArgs } from '@pulumi/pulumi/automation';
@@ -37,6 +38,7 @@ const ctx: AcmCertificateTestContext = {
   },
   clients: {
     acm: new ACMClient({ region }),
+    acmAlternateRegion: new ACMClient({ region: alternateRegion }),
     route53: new Route53Client({ region }),
   },
 };
@@ -46,7 +48,7 @@ describe('ACM Certificate component deployment', () => {
     ctx.outputs = await automation.deploy(programArgs);
   });
 
-  after(() => automation.destroy(programArgs));
+  // after(() => automation.destroy(programArgs));
 
   it('should create certificate with correct domain name', async () => {
     const certificate = ctx.outputs.certificate.value;
@@ -138,5 +140,22 @@ describe('ACM Certificate component deployment', () => {
       expectedDomains,
       'Certificate should include all expected domains',
     );
+  });
+
+  it('should create certificate in correct region', async () => {
+    const certificate = ctx.outputs.regionCertificate.value;
+    assert.ok(certificate.certificate, 'Should have certificate property');
+    assert.ok(certificate.certificate.arn, 'Certificate should have ARN');
+
+    return backOff(async () => {
+      const certResult = await ctx.clients.acmAlternateRegion.send(
+        new DescribeCertificateCommand({
+          CertificateArn: certificate.certificate.arn,
+        }),
+      );
+
+      const cert = certResult.Certificate;
+      assert.ok(cert, 'Certificate should exist');
+    }, ctx.config.exponentialBackOffConfig);
   });
 });

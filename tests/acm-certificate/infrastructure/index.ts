@@ -1,5 +1,6 @@
 import { next as studion } from '@studion/infra-code-blocks';
 import * as aws from '@pulumi/aws-v7';
+import { alternateRegion } from './config';
 
 const appName = 'acm-certificate-test';
 
@@ -25,4 +26,10 @@ const sanCertificate = new studion.AcmCertificate(
   },
 );
 
-export { certificate, sanCertificate, hostedZone };
+const regionCertificate = new studion.AcmCertificate(`${appName}-region-cert`, {
+  domain: `region.${domainName}`,
+  hostedZoneId: hostedZone.zoneId,
+  region: alternateRegion,
+});
+
+export { certificate, sanCertificate, hostedZone, regionCertificate };

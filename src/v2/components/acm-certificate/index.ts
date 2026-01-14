@@ -36,7 +36,11 @@ export class AcmCertificate extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    this.createCertValidationRecords(args.domain, args.hostedZoneId);
+    this.createCertValidationRecords(
+      args.domain,
+      args.hostedZoneId,
+      args.region,
+    );
 
     this.registerOutputs();
   }
@@ -44,6 +48,7 @@ export class AcmCertificate extends pulumi.ComponentResource {
   private createCertValidationRecords(
     domainName: AcmCertificate.Args['domain'],
     hostedZoneId: AcmCertificate.Args['hostedZoneId'],
+    region: AcmCertificate.Args['region'],
   ) {
     this.certificate.domainValidationOptions.apply(domains => {
       const validationRecords = domains.map(
@@ -69,6 +74,7 @@ export class AcmCertificate extends pulumi.ComponentResource {
         {
           certificateArn: this.certificate.arn,
           validationRecordFqdns: validationRecords.map(record => record.fqdn),
+          region,
         },
         { parent: this },
       );
