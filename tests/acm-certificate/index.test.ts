@@ -48,7 +48,7 @@ describe('ACM Certificate component deployment', () => {
     ctx.outputs = await automation.deploy(programArgs);
   });
 
-  // after(() => automation.destroy(programArgs));
+  after(() => automation.destroy(programArgs));
 
   it('should create certificate with correct domain name', async () => {
     const certificate = ctx.outputs.certificate.value;
@@ -142,7 +142,7 @@ describe('ACM Certificate component deployment', () => {
     );
   });
 
-  it('should create certificate in correct region', async () => {
+  it('should create certificate in alternate region', async () => {
     const certificate = ctx.outputs.regionCertificate.value;
     assert.ok(certificate.certificate, 'Should have certificate property');
     assert.ok(certificate.certificate.arn, 'Certificate should have ARN');
