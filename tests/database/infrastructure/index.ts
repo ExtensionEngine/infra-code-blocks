@@ -5,7 +5,7 @@ import { next as studion } from '@studion/infra-code-blocks';
 
 const vpc = new studion.Vpc(`${config.appName}-vpc`, {});
 
-const defaultDb = new DatabaseBuilder(`${config.appName}-default`)
+const defaultDb = new DatabaseBuilder(`${config.appName}-default-db`)
   .withInstance({
     dbName: config.dbName,
   })

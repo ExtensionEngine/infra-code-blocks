@@ -51,7 +51,7 @@ export function testEcsServiceWithStorage(ctx: EcsTestContext) {
 
   it('should create security group for EFS with correct rules', async () => {
     const ecsServiceWithStorage = ctx.outputs.ecsServiceWithStorage.value;
-    const vpc = ctx.outputs.project.value.vpc;
+    const vpc = ctx.outputs.vpc.value;
 
     const describeMountTargetsCommand = new DescribeMountTargetsCommand({
       FileSystemId: ecsServiceWithStorage.persistentStorage.fileSystem.id,
@@ -112,14 +112,14 @@ export function testEcsServiceWithStorage(ctx: EcsTestContext) {
       p => p.FromPort === 2049,
     );
     assert.ok(
-      nfsRule?.IpRanges?.some(range => range.CidrIp === vpc.vpc.cidrBlock),
+      nfsRule?.IpRanges?.some(range => range.CidrIp === vpc.vpc.vpc.cidrBlock),
       'Security group should allow access from VPC CIDR',
     );
   });
 
   it('should create mount targets in all private subnets', async () => {
     const ecsServiceWithStorage = ctx.outputs.ecsServiceWithStorage.value;
-    const vpc = ctx.outputs.project.value.vpc;
+    const vpc = ctx.outputs.vpc.value;
 
     const command = new DescribeMountTargetsCommand({
       FileSystemId: ecsServiceWithStorage.persistentStorage.fileSystem.id,
@@ -128,7 +128,7 @@ export function testEcsServiceWithStorage(ctx: EcsTestContext) {
 
     assert.ok(MountTargets, 'Mount targets should exist');
 
-    const privateSubnetIds = vpc.privateSubnetIds;
+    const privateSubnetIds = vpc.vpc.privateSubnetIds;
     assert.strictEqual(
       MountTargets.length,
       privateSubnetIds.length,

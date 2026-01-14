@@ -1,8 +1,9 @@
 import * as pulumi from '@pulumi/pulumi';
-import * as awsx from '@pulumi/awsx';
+import * as awsx from '@pulumi/awsx-v3';
 import { EcsService } from '../ecs-service';
 import { WebServer } from '.';
 import { OtelCollector } from '../../otel';
+import { AcmCertificate } from '../acm-certificate';
 
 export namespace WebServerBuilder {
   export type EcsConfig = Omit<WebServer.EcsConfig, 'vpc' | 'volumes'>;
@@ -10,7 +11,6 @@ export namespace WebServerBuilder {
   export type Args = Omit<
     WebServer.Args,
     | 'vpc'
-    | 'publicSubnetIds'
     | 'cluster'
     | 'volumes'
     | 'domain'
@@ -26,7 +26,9 @@ export class WebServerBuilder {
   private _ecsConfig?: WebServerBuilder.EcsConfig;
   private _domain?: pulumi.Input<string>;
   private _hostedZoneId?: pulumi.Input<string>;
+  private _certificate?: pulumi.Input<AcmCertificate>;
   private _healthCheckPath?: pulumi.Input<string>;
+  private _loadBalancingAlgorithmType?: pulumi.Input<string>;
   private _otelCollector?: pulumi.Input<OtelCollector>;
   private _initContainers: pulumi.Input<WebServer.InitContainer>[] = [];
   private _sidecarContainers: pulumi.Input<WebServer.SidecarContainer>[] = [];
@@ -87,6 +89,18 @@ export class WebServerBuilder {
     return this;
   }
 
+  public withCertificate(
+    certificate: WebServerBuilder.Args['certificate'],
+    hostedZoneId: pulumi.Input<string>,
+    domain?: pulumi.Input<string>,
+  ): this {
+    this._certificate = certificate;
+    this._hostedZoneId = hostedZoneId;
+    this._domain = domain;
+
+    return this;
+  }
+
   public withInitContainer(container: WebServer.InitContainer): this {
     this._initContainers.push(container);
 
@@ -109,6 +123,12 @@ export class WebServerBuilder {
     path: WebServer.Args['healthCheckPath'],
   ): this {
     this._healthCheckPath = path;
+
+    return this;
+  }
+
+  public withLoadBalancingAlgorithm(algorithm: pulumi.Input<string>) {
+    this._loadBalancingAlgorithmType = algorithm;
 
     return this;
   }
@@ -137,10 +157,11 @@ export class WebServerBuilder {
         ...this._container,
         vpc: this._vpc,
         volumes: this._volumes,
-        publicSubnetIds: this._vpc.publicSubnetIds,
         domain: this._domain,
         hostedZoneId: this._hostedZoneId,
+        certificate: this._certificate,
         healthCheckPath: this._healthCheckPath,
+        loadBalancingAlgorithmType: this._loadBalancingAlgorithmType,
         otelCollector: this._otelCollector,
         initContainers: this._initContainers,
         sidecarContainers: this._sidecarContainers,
