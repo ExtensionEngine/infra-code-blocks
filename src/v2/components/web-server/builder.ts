@@ -1,5 +1,5 @@
 import * as pulumi from '@pulumi/pulumi';
-import * as awsx from '@pulumi/awsx';
+import * as awsx from '@pulumi/awsx-v3';
 import { EcsService } from '../ecs-service';
 import { WebServer } from '.';
 import { OtelCollector } from '../../otel';
