@@ -77,8 +77,7 @@ export class WebServer extends pulumi.ComponentResource {
   sidecarContainers?: pulumi.Output<EcsService.Container[]>;
   volumes?: pulumi.Output<EcsService.PersistentStorageVolume[]>;
   certificate?: pulumi.Output<AcmCertificate>;
-  dnsRecord?: pulumi.Output<aws.route53.Record>;
-  sanRecords?: pulumi.Output<aws.route53.Record[]>;
+  dnsRecords?: pulumi.Output<aws.route53.Record[]>;
 
   constructor(
     name: string,
@@ -90,7 +89,7 @@ export class WebServer extends pulumi.ComponentResource {
 
     if ((domain || certificate) && !hostedZoneId) {
       throw new Error(
-        'WebServer: hostedZoneId must be provided when domain or certificate are provided',
+        'HostedZoneId must be provided when domain or certificate are provided',
       );
     }
 
@@ -133,13 +132,11 @@ export class WebServer extends pulumi.ComponentResource {
     );
 
     if (this.certificate) {
-      const dnsResult = this.createDnsRecords(
+      this.dnsRecords = this.createDnsRecords(
         this.certificate,
         hostedZoneId!,
         domain,
       );
-      this.dnsRecord = dnsResult.primary;
-      this.sanRecords = dnsResult.sans;
     }
 
     this.registerOutputs();
@@ -335,33 +332,26 @@ export class WebServer extends pulumi.ComponentResource {
     certificate: pulumi.Output<AcmCertificate>,
     hostedZoneId: pulumi.Input<string>,
     domain?: pulumi.Input<string>,
-  ): {
-    primary: pulumi.Output<aws.route53.Record>;
-    sans: pulumi.Output<aws.route53.Record[]>;
-  } {
+  ): pulumi.Output<aws.route53.Record[]> {
     if (domain) {
-      return {
-        primary: pulumi.output(
-          new aws.route53.Record(
-            `${this.name}-route53-record`,
+      const record = new aws.route53.Record(
+        `${this.name}-route53-record`,
+        {
+          type: 'A',
+          name: domain,
+          zoneId: hostedZoneId,
+          aliases: [
             {
-              type: 'A',
-              name: domain,
-              zoneId: hostedZoneId,
-              aliases: [
-                {
-                  name: this.lb.lb.dnsName,
-                  zoneId: this.lb.lb.zoneId,
-                  evaluateTargetHealth: true,
-                },
-              ],
+              name: this.lb.lb.dnsName,
+              zoneId: this.lb.lb.zoneId,
+              evaluateTargetHealth: true,
             },
-            { parent: this },
-          ),
-        ),
+          ],
+        },
+        { parent: this },
+      );
 
-        sans: pulumi.output([]),
-      };
+      return pulumi.output([record]);
     }
 
     const records = pulumi
@@ -375,7 +365,7 @@ export class WebServer extends pulumi.ComponentResource {
           ...(sans || []).filter(san => san !== primaryDomain),
         ];
 
-        const allRecords = allDomains.map(
+        return allDomains.map(
           (domain, index) =>
             new aws.route53.Record(
               `${this.name}-route53-record${index === 0 ? '' : `-${index}`}`,
@@ -394,16 +384,8 @@ export class WebServer extends pulumi.ComponentResource {
               { parent: this },
             ),
         );
-
-        return {
-          primaryRecord: allRecords[0],
-          sanRecords: allRecords.slice(1),
-        };
       });
 
-    return {
-      primary: records.primaryRecord,
-      sans: records.sanRecords,
-    };
+    return records;
   }
 }

@@ -10,11 +10,17 @@ const tags = {
   Environment: stackName,
 };
 
-const vpc = new studion.Vpc(`${appName}-vpc`, {});
+const parent = new pulumi.ComponentResource(
+  'studion:elasticache:TestGroup',
+  `${appName}-root`,
+);
+
+const vpc = new studion.Vpc(`${appName}-vpc`, {}, { parent });
 
 const defaultElastiCacheRedis = new studion.ElastiCacheRedis(
   `${appName}-default-elasticache`,
   { vpc: vpc.vpc },
+  { parent },
 );
 
 const elastiCacheRedis = new studion.ElastiCacheRedis(
@@ -26,6 +32,7 @@ const elastiCacheRedis = new studion.ElastiCacheRedis(
     parameterGroupName: 'default.redis6.x',
     tags,
   },
+  { parent },
 );
 
 const cluster = new aws.ecs.Cluster(
@@ -34,7 +41,7 @@ const cluster = new aws.ecs.Cluster(
     name: `${appName}-cluster-${stackName}`,
     tags,
   },
-  { parent: vpc },
+  { parent },
 );
 
 const testClientContainer = {
@@ -95,12 +102,16 @@ const testClientContainer = {
   essential: true,
 };
 
-const testClient = new studion.EcsService(`${appName}-ec-client`, {
-  cluster,
-  vpc: vpc.vpc,
-  containers: [testClientContainer],
-  assignPublicIp: false,
-});
+const testClient = new studion.EcsService(
+  `${appName}-ec-client`,
+  {
+    cluster,
+    vpc: vpc.vpc,
+    containers: [testClientContainer],
+    assignPublicIp: false,
+  },
+  { parent },
+);
 
 let upstashRedis: studion.UpstashRedis | undefined;
 const upstashEmail = process.env.UPSTASH_EMAIL;
@@ -116,7 +127,7 @@ if (upstashEmail && upstashApiKey) {
     {
       dbName: `${appName}-upstash`,
     },
-    { provider: upstashProvider },
+    { provider: upstashProvider, parent },
   );
 }
 

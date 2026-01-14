@@ -125,19 +125,18 @@ describe('ACM Certificate component deployment', () => {
       }),
     );
     const cert = certResult.Certificate;
-    const sans = cert?.SubjectAlternativeNames || [];
+    const sans = new Set(cert?.SubjectAlternativeNames ?? []);
 
-    const expectedDomains = [
+    const expectedDomains = new Set([
       ctx.config.subDomainName,
       `api.${ctx.config.subDomainName}`,
       `test.${ctx.config.subDomainName}`,
-    ];
+    ]);
 
-    expectedDomains.forEach(expectedDomain => {
-      assert.ok(
-        sans.includes(expectedDomain),
-        `Certificate should include: ${expectedDomain}`,
-      );
-    });
+    assert.deepStrictEqual(
+      sans,
+      expectedDomains,
+      'Certificate should include all expected domains',
+    );
   });
 });
