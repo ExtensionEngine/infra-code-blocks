@@ -1,6 +1,6 @@
-import * as aws from '@pulumi/aws';
+import * as aws from '@pulumi/aws-v7';
 import * as awsNative from '@pulumi/aws-native';
-import * as awsx from '@pulumi/awsx';
+import * as awsx from '@pulumi/awsx-v3';
 import * as pulumi from '@pulumi/pulumi';
 import { Password } from '../../../components/password';
 import { commonTags } from '../../../constants';
