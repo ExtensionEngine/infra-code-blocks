@@ -4,7 +4,7 @@ import { DatabaseBuilder } from '../../../dist/v2/components/database/builder';
 
 const vpc = new studion.Vpc(`${appName}-vpc`, {});
 
-const defaultDb = new DatabaseBuilder(`${appName}-default`)
+const defaultDb = new DatabaseBuilder(`${appName}-default-db`)
   .withInstance({
     dbName,
   })

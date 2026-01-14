@@ -3,7 +3,7 @@ import {
   DescribeDBSnapshotsCommand,
 } from '@aws-sdk/client-rds';
 import { createSpinner } from 'nanospinner';
-import { DatabaseTestContext } from '../test-context';
+import { DatabaseTestContext } from './test-context';
 
 export async function cleanupSnapshots(ctx: DatabaseTestContext) {
   const spinner = createSpinner('Deleting snapshots...').start();
