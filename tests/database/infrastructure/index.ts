@@ -15,7 +15,7 @@ const defaultDb = new DatabaseBuilder(`${config.appName}-default-db`)
   .withVpc(vpc.vpc)
   .build();
 
-const kms = new aws.kms.Key(`${config.appName}-kms`, {
+const kms = new aws.kms.Key(`${config.appName}-kms-key`, {
   description: `${config.appName} RDS encryption key`,
   customerMasterKeySpec: 'SYMMETRIC_DEFAULT',
   isEnabled: true,
