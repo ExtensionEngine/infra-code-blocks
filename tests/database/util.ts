@@ -8,7 +8,7 @@ import { DatabaseTestContext } from './test-context';
 export async function cleanupSnapshots(ctx: DatabaseTestContext) {
   const spinner = createSpinner('Deleting snapshots...').start();
 
-  const dbs = [ctx.outputs.defaultDb.value, ctx.outputs.customDb.value];
+  const dbs = [ctx.outputs.defaultDb.value, ctx.outputs.configurableDb.value];
   await Promise.all(
     dbs.map(db => deleteSnapshot(ctx, db.instance.dbInstanceIdentifier)),
   );

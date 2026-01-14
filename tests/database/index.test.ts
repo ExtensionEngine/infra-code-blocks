@@ -23,7 +23,7 @@ import { it } from 'node:test';
 import { KMSClient } from '@aws-sdk/client-kms';
 import { RDSClient } from '@aws-sdk/client-rds';
 import { requireEnv } from '../util';
-import { testCustomDb } from './custom-db.test';
+import { testConfigurableDb } from './configurable-db.test';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -206,5 +206,5 @@ describe('Database component deployment', () => {
     );
   });
 
-  describe('Custom database', () => testCustomDb(ctx));
+  describe('With configurable options', () => testConfigurableDb(ctx));
 });
