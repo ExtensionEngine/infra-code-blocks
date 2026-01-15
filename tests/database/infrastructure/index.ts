@@ -1,9 +1,15 @@
 import * as aws from '@pulumi/aws';
 import * as config from './config';
+import * as pulumi from '@pulumi/pulumi';
 import { DatabaseBuilder } from '../../../dist/v2/components/database/builder';
 import { next as studion } from '@studion/infra-code-blocks';
 
-const vpc = new studion.Vpc(`${config.appName}-vpc`, {});
+const parent = new pulumi.ComponentResource(
+  'studion:database:TestGroup',
+  `${config.appName}-root`,
+);
+
+const vpc = new studion.Vpc(`${config.appName}-vpc`, {}, { parent });
 
 const defaultDb = new DatabaseBuilder(`${config.appName}-default-db`)
   .withInstance({
@@ -13,17 +19,21 @@ const defaultDb = new DatabaseBuilder(`${config.appName}-default-db`)
     username: config.dbUsername,
   })
   .withVpc(vpc.vpc)
-  .build();
+  .build({ parent });
 
-const kms = new aws.kms.Key(`${config.appName}-kms-key`, {
-  description: `${config.appName} RDS encryption key`,
-  customerMasterKeySpec: 'SYMMETRIC_DEFAULT',
-  isEnabled: true,
-  keyUsage: 'ENCRYPT_DECRYPT',
-  multiRegion: false,
-  enableKeyRotation: true,
-  tags: config.tags,
-});
+const kms = new aws.kms.Key(
+  `${config.appName}-kms-key`,
+  {
+    description: `${config.appName} RDS encryption key`,
+    customerMasterKeySpec: 'SYMMETRIC_DEFAULT',
+    isEnabled: true,
+    keyUsage: 'ENCRYPT_DECRYPT',
+    multiRegion: false,
+    enableKeyRotation: true,
+    tags: config.tags,
+  },
+  { parent },
+);
 
 const paramGroup = new aws.rds.ParameterGroup(
   `${config.appName}-parameter-group`,
@@ -31,6 +41,7 @@ const paramGroup = new aws.rds.ParameterGroup(
     family: 'postgres17',
     tags: config.tags,
   },
+  { parent },
 );
 
 const configurableDb = new DatabaseBuilder(`${config.appName}-configurable-db`)
@@ -53,7 +64,7 @@ const configurableDb = new DatabaseBuilder(`${config.appName}-configurable-db`)
   .withKms(kms.arn)
   .withParameterGroup(paramGroup.name)
   .withTags(config.tags)
-  .build();
+  .build({ parent });
 
 const snapshot = defaultDb.instance.dbInstanceIdentifier.apply(
   dbInstanceIdentifier => {
