@@ -1,8 +1,14 @@
 import { appName, dbName, dbUsername } from './config';
+import * as pulumi from '@pulumi/pulumi';
 import { next as studion } from '@studion/infra-code-blocks';
 import { DatabaseBuilder } from '../../../dist/v2/components/database/builder';
 
-const vpc = new studion.Vpc(`${appName}-vpc`, {});
+const parent = new pulumi.ComponentResource(
+  'studion:database:TestGroup',
+  `${appName}-root`,
+);
+
+const vpc = new studion.Vpc(`${appName}-vpc`, {}, { parent });
 
 const defaultDb = new DatabaseBuilder(`${appName}-default-db`)
   .withInstance({
@@ -12,6 +18,6 @@ const defaultDb = new DatabaseBuilder(`${appName}-default-db`)
     username: dbUsername,
   })
   .withVpc(vpc.vpc)
-  .build();
+  .build({ parent });
 
 export { vpc, defaultDb };
