@@ -24,6 +24,7 @@ interface PulumiProgramContext {
 interface AwsContext {
   clients: {
     acm: ACMClient;
+    acmAlternateRegion: ACMClient;
     route53: Route53Client;
   };
 }

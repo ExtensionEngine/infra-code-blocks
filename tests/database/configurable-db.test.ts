@@ -139,7 +139,11 @@ export function testConfigurableDb(ctx: DatabaseTestContext) {
     Object.entries(ctx.config.tags).map(([Key, Value]) => {
       const tag = TagList.find(tag => tag.Key === Key);
       assert.ok(tag, `${Key} tag should exist`);
-      assert.strictEqual(tag.Value, Value, `${Key} tag should set correctly`);
+      assert.strictEqual(
+        tag.Value,
+        Value,
+        `${Key} tag should be set correctly`,
+      );
     });
   });
 }
