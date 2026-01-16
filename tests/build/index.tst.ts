@@ -4,6 +4,8 @@ import { describe, expect, it } from 'tstyche';
 import { next as studion } from '@studion/infra-code-blocks';
 import { OtelCollector } from '../../dist/v2/otel';
 import { OtelCollectorBuilder } from '../../dist/v2/otel/builder';
+import { Database } from '../../dist/v2/components/database';
+import { DatabaseBuilder } from '../../dist/v2/components/database/builder';
 
 describe('Build output', () => {
   describe('ECS Service', () => {
@@ -254,6 +256,89 @@ describe('Build output', () => {
 
       it('should have withTracesPipeline method', () => {
         expect(builder.withTracesPipeline).type.toBeCallableWith([], [], []);
+      });
+    });
+  });
+
+  describe('Database', () => {
+    it.skip('should export Database', () => {
+      expect(studion).type.toHaveProperty('Database');
+    });
+
+    it.skip('should export DatabaseBuilder', () => {
+      expect(studion).type.toHaveProperty('DatabaseBuilder');
+    });
+
+    describe('Instantiation', () => {
+      it('should construct Database', () => {
+        expect(Database).type.toBeConstructableWith('db-test', {
+          vpc: new awsx.ec2.Vpc('vpcName'),
+          dbName: 'dbName',
+          username: 'username',
+        });
+      });
+
+      it('should construct DatabaseBuilder', () => {
+        expect(DatabaseBuilder).type.toBeConstructableWith('db-test');
+      });
+    });
+
+    describe('Builder', () => {
+      const builder = new DatabaseBuilder('db-test');
+
+      it('should have build method', () => {
+        expect(builder.build).type.toBeCallableWith();
+      });
+
+      it('should have withInstance method', () => {
+        expect(builder.withInstance).type.toBeCallableWith({
+          dbName: 'dbName',
+        });
+      });
+
+      it('should have withCredentials method', () => {
+        expect(builder.withCredentials).type.toBeCallableWith({
+          username: 'username',
+          password: 'password',
+        });
+      });
+
+      it('should have withStorage method', () => {
+        expect(builder.withStorage).type.toBeCallableWith({
+          allocatedStorage: 50,
+          maxAllocatedStorage: 200,
+        });
+      });
+
+      it('should have withVpc method', () => {
+        expect(builder.withVpc).type.toBeCallableWith(
+          new awsx.ec2.Vpc('vpcName'),
+        );
+      });
+
+      it('should have withMonitoring method', () => {
+        expect(builder.withMonitoring).type.toBeCallableWith();
+      });
+
+      it('should have withSnapshot method', () => {
+        expect(builder.withSnapshot).type.toBeCallableWith('snapshot-id');
+      });
+
+      it('should have withKms method', () => {
+        expect(builder.withKms).type.toBeCallableWith('kms-key-id');
+      });
+
+      it('should have withParameterGroup method', () => {
+        expect(builder.withParameterGroup).type.toBeCallableWith(
+          'parameter-group-name',
+        );
+      });
+
+      it('should have withTags method', () => {
+        expect(builder.withTags).type.toBeCallableWith({
+          Project: 'db-test',
+          Environment: 'dev',
+        });
       });
     });
   });
