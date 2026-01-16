@@ -1,7 +1,7 @@
 import { appName, dbName, dbUsername } from './config';
 import * as pulumi from '@pulumi/pulumi';
 import { next as studion } from '@studion/infra-code-blocks';
-import { DatabaseBuilder } from '../../../dist/v2/components/database/builder';
+import { DatabaseBuilder } from '../../../src/v2/components/database/builder';
 
 const parent = new pulumi.ComponentResource(
   'studion:database:TestGroup',
