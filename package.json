@@ -29,7 +29,7 @@
     "build": "npm run clean && tsc -b src",
     "format": "prettier -w .",
     "release": "release-it --only-version",
-    "test": "TS_NODE_PROJECT=tests node --test --test-concurrency=1 -r ts-node/register tests/**[!build]/index.test.ts",
+    "test": "TS_NODE_PROJECT=tests node --test --test-concurrency=2 -r ts-node/register tests/**/index.test.ts",
     "test:build": "npm run build && tstyche build",
     "prepare": "husky"
   },
