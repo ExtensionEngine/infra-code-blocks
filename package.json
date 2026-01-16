@@ -36,8 +36,8 @@
   "prettier": "@studion/prettier-config",
   "dependencies": {
     "@pulumi/aws": "^6.66.3",
-    "@pulumi/aws-v7": "npm:@pulumi/aws@^7.15.0",
     "@pulumi/aws-native": "^1.38.0",
+    "@pulumi/aws-v7": "npm:@pulumi/aws@^7.15.0",
     "@pulumi/awsx": "^2.21.0",
     "@pulumi/awsx-v3": "npm:@pulumi/awsx@^3.1.0",
     "@pulumi/pulumi": "^3.146.0",
@@ -55,7 +55,7 @@
     "@aws-sdk/client-efs": "^3.758.0",
     "@aws-sdk/client-elastic-load-balancing-v2": "^3.764.0",
     "@aws-sdk/client-elasticache": "^3.901.0",
-    "@aws-sdk/client-iam": "^3.952.0",
+    "@aws-sdk/client-iam": "^3.970.0",
     "@aws-sdk/client-kms": "^3.943.0",
     "@aws-sdk/client-rds": "^3.943.0",
     "@aws-sdk/client-route-53": "^3.782.0",
