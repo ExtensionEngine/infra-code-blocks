@@ -83,7 +83,7 @@ describe('OtelCollectorConfigBuilder', () => {
 
   it('withBatchProcessor should use provided parameters', () => {
     const result = new OtelCollectorConfigBuilder()
-      .withBatchProcessor(5000, 8000, '10s')
+      .withBatchProcessor('batch', 5000, 8000, '10s')
       .build();
 
     assert.deepStrictEqual(result.processors.batch, {
@@ -270,7 +270,12 @@ describe('OtelCollectorConfigBuilder', () => {
         },
       },
       processors: {
-        batch: defaultBatchConfig,
+        'batch/metrics': defaultBatchConfig,
+        'batch/traces': {
+          send_batch_max_size: 5000,
+          send_batch_size: 2000,
+          timeout: '2s',
+        },
         memory_limiter: defaultMemoryLimiterConfig,
       },
       exporters: {
@@ -293,12 +298,12 @@ describe('OtelCollectorConfigBuilder', () => {
         pipelines: {
           metrics: {
             receivers: ['otlp'],
-            processors: ['memory_limiter', 'batch'],
+            processors: ['memory_limiter', 'batch/metrics'],
             exporters: ['prometheusremotewrite'],
           },
           traces: {
             receivers: ['otlp'],
-            processors: ['memory_limiter', 'batch'],
+            processors: ['memory_limiter', 'batch/traces'],
             exporters: ['awsxray'],
           },
         },
