@@ -5,11 +5,17 @@ import {
   OutputMap,
 } from '@pulumi/pulumi/automation';
 import { createSpinner } from 'nanospinner';
+import { requireEnv } from './util';
 
-export async function deploy(args: InlineProgramArgs): Promise<OutputMap> {
+export async function deploy(
+  args: InlineProgramArgs,
+  region?: string,
+): Promise<OutputMap> {
   const spinner = createSpinner('Deploying stack...').start();
   const stack = await LocalWorkspace.createOrSelectStack(args);
-  await stack.setConfig('aws:region', { value: 'us-east-2' });
+  await stack.setConfig('aws:region', {
+    value: region ?? requireEnv('AWS_REGION'),
+  });
   const up = await stack.up({ logToStdErr: true });
   spinner.success({ text: 'Stack deployed' });
 
