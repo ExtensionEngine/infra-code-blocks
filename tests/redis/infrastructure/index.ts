@@ -126,7 +126,7 @@ const upstashRedis = new studion.UpstashRedis(
   { provider: upstashProvider, parent },
 );
 
-module.exports = {
+export {
   vpc,
   defaultElastiCacheRedis,
   elastiCacheRedis,
