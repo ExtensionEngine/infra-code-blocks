@@ -92,6 +92,17 @@ const snapshotDb = snapshot.apply(snapshot => {
     .build({ parent });
 });
 
+const replicaDb = new studion.DatabaseBuilder(`${config.appName}-replica`)
+  .withInstance({
+    dbName: config.dbName,
+  })
+  .withCredentials({
+    username: config.dbUsername,
+  })
+  .withReplica()
+  .withVpc(vpc.vpc)
+  .build({ parent });
+
 export {
   vpc,
   defaultDb,
@@ -100,4 +111,5 @@ export {
   configurableDb,
   snapshot,
   snapshotDb,
+  replicaDb,
 };
