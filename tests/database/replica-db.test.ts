@@ -7,13 +7,17 @@ export function testReplicaDb(ctx: DatabaseTestContext) {
     const replicaDb = ctx.outputs.replicaDb.value;
 
     assert.ok(replicaDb.replica, 'Replica should be defined');
+
+    const dbInstance = replicaDb.instance;
+    const replicaInstance = replicaDb.replica.instance;
+
     assert.strictEqual(
-      replicaDb.replica.instance.sourceDbInstanceIdentifier,
-      replicaDb.instance.dbInstanceIdentifier,
+      replicaInstance.sourceDbInstanceIdentifier,
+      dbInstance.dbInstanceIdentifier,
       'Replica instance should have correct source db instance identifier',
     );
 
-    const { readReplicaDbInstanceIdentifiers } = replicaDb.instance;
+    const { readReplicaDbInstanceIdentifiers } = dbInstance;
     assert.ok(
       readReplicaDbInstanceIdentifiers &&
         readReplicaDbInstanceIdentifiers.length === 1,
@@ -22,7 +26,7 @@ export function testReplicaDb(ctx: DatabaseTestContext) {
     const [readReplicaDbInstanceIdentifier] = readReplicaDbInstanceIdentifiers;
     assert.strictEqual(
       readReplicaDbInstanceIdentifier,
-      replicaDb.replica.instance.dbInstanceIdentifier,
+      replicaInstance.dbInstanceIdentifier,
       'Database instance should have correct replica associated',
     );
   });
