@@ -10,7 +10,7 @@ const parent = new pulumi.ComponentResource(
 
 const vpc = new studion.Vpc(`${config.appName}-vpc`, {}, { parent });
 
-const defaultDb = new studion.DatabaseBuilder(`${config.appName}-default-db`)
+const defaultDb = new studion.DatabaseBuilder(`${config.appName}-default`)
   .withInstance({
     dbName: config.dbName,
   })
@@ -44,7 +44,7 @@ const paramGroup = new aws.rds.ParameterGroup(
 );
 
 const configurableDb = new studion.DatabaseBuilder(
-  `${config.appName}-configurable-db`,
+  `${config.appName}-configurable`,
 )
   .withInstance({
     dbName: config.dbName,
@@ -82,7 +82,7 @@ const snapshot = defaultDb.instance.dbInstanceIdentifier.apply(
 );
 
 const snapshotDb = snapshot.apply(snapshot => {
-  return new studion.DatabaseBuilder(`${config.appName}-snapshot-db`)
+  return new studion.DatabaseBuilder(`${config.appName}-snapshot`)
     .withInstance({
       applyImmediately: true,
     })
