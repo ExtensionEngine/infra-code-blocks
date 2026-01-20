@@ -69,11 +69,10 @@ const configurableDb = new studion.DatabaseBuilder(
 
 const snapshot = defaultDb.instance.dbInstanceIdentifier.apply(
   dbInstanceIdentifier => {
-    if (!dbInstanceIdentifier) return;
     return new aws.rds.Snapshot(
       `${config.appName}-snapshot`,
       {
-        dbInstanceIdentifier: dbInstanceIdentifier,
+        dbInstanceIdentifier: dbInstanceIdentifier!,
         dbSnapshotIdentifier: `${config.appName}-snapshot-id`,
         tags: config.tags,
       },
@@ -83,7 +82,6 @@ const snapshot = defaultDb.instance.dbInstanceIdentifier.apply(
 );
 
 const snapshotDb = snapshot.apply(snapshot => {
-  if (!snapshot) return;
   return new studion.DatabaseBuilder(`${config.appName}-snapshot-db`)
     .withInstance({
       applyImmediately: true,
