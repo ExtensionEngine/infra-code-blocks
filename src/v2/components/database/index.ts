@@ -2,6 +2,7 @@ import * as aws from '@pulumi/aws-v7';
 import * as awsNative from '@pulumi/aws-native';
 import * as awsx from '@pulumi/awsx-v3';
 import * as pulumi from '@pulumi/pulumi';
+import { DatabaseReplica } from './database-replica';
 import { Password } from '../../../components/password';
 import { commonTags } from '../../../constants';
 
@@ -34,6 +35,7 @@ export namespace Database {
       snapshotIdentifier?: pulumi.Input<string>;
       parameterGroupName?: pulumi.Input<string>;
       kmsKeyId?: pulumi.Input<string>;
+      createReplica?: pulumi.Input<boolean>;
       tags?: pulumi.Input<{
         [key: string]: pulumi.Input<string>;
       }>;
@@ -62,6 +64,7 @@ export class Database extends pulumi.ComponentResource {
   kmsKeyId: pulumi.Output<string>;
   monitoringRole?: aws.iam.Role;
   encryptedSnapshotCopy?: aws.rds.SnapshotCopy;
+  replica?: pulumi.Output<DatabaseReplica>;
 
   constructor(
     name: string,
@@ -100,6 +103,10 @@ export class Database extends pulumi.ComponentResource {
     }
 
     this.instance = this.createDatabaseInstance(argsWithDefaults);
+
+    if (args.createReplica) {
+      this.replica = this.createDatabaseReplica();
+    }
 
     this.registerOutputs();
   }
@@ -203,6 +210,23 @@ export class Database extends pulumi.ComponentResource {
       },
       { parent: this },
     );
+  }
+
+  private createDatabaseReplica() {
+    const replica = this.instance.dbInstanceIdentifier.apply(
+      dbInstanceIdentifier => {
+        return new DatabaseReplica(
+          `${this.name}-replica`,
+          {
+            sourceDbInstanceIdentifier: dbInstanceIdentifier!,
+            dbSecurityGroupId: this.dbSecurityGroup.id,
+          },
+          { parent: this },
+        );
+      },
+    );
+
+    return replica;
   }
 
   private createDatabaseInstance(args: Database.Args) {

@@ -12,6 +12,7 @@ export class DatabaseBuilder {
   private kmsKeyId?: Database.Args['kmsKeyId'];
   private parameterGroupName?: Database.Args['parameterGroupName'];
   private tags?: Database.Args['tags'];
+  private createReplica?: Database.Args['createReplica'];
 
   constructor(name: string) {
     this.name = name;
@@ -75,6 +76,12 @@ export class DatabaseBuilder {
     return this;
   }
 
+  public withReplica(): this {
+    this.createReplica = true;
+
+    return this;
+  }
+
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
     if (!this.snapshotIdentifier && !this.instanceConfig?.dbName) {
       throw new Error(
@@ -114,6 +121,7 @@ export class DatabaseBuilder {
         kmsKeyId: this.kmsKeyId,
         parameterGroupName: this.parameterGroupName,
         tags: this.tags,
+        createReplica: this.createReplica,
       },
       opts,
     );
