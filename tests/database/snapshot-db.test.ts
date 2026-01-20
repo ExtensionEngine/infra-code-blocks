@@ -9,23 +9,23 @@ export function testSnapshotDb(ctx: DatabaseTestContext) {
 
     assert.ok(
       snapshotDb.encryptedSnapshotCopy,
-      'Encrtyped snapshot copy should exist',
+      'Encrypted snapshot copy should exist',
     );
 
     assert.strictEqual(
       snapshotDb.encryptedSnapshotCopy.sourceDbSnapshotIdentifier,
       snapshot.dbSnapshotArn,
-      'Encrtyped snapshot copy should have correct source db snapshot identifier',
+      'Encrypted snapshot copy should have correct source db snapshot identifier',
     );
     assert.strictEqual(
       snapshotDb.encryptedSnapshotCopy.targetDbSnapshotIdentifier,
       `${snapshot.id}-encrypted-copy`,
-      'Encrtyped snapshot copy should have the correct target db snapshot identifier',
+      'Encrypted snapshot copy should have the correct target db snapshot identifier',
     );
     assert.strictEqual(
       snapshotDb.encryptedSnapshotCopy.kmsKeyId,
       snapshotDb.kmsKeyId,
-      'Encrtyped snapshot copy should have the correct ksm key id',
+      'Encrypted snapshot copy should have the correct ksm key id',
     );
   });
 
