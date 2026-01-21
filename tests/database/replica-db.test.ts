@@ -1,5 +1,6 @@
 import * as assert from 'node:assert';
 import { DatabaseTestContext } from './test-context';
+import { DescribeDBInstancesCommand } from '@aws-sdk/client-rds';
 import { it } from 'node:test';
 
 export function testReplicaDb(ctx: DatabaseTestContext) {
@@ -17,17 +18,27 @@ export function testReplicaDb(ctx: DatabaseTestContext) {
       'Replica instance should have correct source db instance identifier',
     );
 
-    const { readReplicaDbInstanceIdentifiers } = dbInstance;
+    const command = new DescribeDBInstancesCommand({
+      DBInstanceIdentifier: dbInstance.dbInstanceIdentifier,
+    });
+
+    const { DBInstances } = await ctx.clients.rds.send(command);
     assert.ok(
-      readReplicaDbInstanceIdentifiers &&
-        readReplicaDbInstanceIdentifiers.length === 1,
+      DBInstances && DBInstances.length === 1,
+      'Database instance should be created',
+    );
+    const [DBInstance] = DBInstances;
+    const { ReadReplicaDBInstanceIdentifiers } = DBInstance;
+    assert.ok(
+      ReadReplicaDBInstanceIdentifiers &&
+        ReadReplicaDBInstanceIdentifiers.length === 1,
       'Database instance should have associated read replica instance',
     );
-    const [readReplicaDbInstanceIdentifier] = readReplicaDbInstanceIdentifiers;
+    const [ReadReplicaDBInstanceIdentifier] = ReadReplicaDBInstanceIdentifiers;
     assert.strictEqual(
-      readReplicaDbInstanceIdentifier,
+      ReadReplicaDBInstanceIdentifier,
       replicaInstance.dbInstanceIdentifier,
-      'Database instance should have correct replica associated',
+      'Database instance should have correct replica instance associated',
     );
   });
 }
