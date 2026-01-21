@@ -18,8 +18,8 @@ const programArgs: InlineProgramArgs = {
 };
 
 const region = requireEnv('AWS_REGION');
-const hasUpstashCredentials =
-  process.env.UPSTASH_EMAIL && process.env.UPSTASH_API_KEY;
+requireEnv('UPSTASH_EMAIL');
+requireEnv('UPSTASH_API_KEY');
 const ctx: RedisTestContext = {
   outputs: {},
   config: {
@@ -52,11 +52,5 @@ describe('Redis component deployment', () => {
   after(() => automation.destroy(programArgs));
 
   describe('ElastiCache Redis', () => testElastiCacheRedis(ctx));
-  if (hasUpstashCredentials) {
-    describe('Upstash Redis', () => testUpstashRedis(ctx));
-  } else {
-    console.log(
-      'Skipping Upstash redis tests, Upstash credentials were not provided...',
-    );
-  }
+  describe('Upstash Redis', () => testUpstashRedis(ctx));
 });

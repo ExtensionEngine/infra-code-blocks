@@ -2,9 +2,9 @@ import * as aws from '@pulumi/aws-v7';
 import * as awsNative from '@pulumi/aws-native';
 import * as awsx from '@pulumi/awsx-v3';
 import * as pulumi from '@pulumi/pulumi';
-import { DatabaseReplica } from './database-replica';
-import { Password } from '../../../components/password';
 import { commonTags } from '../../../constants';
+import { DatabaseReplica } from './database-replica';
+import { Password } from '../password';
 
 export namespace Database {
   export type Instance = {

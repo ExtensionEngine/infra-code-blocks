@@ -113,23 +113,13 @@ const testClient = new studion.EcsService(
   { parent },
 );
 
-let upstashRedis: studion.UpstashRedis | undefined;
-const upstashEmail = process.env.UPSTASH_EMAIL;
-const upstashApiKey = process.env.UPSTASH_API_KEY;
-if (upstashEmail && upstashApiKey) {
-  const upstashProvider = new upstash.Provider('upstash', {
-    email: upstashEmail,
-    apiKey: upstashApiKey,
-  });
-
-  upstashRedis = new studion.UpstashRedis(
-    `${appName}-upstash`,
-    {
-      dbName: `${appName}-upstash`,
-    },
-    { provider: upstashProvider, parent },
-  );
-}
+const upstashRedis = new studion.UpstashRedis(
+  `${appName}-upstash`,
+  {
+    dbName: `${appName}-upstash`,
+  },
+  { parent },
+);
 
 module.exports = {
   vpc,
@@ -137,5 +127,5 @@ module.exports = {
   elastiCacheRedis,
   cluster,
   testClient,
-  ...(upstashRedis && { upstashRedis }),
+  upstashRedis,
 };

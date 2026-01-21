@@ -25,16 +25,16 @@ const defaults = {
   primaryRegion: 'us-east-1',
 };
 
-export interface RedisOptions extends pulumi.ComponentResourceOptions {
-  provider: upstash.Provider;
-}
-
 export class UpstashRedis extends pulumi.ComponentResource {
   instance: upstash.RedisDatabase;
   password: Password;
   username = 'default';
 
-  constructor(name: string, args: RedisArgs, opts: RedisOptions) {
+  constructor(
+    name: string,
+    args: RedisArgs,
+    opts: pulumi.ComponentResourceOptions = {},
+  ) {
     super('studion:Redis:Upstash', name, {}, opts);
 
     const argsWithDefaults = Object.assign({}, defaults, args);
@@ -51,7 +51,7 @@ export class UpstashRedis extends pulumi.ComponentResource {
         eviction: true,
         tls: true,
       },
-      { provider: opts.provider, parent: this },
+      { parent: this },
     );
 
     this.password = new Password(
