@@ -1,8 +1,37 @@
 import * as assert from 'node:assert';
 import { DatabaseTestContext } from './test-context';
+import { DescribeDBInstancesCommand } from '@aws-sdk/client-rds';
 import { it } from 'node:test';
 
 export function testSnapshotDb(ctx: DatabaseTestContext) {
+  it('should create a database', async () => {
+    const snapshotDb = ctx.outputs.snapshotDb.value;
+
+    assert.ok(snapshotDb, 'Database should be defined');
+    assert.strictEqual(
+      snapshotDb.name,
+      `${ctx.config.appName}-snapshot-db`,
+      'Database should have correct name',
+    );
+    assert.ok(snapshotDb.instance, 'Database instance should be defined');
+
+    const command = new DescribeDBInstancesCommand({
+      DBInstanceIdentifier: snapshotDb.instance.dbInstanceIdentifier,
+    });
+
+    const { DBInstances } = await ctx.clients.rds.send(command);
+    assert.ok(
+      DBInstances && DBInstances.length === 1,
+      'Database instance should be created',
+    );
+    const [DBInstance] = DBInstances;
+    assert.strictEqual(
+      DBInstance.DBInstanceIdentifier,
+      snapshotDb.instance.dbInstanceIdentifier,
+      'Database instance identifier should match',
+    );
+  });
+
   it('should create and properly configure encrypted snapshot copy', () => {
     const snapshotDb = ctx.outputs.snapshotDb.value;
     const snapshot = ctx.outputs.snapshot.value;
