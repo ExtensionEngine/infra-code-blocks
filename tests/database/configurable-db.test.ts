@@ -1,13 +1,44 @@
 import {
+  DescribeDBInstancesCommand,
+  ListTagsForResourceCommand,
+} from '@aws-sdk/client-rds';
+import {
   GetRoleCommand,
   ListAttachedRolePoliciesCommand,
 } from '@aws-sdk/client-iam';
 import * as assert from 'node:assert';
 import { DatabaseTestContext } from './test-context';
 import { it } from 'node:test';
-import { ListTagsForResourceCommand } from '@aws-sdk/client-rds';
 
 export function testConfigurableDb(ctx: DatabaseTestContext) {
+  it('should create a database', async () => {
+    const configurableDb = ctx.outputs.configurableDb.value;
+
+    assert.ok(configurableDb, 'Database should be defined');
+    assert.strictEqual(
+      configurableDb.name,
+      `${ctx.config.appName}-configurable-db`,
+      'Database should have correct name',
+    );
+    assert.ok(configurableDb.instance, 'Database instance should be defined');
+
+    const command = new DescribeDBInstancesCommand({
+      DBInstanceIdentifier: configurableDb.instance.dbInstanceIdentifier,
+    });
+
+    const { DBInstances } = await ctx.clients.rds.send(command);
+    assert.ok(
+      DBInstances && DBInstances.length === 1,
+      'Database instance should be created',
+    );
+    const [DBInstance] = DBInstances;
+    assert.strictEqual(
+      DBInstance.DBInstanceIdentifier,
+      configurableDb.instance.dbInstanceIdentifier,
+      'Database instance identifier should match',
+    );
+  });
+
   it('should properly configure instance', () => {
     const configurableDb = ctx.outputs.configurableDb.value;
 
