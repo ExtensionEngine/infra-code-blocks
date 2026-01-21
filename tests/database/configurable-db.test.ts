@@ -17,7 +17,7 @@ export function testConfigurableDb(ctx: DatabaseTestContext) {
     assert.ok(configurableDb, 'Database should be defined');
     assert.strictEqual(
       configurableDb.name,
-      `${ctx.config.appName}-configurable-db`,
+      `${ctx.config.appName}-configurable`,
       'Database should have correct name',
     );
     assert.ok(configurableDb.instance, 'Database instance should be defined');

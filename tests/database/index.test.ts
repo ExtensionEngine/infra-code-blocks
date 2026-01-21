@@ -60,7 +60,7 @@ describe('Database component deployment', () => {
     assert.ok(database, 'Database should be defined');
     assert.strictEqual(
       database.name,
-      `${ctx.config.appName}-default-db`,
+      `${ctx.config.appName}-default`,
       'Database should have correct name',
     );
     assert.ok(database.instance, 'Database instance should be defined');
