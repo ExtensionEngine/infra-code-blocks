@@ -66,4 +66,37 @@ const configurableDb = new DatabaseBuilder(`${config.appName}-configurable-db`)
   .withTags(config.tags)
   .build({ parent });
 
-export { vpc, defaultDb, kms, paramGroup, configurableDb };
+const snapshot = defaultDb.instance.dbInstanceIdentifier.apply(
+  dbInstanceIdentifier => {
+    return new aws.rds.Snapshot(
+      `${config.appName}-snapshot`,
+      {
+        dbInstanceIdentifier: dbInstanceIdentifier!,
+        dbSnapshotIdentifier: `${config.appName}-snapshot-id`,
+        tags: config.tags,
+      },
+      { parent },
+    );
+  },
+);
+
+const snapshotDb = snapshot.apply(snapshot => {
+  return new DatabaseBuilder(`${config.appName}-snapshot-db`)
+    .withInstance({
+      applyImmediately: true,
+    })
+    .withVpc(vpc.vpc)
+    .withTags(config.tags)
+    .withSnapshot(snapshot.id)
+    .build({ parent });
+});
+
+export {
+  vpc,
+  defaultDb,
+  kms,
+  paramGroup,
+  configurableDb,
+  snapshot,
+  snapshotDb,
+};
