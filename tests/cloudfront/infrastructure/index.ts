@@ -6,7 +6,6 @@ import { AcmCertificate } from '../../../src/v2/components/acm-certificate';
 import * as config from './config';
 import { OriginFactory } from './origin-factory';
 
-const domainName = process.env.ICB_DOMAIN_NAME!;
 const hostedZoneId = process.env.ICB_HOSTED_ZONE_ID;
 const tags = {
   Project: pulumi.getProject(),
@@ -133,7 +132,7 @@ const cfWithDomain = new CloudFront(
   `${config.appName}-domain`,
   {
     behaviors: [{ ...cfMinimalBehavior }],
-    domain: domainName,
+    domain: config.defaultDomain,
     hostedZoneId: hostedZone.zoneId,
     tags,
   },
