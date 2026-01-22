@@ -10,7 +10,7 @@ export function testSnapshotDb(ctx: DatabaseTestContext) {
     assert.ok(snapshotDb, 'Database should be defined');
     assert.strictEqual(
       snapshotDb.name,
-      `${ctx.config.appName}-snapshot`,
+      `${ctx.config.appName}-snapshot-db`,
       'Database should have correct name',
     );
     assert.ok(snapshotDb.instance, 'Database instance should be defined');
