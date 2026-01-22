@@ -36,6 +36,7 @@ export namespace Database {
       parameterGroupName?: pulumi.Input<string>;
       kmsKeyId?: pulumi.Input<string>;
       createReplica?: pulumi.Input<boolean>;
+      replicaConfig?: DatabaseReplica.Config;
       tags?: pulumi.Input<{
         [key: string]: pulumi.Input<string>;
       }>;
@@ -64,7 +65,7 @@ export class Database extends pulumi.ComponentResource {
   kmsKeyId: pulumi.Output<string>;
   monitoringRole?: aws.iam.Role;
   encryptedSnapshotCopy?: aws.rds.SnapshotCopy;
-  replica?: pulumi.Output<DatabaseReplica>;
+  replica?: DatabaseReplica;
 
   constructor(
     name: string,
@@ -76,8 +77,14 @@ export class Database extends pulumi.ComponentResource {
     this.name = name;
 
     const argsWithDefaults = Object.assign({}, defaults, args);
-    const { vpc, kmsKeyId, enableMonitoring, snapshotIdentifier } =
-      argsWithDefaults;
+    const {
+      vpc,
+      kmsKeyId,
+      enableMonitoring,
+      snapshotIdentifier,
+      createReplica,
+      replicaConfig = {},
+    } = argsWithDefaults;
 
     this.vpc = pulumi.output(vpc);
     this.dbSubnetGroup = this.createSubnetGroup();
@@ -104,8 +111,8 @@ export class Database extends pulumi.ComponentResource {
 
     this.instance = this.createDatabaseInstance(argsWithDefaults);
 
-    if (args.createReplica) {
-      this.replica = this.createDatabaseReplica();
+    if (createReplica) {
+      this.replica = this.createDatabaseReplica(replicaConfig);
     }
 
     this.registerOutputs();
@@ -212,18 +219,27 @@ export class Database extends pulumi.ComponentResource {
     );
   }
 
-  private createDatabaseReplica() {
-    const replica = this.instance.dbInstanceIdentifier.apply(
-      dbInstanceIdentifier => {
-        return new DatabaseReplica(
-          `${this.name}-replica`,
-          {
-            sourceDbInstanceIdentifier: dbInstanceIdentifier!,
-            dbSecurityGroup: this.dbSecurityGroup,
-          },
-          { parent: this },
-        );
+  private createDatabaseReplica(config: DatabaseReplica.Config) {
+    const replica = new DatabaseReplica(
+      `${this.name}-replica`,
+      {
+        sourceDbInstanceIdentifier: this.instance.dbInstanceIdentifier.apply(
+          id => id!,
+        ),
+        dbSecurityGroup: this.dbSecurityGroup,
+        dbSubnetGroup: this.dbSubnetGroup,
+        parameterGroupName: this.instance.dbParameterGroupName.apply(
+          name => name!,
+        ),
+        tags: this.instance.tags.apply((tags = []) =>
+          Object.fromEntries(tags.map(tag => [tag.key, tag.value])),
+        ),
+        monitoringRole: config.enableMonitoring
+          ? this.monitoringRole
+          : undefined,
+        ...config,
       },
+      { parent: this },
     );
 
     return replica;

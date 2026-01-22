@@ -33,6 +33,9 @@ export namespace DatabaseReplica {
         [key: string]: pulumi.Input<string>;
       }>;
     };
+
+  export type Config = Instance &
+    Storage & { enableMonitoring?: pulumi.Input<boolean> };
 }
 
 const defaults = {
@@ -41,7 +44,6 @@ const defaults = {
   allocatedStorage: 20,
   maxAllocatedStorage: 100,
   instanceClass: 'db.t4g.micro',
-  enableMonitoring: false,
   allowMajorVersionUpgrade: false,
   autoMinorVersionUpgrade: true,
   engineVersion: '17.2',

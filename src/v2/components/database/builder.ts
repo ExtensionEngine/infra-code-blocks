@@ -13,6 +13,7 @@ export class DatabaseBuilder {
   private parameterGroupName?: Database.Args['parameterGroupName'];
   private tags?: Database.Args['tags'];
   private createReplica?: Database.Args['createReplica'];
+  private replicaConfig?: Database.Args['replicaConfig'];
 
   constructor(name: string) {
     this.name = name;
@@ -76,8 +77,9 @@ export class DatabaseBuilder {
     return this;
   }
 
-  public withReplica(): this {
+  public withReplica(replicaConfig: Database.Args['replicaConfig'] = {}): this {
     this.createReplica = true;
+    this.replicaConfig = replicaConfig;
 
     return this;
   }
@@ -122,6 +124,7 @@ export class DatabaseBuilder {
         parameterGroupName: this.parameterGroupName,
         tags: this.tags,
         createReplica: this.createReplica,
+        replicaConfig: this.replicaConfig,
       },
       opts,
     );
