@@ -15,7 +15,4 @@ const vpc = new studion.Vpc(`${appName}`, {
   tags,
 });
 
-module.exports = {
-  defaultVpc,
-  vpc,
-};
+export { defaultVpc, vpc };
