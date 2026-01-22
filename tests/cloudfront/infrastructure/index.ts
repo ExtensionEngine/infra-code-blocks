@@ -1,6 +1,7 @@
 import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
 import { next as studion } from '@studion/infra-code-blocks';
+import * as util from '../../util';
 import * as config from './config';
 import { OriginFactory } from './origin-factory';
 
@@ -15,7 +16,7 @@ const parent = new pulumi.ComponentResource(
   'studion:cf:TestGroup',
   `${config.appName}-root`,
 );
-const vpc = new studion.Vpc(`${config.appName}-vpc`, {}, { parent });
+const vpc = util.getCommonVpc();
 const hostedZone = aws.route53.getZoneOutput({
   zoneId: hostedZoneId,
 });
