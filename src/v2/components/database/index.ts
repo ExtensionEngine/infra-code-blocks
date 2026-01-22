@@ -219,7 +219,7 @@ export class Database extends pulumi.ComponentResource {
           `${this.name}-replica`,
           {
             sourceDbInstanceIdentifier: dbInstanceIdentifier!,
-            dbSecurityGroupId: this.dbSecurityGroup.id,
+            dbSecurityGroup: this.dbSecurityGroup,
           },
           { parent: this },
         );

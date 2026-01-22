@@ -14,8 +14,8 @@ export namespace DatabaseReplica {
   };
 
   export type Security = {
-    dbSecurityGroupId: pulumi.Input<string>;
-    dbSubnetGroupName?: pulumi.Input<string>;
+    dbSecurityGroup: aws.ec2.SecurityGroup;
+    dbSubnetGroup?: aws.rds.SubnetGroup;
   };
 
   export type Storage = {
@@ -27,7 +27,7 @@ export namespace DatabaseReplica {
     Security &
     Storage & {
       sourceDbInstanceIdentifier: pulumi.Input<string>;
-      monitoringRoleArn?: pulumi.Input<string>;
+      monitoringRole?: aws.iam.Role;
       parameterGroupName?: pulumi.Input<string>;
       tags?: pulumi.Input<{
         [key: string]: pulumi.Input<string>;
@@ -67,10 +67,10 @@ export class DatabaseReplica extends pulumi.ComponentResource {
   }
 
   private createDatabaseInstance(args: DatabaseReplica.Args) {
-    const monitoringOptions = args.monitoringRoleArn
+    const monitoringOptions = args.monitoringRole
       ? {
           monitoringInterval: 60,
-          monitoringRoleArn: args.monitoringRoleArn,
+          monitoringRoleArn: args.monitoringRole.arn,
           enablePerformanceInsights: true,
           performanceInsightsRetentionPeriod: 7,
         }
@@ -83,8 +83,8 @@ export class DatabaseReplica extends pulumi.ComponentResource {
         engine: 'postgres',
         engineVersion: args.engineVersion,
         dbInstanceClass: args.instanceClass,
-        vpcSecurityGroups: [args.dbSecurityGroupId],
-        dbSubnetGroupName: args.dbSubnetGroupName,
+        vpcSecurityGroups: [args.dbSecurityGroup.id],
+        dbSubnetGroupName: args.dbSubnetGroup?.name,
         allocatedStorage: args.allocatedStorage?.toString(),
         maxAllocatedStorage: args.maxAllocatedStorage,
         multiAz: args.multiAz,
