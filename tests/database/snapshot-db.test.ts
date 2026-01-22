@@ -32,14 +32,18 @@ export function testSnapshotDb(ctx: DatabaseTestContext) {
     );
   });
 
-  it('should create and properly configure encrypted snapshot copy', () => {
+  it('should create encrypted snapshot copy', () => {
     const snapshotDb = ctx.outputs.snapshotDb.value;
-    const snapshot = ctx.outputs.snapshot.value;
 
     assert.ok(
       snapshotDb.encryptedSnapshotCopy,
       'Encrypted snapshot copy should exist',
     );
+  });
+
+  it('should properly configure encrypted snapshot copy', () => {
+    const snapshotDb = ctx.outputs.snapshotDb.value;
+    const snapshot = ctx.outputs.snapshot.value;
 
     assert.strictEqual(
       snapshotDb.encryptedSnapshotCopy.sourceDbSnapshotIdentifier,
