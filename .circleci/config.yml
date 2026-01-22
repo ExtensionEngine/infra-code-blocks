@@ -29,6 +29,16 @@ commands:
       - run:
           name: Set default Pulumi Organization
           command: pulumi org set-default extensionengine
+  setup-test-env:
+    steps:
+      - checkout
+      - aws-cli/setup:
+          role_arn: ${AWS_ROLE_ARN}
+          session_duration: '7200'
+      - setup-pulumi
+      - node/install
+      - core/ensure_pkg_manager
+      - core/install_dependencies
 
 jobs:
   detect-leaks:
@@ -56,16 +66,48 @@ jobs:
   test-components:
     machine:
       image: ubuntu-2204:current
+    parallelism: 4
     steps:
-      - checkout
-      - aws-cli/setup:
-          role_arn: ${AWS_ROLE_ARN}
-          session_duration: '7200'
-      - setup-pulumi
-      - node/install
-      - core/run_script:
-          script: 'test'
-          no_output_timeout: 2h
+      - setup-test-env
+      - attach_workspace:
+          at: .
+      - run:
+          name: 'Export common infra stack ref env'
+          command: |
+            STACK_REF=$(cat .icbstackref)
+            echo "export ICB_COMMON_INFRA_STACK_REF=${STACK_REF}" >> "$BASH_ENV"
+      - run:
+          name: 'Run tests'
+          command: |
+            circleci tests glob "tests/**/index.test.ts" \
+              | circleci tests run \
+                --command="xargs npm run test -- --skip-setup --skip-teardown" \
+                --split-by=timings
+          no_output_timeout: 1h
+  provision-test-common-infra:
+    machine:
+      image: ubuntu-2204:current
+    steps:
+      - setup-test-env
+      - run:
+          name: 'Setup common infrastructure'
+          command: |
+            npm run test -- --skip-tests --skip-teardown --stack-ref-file
+          no_output_timeout: 1h
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .icbstackref
+  destroy-test-common-infra:
+    machine:
+      image: ubuntu-2204:current
+    steps:
+      - setup-test-env
+      - run:
+          name: 'Teardown common infrastructure'
+          command: |
+            npm run test -- --skip-setup --skip-tests
+          no_output_timeout: 1h
 
 workflows:
   scan-and-test:
@@ -79,5 +121,21 @@ workflows:
           filters: *trunk-filters
       - test-build:
           filters: *change-filters
+      - provision-test-common-infra:
+          filters: *change-filters
       - test-components:
-          filters: *trunk-filters
+          filters: *change-filters
+          requires:
+            - provision-test-common-infra
+      - destroy-test-common-infra:
+          filters: *change-filters
+          requires:
+            - provision-test-common-infra:
+                - success
+                - failed
+                - canceled
+            - test-components:
+                - success
+                - failed
+                - canceled
+                - not_run

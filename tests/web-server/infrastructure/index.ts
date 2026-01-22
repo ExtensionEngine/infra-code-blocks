@@ -1,6 +1,7 @@
 import { next as studion } from '@studion/infra-code-blocks';
 import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
+import * as util from '../../util';
 import {
   webServerName,
   healthCheckPath,
@@ -15,7 +16,7 @@ const parent = new pulumi.ComponentResource(
   'studion:webserver:TestGroup',
   `${webServerName}-root`,
 );
-const vpc = new studion.Vpc(`${webServerName}-vpc`, {}, { parent });
+const vpc = util.getCommonVpc();
 const tags = { Env: stackName, Project: webServerName };
 const init = {
   name: 'init',
