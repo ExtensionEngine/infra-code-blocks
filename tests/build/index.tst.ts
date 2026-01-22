@@ -4,8 +4,6 @@ import { describe, expect, it } from 'tstyche';
 import { next as studion } from '@studion/infra-code-blocks';
 import { OtelCollector } from '../../dist/v2/otel';
 import { OtelCollectorBuilder } from '../../dist/v2/otel/builder';
-import { Database } from '../../dist/v2/components/database';
-import { DatabaseBuilder } from '../../dist/v2/components/database/builder';
 
 describe('Build output', () => {
   describe('ECS Service', () => {
@@ -261,11 +259,13 @@ describe('Build output', () => {
   });
 
   describe('Database', () => {
-    it.skip('should export Database', () => {
+    const { Database, DatabaseBuilder } = studion;
+
+    it('should export Database', () => {
       expect(studion).type.toHaveProperty('Database');
     });
 
-    it.skip('should export DatabaseBuilder', () => {
+    it('should export DatabaseBuilder', () => {
       expect(studion).type.toHaveProperty('DatabaseBuilder');
     });
 

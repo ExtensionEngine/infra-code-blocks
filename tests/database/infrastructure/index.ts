@@ -2,7 +2,6 @@ import * as aws from '@pulumi/aws-v7';
 import * as config from './config';
 import * as pulumi from '@pulumi/pulumi';
 import { next as studion } from '@studion/infra-code-blocks';
-import { DatabaseBuilder } from '../../../src/v2/components/database/builder';
 
 const parent = new pulumi.ComponentResource(
   'studion:database:TestGroup',
@@ -11,7 +10,7 @@ const parent = new pulumi.ComponentResource(
 
 const vpc = new studion.Vpc(`${config.appName}-vpc`, {}, { parent });
 
-const defaultDb = new DatabaseBuilder(`${config.appName}-default-db`)
+const defaultDb = new studion.DatabaseBuilder(`${config.appName}-default-db`)
   .withInstance({
     dbName: config.dbName,
   })
@@ -44,7 +43,9 @@ const paramGroup = new aws.rds.ParameterGroup(
   { parent },
 );
 
-const configurableDb = new DatabaseBuilder(`${config.appName}-configurable-db`)
+const configurableDb = new studion.DatabaseBuilder(
+  `${config.appName}-configurable-db`,
+)
   .withInstance({
     dbName: config.dbName,
     applyImmediately: config.applyImmediately,
@@ -81,7 +82,7 @@ const snapshot = defaultDb.instance.dbInstanceIdentifier.apply(
 );
 
 const snapshotDb = snapshot.apply(snapshot => {
-  return new DatabaseBuilder(`${config.appName}-snapshot-db`)
+  return new studion.DatabaseBuilder(`${config.appName}-snapshot-db`)
     .withInstance({
       applyImmediately: true,
     })
