@@ -224,7 +224,7 @@ const ecsServiceWithOutputEmptyVolumes = new studion.EcsService(
   { parent },
 );
 
-module.exports = {
+export {
   vpc,
   cluster,
   minimalEcsService,
