@@ -113,17 +113,12 @@ const testClient = new studion.EcsService(
   { parent },
 );
 
-const upstashProvider = new upstash.Provider('upstash', {
-  email: process.env.UPSTASH_EMAIL,
-  apiKey: process.env.UPSTASH_API_KEY,
-});
-
 const upstashRedis = new studion.UpstashRedis(
   `${appName}-upstash`,
   {
     dbName: `${appName}-upstash`,
   },
-  { provider: upstashProvider, parent },
+  { parent },
 );
 
 export {

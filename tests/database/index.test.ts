@@ -17,11 +17,14 @@ import { cleanupSnapshots } from './util';
 import * as config from './infrastructure/config';
 import { DatabaseTestContext } from './test-context';
 import { EC2Client } from '@aws-sdk/client-ec2';
+import { IAMClient } from '@aws-sdk/client-iam';
 import { InlineProgramArgs } from '@pulumi/pulumi/automation';
 import { it } from 'node:test';
 import { KMSClient } from '@aws-sdk/client-kms';
 import { RDSClient } from '@aws-sdk/client-rds';
 import { requireEnv } from '../util';
+import { testConfigurableDb } from './configurable-db.test';
+import { testSnapshotDb } from './snapshot-db.test';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -37,6 +40,7 @@ const ctx: DatabaseTestContext = {
     rds: new RDSClient({ region }),
     ec2: new EC2Client({ region }),
     kms: new KMSClient({ region }),
+    iam: new IAMClient({ region }),
   },
 };
 
@@ -202,4 +206,7 @@ describe('Database component deployment', () => {
       'KMS key rotation should be enabled',
     );
   });
+
+  describe('With configurable options', () => testConfigurableDb(ctx));
+  describe('With snapshot', () => testSnapshotDb(ctx));
 });
