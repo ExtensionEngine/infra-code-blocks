@@ -6,8 +6,8 @@ import { AcmCertificate } from '../../src/v2/components/acm-certificate';
 import { AwsContext, ConfigContext, PulumiProgramContext } from '../types';
 
 interface Config {
-  domainName: string;
   hostedZoneId: string;
+  defaultDomain: string;
   certificateDomain: string;
   certificateSANs: string[];
   loadBalancerDomain: string;
