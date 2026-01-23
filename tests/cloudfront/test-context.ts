@@ -1,8 +1,7 @@
 import { CloudFrontClient } from '@aws-sdk/client-cloudfront';
 import { Route53Client } from '@aws-sdk/client-route-53';
 import * as aws from '@pulumi/aws-v7';
-import { CloudFront } from '../../src/v2/components/cloudfront';
-import { AcmCertificate } from '../../src/v2/components/acm-certificate';
+import { next as studion } from '@studion/infra-code-blocks';
 import { AwsContext, ConfigContext, PulumiProgramContext } from '../types';
 
 interface Config {
@@ -30,10 +29,10 @@ interface AwsClients {
 
 export interface ProgramOutput {
   cfMinimalOriginDomainName: string;
-  cfMinimal: CloudFront;
-  cfWithDomain: CloudFront;
-  certificate: AcmCertificate;
-  cfWithCertificate: CloudFront;
+  cfMinimal: studion.CloudFront;
+  cfWithDomain: studion.CloudFront;
+  certificate: studion.AcmCertificate;
+  cfWithCertificate: studion.CloudFront;
   loadBalancer: aws.lb.LoadBalancer;
   s3WebsiteBucket: aws.s3.Bucket;
   s3WebsiteBucketConfig: aws.s3.BucketWebsiteConfiguration;
@@ -42,7 +41,7 @@ export interface ProgramOutput {
   customCachePolicy: aws.cloudfront.CachePolicy;
   customOriginRequestPolicy: aws.cloudfront.OriginRequestPolicy;
   customResponseHeadersPolicy: aws.cloudfront.ResponseHeadersPolicy;
-  cfWithVariousBehaviors: CloudFront;
+  cfWithVariousBehaviors: studion.CloudFront;
 }
 
 export interface CloudFrontTestContext

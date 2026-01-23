@@ -342,4 +342,46 @@ describe('Build output', () => {
       });
     });
   });
+
+  describe('CloudFront', () => {
+    it('should export CloudFront', () => {
+      expect(studion).type.toHaveProperty('CloudFront');
+    });
+
+    describe('Instantiation', () => {
+      const { CloudFront } = studion;
+
+      it('should construct CloudFront', () => {
+        expect(CloudFront).type.toBeConstructableWith('cfName', {
+          behaviors: [],
+        });
+      });
+    });
+
+    describe('BehaviorType', () => {
+      const { CloudFront } = studion;
+
+      it('should export BehaviorType', () => {
+        expect(CloudFront).type.toHaveProperty('BehaviorType');
+      });
+
+      describe('Members', () => {
+        const {
+          CloudFront: { BehaviorType },
+        } = studion;
+
+        it('should export CUSTOM', () => {
+          expect(BehaviorType).type.toHaveProperty('CUSTOM');
+        });
+
+        it('should export LB', () => {
+          expect(BehaviorType).type.toHaveProperty('LB');
+        });
+
+        it('should export S3', () => {
+          expect(BehaviorType).type.toHaveProperty('S3');
+        });
+      });
+    });
+  });
 });

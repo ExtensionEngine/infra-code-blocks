@@ -1,8 +1,6 @@
 import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
 import { next as studion } from '@studion/infra-code-blocks';
-import { CloudFront } from '../../../src/v2/components/cloudfront';
-import { AcmCertificate } from '../../../src/v2/components/acm-certificate';
 import * as config from './config';
 import { OriginFactory } from './origin-factory';
 
@@ -43,7 +41,7 @@ const loadBalancer = originFactory.getLoadBalancer(
   hostedZone.zoneId,
 );
 
-const certificate = new AcmCertificate(
+const certificate = new studion.AcmCertificate(
   `${config.appName}-acm-certificate`,
   {
     domain: config.certificateDomain,
@@ -109,15 +107,15 @@ const customResponseHeadersPolicy = new aws.cloudfront.ResponseHeadersPolicy(
 );
 
 const cfMinimalOriginDomainName = minimalWebsiteBucketConfig.websiteEndpoint;
-const cfMinimalBehavior: CloudFront.Behavior = {
-  type: CloudFront.BehaviorType.CUSTOM,
+const cfMinimalBehavior: studion.CloudFront.Behavior = {
+  type: studion.CloudFront.BehaviorType.CUSTOM,
   pathPattern: '*',
   originId: config.cfMinimalOriginId,
   domainName: cfMinimalOriginDomainName,
   originProtocolPolicy: config.cfMinimalOriginProtocolPolicy,
   defaultRootObject: config.cfMinimalDefaultRootObject,
 };
-const cfMinimal = new CloudFront(
+const cfMinimal = new studion.CloudFront(
   config.cfMinimalName,
   {
     behaviors: [{ ...cfMinimalBehavior }],
@@ -128,7 +126,7 @@ const cfMinimal = new CloudFront(
   },
   { parent },
 );
-const cfWithDomain = new CloudFront(
+const cfWithDomain = new studion.CloudFront(
   `${config.appName}-domain`,
   {
     behaviors: [{ ...cfMinimalBehavior }],
@@ -138,7 +136,7 @@ const cfWithDomain = new CloudFront(
   },
   { parent },
 );
-const cfWithCertificate = new CloudFront(
+const cfWithCertificate = new studion.CloudFront(
   `${config.appName}-certificate`,
   {
     behaviors: [{ ...cfMinimalBehavior }],
@@ -148,24 +146,24 @@ const cfWithCertificate = new CloudFront(
   },
   { parent },
 );
-const cfWithVariousBehaviors = new CloudFront(
+const cfWithVariousBehaviors = new studion.CloudFront(
   `${config.appName}-various-behaviors`,
   {
     behaviors: [
       {
-        type: CloudFront.BehaviorType.LB,
+        type: studion.CloudFront.BehaviorType.LB,
         pathPattern: config.cfWithVariousBehaviorsLbPathPattern,
         loadBalancer,
         dnsName: config.loadBalancerDomain,
       },
       {
-        type: CloudFront.BehaviorType.S3,
+        type: studion.CloudFront.BehaviorType.S3,
         pathPattern: config.cfWithVariousBehaviorsS3PathPattern,
         bucket: s3WebsiteBucket,
         websiteConfig: s3WebsiteBucketConfig,
       },
       {
-        type: CloudFront.BehaviorType.CUSTOM,
+        type: studion.CloudFront.BehaviorType.CUSTOM,
         pathPattern: '*',
         originId: customWebsiteBucket.id,
         domainName: customWebsiteBucketConfig.websiteEndpoint,
