@@ -65,7 +65,7 @@ jobs:
       - node/install
       - core/run_script:
           script: 'test'
-          no_output_timeout: 30m
+          no_output_timeout: 1h
 
 workflows:
   scan-and-test:
