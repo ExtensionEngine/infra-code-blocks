@@ -1,4 +1,3 @@
-import { alternateRegion } from './infrastructure/config';
 import * as assert from 'node:assert';
 import * as automation from '../automation';
 import { InlineProgramArgs } from '@pulumi/pulumi/automation';
@@ -13,6 +12,7 @@ import { ListResourceRecordSetsCommand } from '@aws-sdk/client-route-53';
 import { AcmCertificateTestContext } from './test-context';
 import { describe, it, before, after } from 'node:test';
 import { requireEnv } from '../util';
+import * as infraConfig from './infrastructure/config';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -21,13 +21,15 @@ const programArgs: InlineProgramArgs = {
 };
 
 const region = requireEnv('AWS_REGION');
-const domainName = requireEnv('ICB_DOMAIN_NAME');
-const hostedZoneId = requireEnv('ICB_HOSTED_ZONE_ID');
+requireEnv('ICB_DOMAIN_NAME');
+requireEnv('ICB_HOSTED_ZONE_ID');
 
 const ctx: AcmCertificateTestContext = {
   outputs: {},
   config: {
-    subDomainName: `app.${domainName}`,
+    certificateDomain: infraConfig.certificateDomain,
+    sanCertificateDomain: infraConfig.sanCertificateDomain,
+    certificateSANs: infraConfig.certificateSANs,
     exponentialBackOffConfig: {
       delayFirstAttempt: true,
       numOfAttempts: 5,
@@ -38,7 +40,7 @@ const ctx: AcmCertificateTestContext = {
   },
   clients: {
     acm: new ACMClient({ region }),
-    acmAlternateRegion: new ACMClient({ region: alternateRegion }),
+    acmAlternateRegion: new ACMClient({ region: infraConfig.alternateRegion }),
     route53: new Route53Client({ region }),
   },
 };
@@ -66,7 +68,7 @@ describe('ACM Certificate component deployment', () => {
       assert.ok(cert, 'Certificate should exist');
       assert.strictEqual(
         cert.DomainName,
-        domainName,
+        ctx.config.certificateDomain,
         'Certificate domain should match',
       );
       assert.strictEqual(
@@ -130,9 +132,8 @@ describe('ACM Certificate component deployment', () => {
     const sans = new Set(cert?.SubjectAlternativeNames ?? []);
 
     const expectedDomains = new Set([
-      ctx.config.subDomainName,
-      `api.${ctx.config.subDomainName}`,
-      `test.${ctx.config.subDomainName}`,
+      ctx.config.sanCertificateDomain,
+      ...ctx.config.certificateSANs,
     ]);
 
     assert.deepStrictEqual(
