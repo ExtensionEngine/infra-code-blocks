@@ -16,6 +16,7 @@ export namespace AcmCertificate {
 
 export class AcmCertificate extends pulumi.ComponentResource {
   certificate: aws.acm.Certificate;
+  certificateValidation: pulumi.Output<aws.acm.CertificateValidation>;
 
   constructor(
     name: string,
@@ -35,8 +36,7 @@ export class AcmCertificate extends pulumi.ComponentResource {
       },
       { parent: this },
     );
-
-    this.createCertValidationRecords(
+    this.certificateValidation = this.createCertValidationRecords(
       args.domain,
       args.hostedZoneId,
       args.region,
@@ -50,7 +50,7 @@ export class AcmCertificate extends pulumi.ComponentResource {
     hostedZoneId: AcmCertificate.Args['hostedZoneId'],
     region: AcmCertificate.Args['region'],
   ) {
-    this.certificate.domainValidationOptions.apply(domains => {
+    return this.certificate.domainValidationOptions.apply(domains => {
       const validationRecords = domains.map(
         domain =>
           new aws.route53.Record(
@@ -69,7 +69,7 @@ export class AcmCertificate extends pulumi.ComponentResource {
           ),
       );
 
-      const certificateValidation = new aws.acm.CertificateValidation(
+      return new aws.acm.CertificateValidation(
         `${domainName}-cert-validation`,
         {
           certificateArn: this.certificate.arn,

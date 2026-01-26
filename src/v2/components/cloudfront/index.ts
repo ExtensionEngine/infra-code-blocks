@@ -59,6 +59,9 @@ export class CloudFront extends pulumi.ComponentResource {
         certificate || this.acmCertificate
           ? pulumi.output(certificate ?? this.acmCertificate!.certificate)
           : undefined,
+      certificateValidation: this.acmCertificate
+        ? this.acmCertificate.certificateValidation
+        : undefined,
       defaultRootObject,
       tags,
     });
@@ -201,6 +204,7 @@ export class CloudFront extends pulumi.ComponentResource {
     orderedCaches,
     domain,
     certificate,
+    certificateValidation,
     defaultRootObject,
     tags,
   }: CreateDistributionArgs): aws.cloudfront.Distribution {
@@ -245,7 +249,13 @@ export class CloudFront extends pulumi.ComponentResource {
         },
         tags: { ...commonTags, ...tags },
       },
-      { parent: this, aliases: [{ name: `${this.name}-cloudfront` }] },
+      {
+        parent: this,
+        aliases: [{ name: `${this.name}-cloudfront` }],
+        ...(certificateValidation
+          ? { dependsOn: [certificateValidation] }
+          : undefined),
+      },
     );
   }
 
@@ -372,6 +382,7 @@ type CreateDistributionArgs = {
   orderedCaches?: aws.types.input.cloudfront.DistributionOrderedCacheBehavior[];
   domain?: pulumi.Input<string>;
   certificate?: pulumi.Output<aws.acm.Certificate>;
+  certificateValidation?: pulumi.Output<aws.acm.CertificateValidation>;
   defaultRootObject?: pulumi.Input<string>;
   tags: CloudFront.Args['tags'];
 };
