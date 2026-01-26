@@ -144,7 +144,7 @@ const cfWithCertificate = new studion.CloudFront(
     hostedZoneId: hostedZone.zoneId,
     tags,
   },
-  { parent },
+  { parent, dependsOn: [certificate.certificateValidation] },
 );
 const cfWithVariousBehaviors = new studion.CloudFront(
   `${config.appName}-various-behaviors`,
