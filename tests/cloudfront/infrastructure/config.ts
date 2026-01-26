@@ -1,15 +1,13 @@
 export const appName = 'cloudfront-test';
 
-export const defaultDomain = `cf-dmn.${process.env.ICB_DOMAIN_NAME}`;
+export const baseDomain = `cf.${process.env.ICB_DOMAIN_NAME}`;
+export const defaultDomain = `dmn.${baseDomain}`;
 
-export const certificateDomain = `cf-crt.${process.env.ICB_DOMAIN_NAME}`;
+export const certificateDomain = `crt.${baseDomain}`;
 
-export const certificateSANs = [
-  `cf-alt1.${process.env.ICB_DOMAIN_NAME}`,
-  `cf-alt2.${process.env.ICB_DOMAIN_NAME}`,
-];
+export const certificateSANs = [`alt1.${baseDomain}`, `alt2.${baseDomain}`];
 
-export const loadBalancerDomain = `lb.${process.env.ICB_DOMAIN_NAME}`;
+export const loadBalancerDomain = `lb.${baseDomain}`;
 
 export const cfMinimalName = `${appName}-minimal`;
 

@@ -9,13 +9,14 @@ const hostedZone = aws.route53.getZoneOutput({
   privateZone: false,
 });
 
-const domainName = process.env.ICB_DOMAIN_NAME!;
+const baseDomain = `acm.${process.env.ICB_DOMAIN_NAME!}`;
+
 const certificate = new studion.AcmCertificate(`${appName}-certificate`, {
-  domain: domainName,
+  domain: baseDomain,
   hostedZoneId: hostedZone.zoneId,
 });
 
-const subDomainName = `app.${domainName}`;
+const subDomainName = `app.${baseDomain}`;
 const sanCertificate = new studion.AcmCertificate(
   `${appName}-certificate-san`,
   {
@@ -26,7 +27,7 @@ const sanCertificate = new studion.AcmCertificate(
 );
 
 const regionCertificate = new studion.AcmCertificate(`${appName}-region-cert`, {
-  domain: `region.${domainName}`,
+  domain: `region.${baseDomain}`,
   hostedZoneId: hostedZone.zoneId,
   region: alternateRegion,
 });
