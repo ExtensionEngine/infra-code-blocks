@@ -105,6 +105,14 @@ export class DatabaseBuilder {
       throw new Error(`You can't set username when using snapshotIdentifier.`);
     }
 
+    if (this.createReplica && this.replicaConfig?.enableMonitoring) {
+      if (!this.enableMonitoring && !this.replicaConfig.monitoringRole) {
+        throw new Error(
+          'To enable monitoring on read replica provide monitoring role or enable monitoring on the primary instance.',
+        );
+      }
+    }
+
     if (!this.vpc) {
       throw new Error(
         'VPC not provided. Make sure to call DatabaseBuilder.withVpc().',

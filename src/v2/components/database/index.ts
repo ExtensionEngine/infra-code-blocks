@@ -220,6 +220,10 @@ export class Database extends pulumi.ComponentResource {
   }
 
   private createDatabaseReplica(config: DatabaseReplica.Config) {
+    const monitoringRole = config.enableMonitoring
+      ? config.monitoringRole && this.monitoringRole
+      : undefined;
+
     const replica = new DatabaseReplica(
       `${this.name}-replica`,
       {
@@ -227,19 +231,10 @@ export class Database extends pulumi.ComponentResource {
           id => id!,
         ),
         dbSecurityGroup: this.dbSecurityGroup,
-        dbSubnetGroup: this.dbSubnetGroup,
-        parameterGroupName: this.instance.dbParameterGroupName.apply(
-          name => name!,
-        ),
-        tags: this.instance.tags.apply((tags = []) =>
-          Object.fromEntries(tags.map(tag => [tag.key, tag.value])),
-        ),
-        monitoringRole: config.enableMonitoring
-          ? this.monitoringRole
-          : undefined,
+        monitoringRole,
         ...config,
       },
-      { parent: this },
+      { parent: this, dependsOn: [this.instance] },
     );
 
     return replica;

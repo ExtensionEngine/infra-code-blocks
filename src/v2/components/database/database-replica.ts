@@ -34,8 +34,9 @@ export namespace DatabaseReplica {
       }>;
     };
 
-  export type Config = Instance &
-    Storage & { enableMonitoring?: pulumi.Input<boolean> };
+  export type Config = Partial<Omit<Args, 'sourceDbInstanceIdentifier'>> & {
+    enableMonitoring?: pulumi.Input<boolean>;
+  };
 }
 
 const defaults = {
