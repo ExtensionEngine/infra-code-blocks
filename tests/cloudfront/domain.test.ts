@@ -16,7 +16,7 @@ export function testCloudFrontWithDomain(ctx: CloudFrontTestContext) {
   it('should create alias record when domain is provided', async () => {
     const cf = ctx.outputs!.cfWithDomain;
     // Ensure FQDN, i.e., end with dot if not
-    const domainName = ctx.config.domainName.replace(/([^.])$/, '$1.');
+    const domainName = ctx.config.defaultDomain.replace(/([^.])$/, '$1.');
 
     const command = new ListResourceRecordSetsCommand({
       HostedZoneId: ctx.config.hostedZoneId,
@@ -62,13 +62,13 @@ export function testCloudFrontWithDomain(ctx: CloudFrontTestContext) {
 
     assert.deepStrictEqual(
       cf.distribution.aliases,
-      [ctx.config.domainName],
+      [ctx.config.defaultDomain],
       'Aliases should be correctly configured',
     );
   });
 
   it('should have reachable distribution when domain is provided', async () => {
-    const url = `https://${ctx.config.domainName}`;
+    const url = `https://${ctx.config.defaultDomain}`;
 
     await backOff(async () => {
       const response = await request(url);

@@ -17,19 +17,19 @@ import { testCloudFrontWithDomain } from './domain.test';
 import { testCloudFrontWithCertificate } from './certificate.test';
 import { testCloudFrontWithVariousBehaviors } from './various-behaviors.test';
 
+requireEnv('ICB_DOMAIN_NAME');
+
+const hostedZoneId = requireEnv('ICB_HOSTED_ZONE_ID');
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
   projectName: 'icb-test-cloudfront',
   program: () => import('./infrastructure'),
 };
 
-const domainName = requireEnv('ICB_DOMAIN_NAME');
-const hostedZoneId = requireEnv('ICB_HOSTED_ZONE_ID');
-
 const ctx: CloudFrontTestContext = {
   config: {
-    domainName,
     hostedZoneId,
+    defaultDomain: infraConfig.defaultDomain,
     certificateDomain: infraConfig.certificateDomain,
     certificateSANs: infraConfig.certificateSANs,
     loadBalancerDomain: infraConfig.loadBalancerDomain,

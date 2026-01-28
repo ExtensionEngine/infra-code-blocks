@@ -1,6 +1,6 @@
 import { next as studion } from '@studion/infra-code-blocks';
 import * as aws from '@pulumi/aws-v7';
-import { alternateRegion } from './config';
+import * as infraConfig from './config';
 
 const appName = 'acm-certificate-test';
 
@@ -9,26 +9,24 @@ const hostedZone = aws.route53.getZoneOutput({
   privateZone: false,
 });
 
-const domainName = process.env.ICB_DOMAIN_NAME!;
 const certificate = new studion.AcmCertificate(`${appName}-certificate`, {
-  domain: domainName,
+  domain: infraConfig.certificateDomain,
   hostedZoneId: hostedZone.zoneId,
 });
 
-const subDomainName = `app.${domainName}`;
 const sanCertificate = new studion.AcmCertificate(
   `${appName}-certificate-san`,
   {
-    domain: subDomainName,
-    subjectAlternativeNames: [`api.${subDomainName}`, `test.${subDomainName}`],
+    domain: infraConfig.sanCertificateDomain,
+    subjectAlternativeNames: infraConfig.certificateSANs,
     hostedZoneId: hostedZone.zoneId,
   },
 );
 
 const regionCertificate = new studion.AcmCertificate(`${appName}-region-cert`, {
-  domain: `region.${domainName}`,
+  domain: infraConfig.regionCertificateDomain,
   hostedZoneId: hostedZone.zoneId,
-  region: alternateRegion,
+  region: infraConfig.alternateRegion,
 });
 
 export { certificate, sanCertificate, regionCertificate, hostedZone };
