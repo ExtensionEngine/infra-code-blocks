@@ -266,12 +266,16 @@ export function testEcsServiceWithStorage(ctx: EcsTestContext) {
     }
     const logsClient = new CloudWatchLogsClient({ region });
 
-    const listCommand = new ListTasksCommand({
-      cluster: clusterName,
-      family: ecsServiceWithStorage.taskDefinition.family,
-    });
-    const { taskArns } = await ctx.clients.ecs.send(listCommand);
-    assert.ok(taskArns && taskArns.length > 0, 'Task should be running');
+    const taskArns = await backOff(async () => {
+      const listCommand = new ListTasksCommand({
+        cluster: clusterName,
+        family: ecsServiceWithStorage.taskDefinition.family,
+      });
+      const { taskArns } = await ctx.clients.ecs.send(listCommand);
+      assert.ok(taskArns && taskArns.length > 0, 'Task should be running');
+
+      return taskArns;
+    }, ctx.config.exponentialBackOffConfig);
 
     const describeTasksCommand = new DescribeTasksCommand({
       cluster: clusterName,
