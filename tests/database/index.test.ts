@@ -24,6 +24,7 @@ import { KMSClient } from '@aws-sdk/client-kms';
 import { RDSClient } from '@aws-sdk/client-rds';
 import { requireEnv } from '../util';
 import { testConfigurableDb } from './configurable-db.test';
+import { testReplicaDb } from './replica-db.test';
 import { testSnapshotDb } from './snapshot-db.test';
 
 const programArgs: InlineProgramArgs = {
@@ -209,4 +210,5 @@ describe('Database component deployment', () => {
 
   describe('With configurable options', () => testConfigurableDb(ctx));
   describe('With snapshot', () => testSnapshotDb(ctx));
+  describe('With replica', () => testReplicaDb(ctx));
 });

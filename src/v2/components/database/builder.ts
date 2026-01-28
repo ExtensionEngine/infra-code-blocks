@@ -12,6 +12,8 @@ export class DatabaseBuilder {
   private kmsKeyId?: Database.Args['kmsKeyId'];
   private parameterGroupName?: Database.Args['parameterGroupName'];
   private tags?: Database.Args['tags'];
+  private createReplica?: Database.Args['createReplica'];
+  private replicaConfig?: Database.Args['replicaConfig'];
 
   constructor(name: string) {
     this.name = name;
@@ -75,6 +77,13 @@ export class DatabaseBuilder {
     return this;
   }
 
+  public withReplica(replicaConfig: Database.Args['replicaConfig'] = {}): this {
+    this.createReplica = true;
+    this.replicaConfig = replicaConfig;
+
+    return this;
+  }
+
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
     if (!this.snapshotIdentifier && !this.instanceConfig?.dbName) {
       throw new Error(
@@ -96,6 +105,14 @@ export class DatabaseBuilder {
       throw new Error(`You can't set username when using snapshotIdentifier.`);
     }
 
+    if (this.createReplica && this.replicaConfig?.enableMonitoring) {
+      if (!this.enableMonitoring && !this.replicaConfig.monitoringRole) {
+        throw new Error(
+          'To enable monitoring on read replica provide monitoring role or enable monitoring on the primary instance.',
+        );
+      }
+    }
+
     if (!this.vpc) {
       throw new Error(
         'VPC not provided. Make sure to call DatabaseBuilder.withVpc().',
@@ -114,6 +131,8 @@ export class DatabaseBuilder {
         kmsKeyId: this.kmsKeyId,
         parameterGroupName: this.parameterGroupName,
         tags: this.tags,
+        createReplica: this.createReplica,
+        replicaConfig: this.replicaConfig,
       },
       opts,
     );
