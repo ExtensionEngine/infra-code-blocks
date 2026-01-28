@@ -1,4 +1,6 @@
+import * as pulumi from '@pulumi/pulumi';
 import { OutputMap } from '@pulumi/pulumi/automation';
+import { next as studion } from '@studion/infra-code-blocks';
 import { backOff as backOffFn, BackoffOptions } from 'exponential-backoff';
 
 const backOffDefaults: BackoffOptions = {
@@ -36,4 +38,12 @@ export function unwrapOutputs<T extends Record<string, any>>(
   }
 
   return unwrapped;
+}
+
+export function getCommonVpc(): pulumi.Output<studion.Vpc> {
+  const ref = requireEnv('ICB_COMMON_INFRA_STACK_REF');
+  const stack = new pulumi.StackReference(ref);
+  const vpc = stack.getOutput('vpc');
+
+  return vpc as pulumi.Output<studion.Vpc>;
 }

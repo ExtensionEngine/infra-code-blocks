@@ -2,13 +2,14 @@ import * as aws from '@pulumi/aws-v7';
 import * as config from './config';
 import * as pulumi from '@pulumi/pulumi';
 import { next as studion } from '@studion/infra-code-blocks';
+import * as util from '../../util';
 
 const parent = new pulumi.ComponentResource(
   'studion:database:TestGroup',
   `${config.appName}-root`,
 );
 
-const vpc = new studion.Vpc(`${config.appName}-vpc`, {}, { parent });
+const vpc = util.getCommonVpc();
 
 const defaultDb = new studion.DatabaseBuilder(`${config.appName}-default-db`)
   .withInstance({

@@ -1,6 +1,7 @@
 import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
 import { next as studion } from '@studion/infra-code-blocks';
+import * as util from '../../util';
 
 const appName = 'ecs-test';
 const stackName = pulumi.getStack();
@@ -20,7 +21,7 @@ const parent = new pulumi.ComponentResource(
   `${appName}-root`,
 );
 
-const vpc = new studion.Vpc(`${appName}-vpc`, {}, { parent });
+const vpc = util.getCommonVpc();
 
 const cluster = new aws.ecs.Cluster(
   `${appName}-cluster`,
