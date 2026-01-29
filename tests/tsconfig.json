@@ -9,9 +9,5 @@
     "paths": {
       "@studion/infra-code-blocks": ["../src/index.ts"]
     }
-  },
-  "ts-node": {
-    "transpileOnly": true,
-    "require": ["tsconfig-paths/register"]
   }
 }

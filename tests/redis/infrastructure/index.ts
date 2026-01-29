@@ -2,6 +2,7 @@ import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
 import * as upstash from '@upstash/pulumi';
 import { next as studion } from '@studion/infra-code-blocks';
+import * as util from '../../util';
 
 const appName = 'redis-test';
 const stackName = pulumi.getStack();
@@ -15,7 +16,7 @@ const parent = new pulumi.ComponentResource(
   `${appName}-root`,
 );
 
-const vpc = new studion.Vpc(`${appName}-vpc`, {}, { parent });
+const vpc = util.getCommonVpc();
 
 const defaultElastiCacheRedis = new studion.ElastiCacheRedis(
   `${appName}-default-elasticache`,
