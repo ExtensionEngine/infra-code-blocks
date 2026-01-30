@@ -384,4 +384,28 @@ describe('Build output', () => {
       });
     });
   });
+
+  describe('StaticSite', () => {
+    it('Should export StaticSite', () => {
+      expect(studion).type.toHaveProperty('StaticSite');
+    });
+
+    it('Should export S3Assets', () => {
+      expect(studion).type.toHaveProperty('S3Assets');
+    });
+
+    describe('Instantiation', () => {
+      const { StaticSite, S3Assets } = studion;
+
+      it('Should construct StaticSite', () => {
+        expect(StaticSite).type.toBeConstructableWith('ssName', {
+          hostedZoneId: 'ZONE_ID',
+        });
+      });
+
+      it('Should construct S3Assets', () => {
+        expect(S3Assets).type.toBeConstructableWith('s3aName', {});
+      });
+    });
+  });
 });

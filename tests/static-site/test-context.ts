@@ -1,7 +1,7 @@
 import { CloudFrontClient } from '@aws-sdk/client-cloudfront';
 import { S3Client } from '@aws-sdk/client-s3';
+import { next as studion } from '@studion/infra-code-blocks';
 import { AwsContext, ConfigContext, PulumiProgramContext } from '../types';
-import { StaticSite } from '../../src/v2/components/static-site';
 
 interface Config {
   staticSiteName: string;
@@ -14,7 +14,7 @@ interface AwsClients {
 }
 
 export interface ProgramOutput {
-  staticSite: StaticSite;
+  staticSite: studion.StaticSite;
 }
 
 export interface StaticSiteTestContext

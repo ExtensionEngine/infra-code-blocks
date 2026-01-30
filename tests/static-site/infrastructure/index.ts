@@ -1,7 +1,7 @@
 import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
+import { next as studion } from '@studion/infra-code-blocks';
 import * as config from './config';
-import { StaticSite } from '../../../src/v2/components/static-site';
 
 const hostedZoneId = process.env.ICB_HOSTED_ZONE_ID;
 
@@ -13,7 +13,7 @@ const hostedZone = aws.route53.getZoneOutput({
   zoneId: hostedZoneId,
 });
 
-const staticSite = new StaticSite(
+const staticSite = new studion.StaticSite(
   config.staticSiteName,
   {
     domain: config.staticSiteDomain,
