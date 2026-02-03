@@ -1,9 +1,9 @@
 import * as pulumi from '@pulumi/pulumi';
+import * as aws from '@pulumi/aws-v7';
 import * as awsx from '@pulumi/awsx-v3';
 import { EcsService } from '../ecs-service';
 import { WebServer } from '.';
 import { OtelCollector } from '../../otel';
-import { AcmCertificate } from '../acm-certificate';
 
 export namespace WebServerBuilder {
   export type EcsConfig = Omit<WebServer.EcsConfig, 'vpc' | 'volumes'>;
@@ -26,7 +26,7 @@ export class WebServerBuilder {
   private _ecsConfig?: WebServerBuilder.EcsConfig;
   private _domain?: pulumi.Input<string>;
   private _hostedZoneId?: pulumi.Input<string>;
-  private _certificate?: pulumi.Input<AcmCertificate>;
+  private _certificate?: pulumi.Input<aws.acm.Certificate>;
   private _healthCheckPath?: pulumi.Input<string>;
   private _loadBalancingAlgorithmType?: pulumi.Input<string>;
   private _otelCollector?: pulumi.Input<OtelCollector>;

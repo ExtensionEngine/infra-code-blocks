@@ -20,7 +20,7 @@ export class CloudFront extends pulumi.ComponentResource {
     this.name = name;
 
     const { behaviors, domain, certificate, hostedZoneId, tags } = args;
-    const hasCustomDomain = domain || certificate;
+    const hasCustomDomain = !!domain || !!certificate;
 
     if (hasCustomDomain && !hostedZoneId) {
       throw new Error(
@@ -225,10 +225,7 @@ export class CloudFront extends pulumi.ComponentResource {
                       certificate.domainName,
                       certificate.subjectAlternativeNames,
                     ])
-                    .apply(([domain, alternativeDomains]) => [
-                      domain,
-                      ...alternativeDomains,
-                    ]),
+                    .apply(([dn, sans = []]) => [...new Set([dn, ...sans])]),
               viewerCertificate: {
                 acmCertificateArn: certificate.arn,
                 sslSupportMethod: 'sni-only',

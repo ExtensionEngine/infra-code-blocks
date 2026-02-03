@@ -101,8 +101,11 @@ const webServerWithSanCertificate = new studion.WebServerBuilder(
   .configureEcs(ecs)
   .withVpc(vpc.vpc)
   .withCustomHealthCheckPath(healthCheckPath)
-  .withCertificate(sanWebServerCert, hostedZone.zoneId)
-  .build({ parent: cluster });
+  .withCertificate(sanWebServerCert.certificate, hostedZone.zoneId)
+  .build({
+    parent: cluster,
+    dependsOn: [sanWebServerCert.certificateValidation],
+  });
 
 const certWebServer = new studion.AcmCertificate(
   `${webServerName}-cert`,
@@ -119,16 +122,18 @@ const webServerWithCertificate = new studion.WebServerBuilder(`web-server-cert`)
   .withVpc(vpc.vpc)
   .withCustomHealthCheckPath(healthCheckPath)
   .withCertificate(
-    certWebServer,
+    certWebServer.certificate,
     hostedZone.zoneId,
     webServerWithCertificateConfig.primary,
   )
-  .build({ parent: cluster });
+  .build({ parent: cluster, dependsOn: [certWebServer.certificateValidation] });
 
 export {
   webServer,
   otelCollector,
+  sanWebServerCert,
   webServerWithSanCertificate,
+  certWebServer,
   webServerWithCertificate,
   webServerWithDomain,
 };

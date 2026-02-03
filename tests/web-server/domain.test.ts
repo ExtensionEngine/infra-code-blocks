@@ -10,7 +10,13 @@ import status from 'http-status';
 export function testWebServerWithDomain(ctx: WebServerTestContext) {
   it('should configure HTTPS listener with certificate for web server with custom domain', async () => {
     const webServer = ctx.outputs.webServerWithDomain.value;
-    await assertHttpsListenerWithCertificate(ctx, webServer);
+
+    assert.ok(webServer.acmCertificate, 'Certificate should be created');
+    await assertHttpsListenerWithCertificate(
+      ctx,
+      webServer,
+      webServer.acmCertificate.certificate.arn,
+    );
   });
 
   it('should create single DNS A record for web server with custom domain', async () => {
@@ -33,7 +39,14 @@ export function testWebServerWithDomain(ctx: WebServerTestContext) {
 
   it('should configure HTTPS listener with certificate for web server with SAN certificate', async () => {
     const webServer = ctx.outputs.webServerWithSanCertificate.value;
-    await assertHttpsListenerWithCertificate(ctx, webServer);
+    const certificate = ctx.outputs.sanWebServerCert.value;
+
+    assert.ok(!webServer.acmCertificate, 'Certificate should not be created');
+    await assertHttpsListenerWithCertificate(
+      ctx,
+      webServer,
+      certificate.certificate.arn,
+    );
   });
 
   it('should create DNS records for primary domain and all SANs', async () => {
@@ -65,7 +78,14 @@ export function testWebServerWithDomain(ctx: WebServerTestContext) {
 
   it('should configure HTTPS listener with certificate for web server', async () => {
     const webServer = ctx.outputs.webServerWithCertificate.value;
-    await assertHttpsListenerWithCertificate(ctx, webServer);
+    const certificate = ctx.outputs.certWebServer.value;
+
+    assert.ok(!webServer.acmCertificate, 'Certificate should not be created');
+    await assertHttpsListenerWithCertificate(
+      ctx,
+      webServer,
+      certificate.certificate.arn,
+    );
   });
 
   it('should create DNS record only for specified domain in web server with certificate', async () => {
@@ -90,8 +110,8 @@ export function testWebServerWithDomain(ctx: WebServerTestContext) {
 async function assertHttpsListenerWithCertificate(
   ctx: WebServerTestContext,
   webServer: any,
+  certificateArn: string,
 ) {
-  assert.ok(webServer.certificate, 'Certificate should be configured');
   assert.ok(webServer.lb.tlsListener, 'TLS listener should exist');
 
   const command = new DescribeListenersCommand({
@@ -113,10 +133,10 @@ async function assertHttpsListenerWithCertificate(
     'Listener protocol should be HTTPS',
   );
 
-  const certificateArn = listener.Certificates?.[0]?.CertificateArn;
+  const [{ CertificateArn }] = listener.Certificates!;
   assert.strictEqual(
+    CertificateArn,
     certificateArn,
-    webServer.certificate.certificate.arn,
     'Certificate ARN should match the configured certificate',
   );
 }

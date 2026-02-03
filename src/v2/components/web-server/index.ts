@@ -39,17 +39,33 @@ export namespace WebServer {
   export type Args = EcsConfig &
     Container & {
       /**
-       * The domain which will be used to access the service.
-       * The domain or subdomain must belong to the provided hostedZone.
+       * Domain name for CloudFront distribution. Implies creation of certificate
+       * and alias record. Must belong to the provided hosted zone.
+       * Providing the `certificate` argument has following effects:
+       * - Certificate creation is skipped
+       * - Provided certificate must cover the domain name
+       * Responsibility to ensure mentioned requirements in on the consumer, and
+       * falling to do so will result in unexpected behavior.
        */
       domain?: pulumi.Input<string>;
-      hostedZoneId?: pulumi.Input<string>;
       /**
-       * If provided without `domain` argument, Route53 A records will be created for the certificate's
-       * primary domain and all subject alternative names (SANs).
-       * If `domain` argument is also provided, only a single A record for that domain will be created.
+       * Certificate for CloudFront distribution. Domain and alternative domains
+       * are automatically pulled from the certificate and translated into alias
+       * records. Domains covered by the certificate, must belong to the provided
+       * hosted zone. The certificate must be in `us-east-1` region. In a case
+       * of wildcard certificate the `domain` argument is required.
+       * Providing the `domain` argument has following effects:
+       * - Alias records creation, from automatically pulled domains, is skipped
+       * - Certificate must cover the provided domain name
+       * Responsibility to ensure mentioned requirements in on the consumer, and
+       * falling to do so will result in unexpected behavior.
        */
-      certificate?: pulumi.Input<AcmCertificate>;
+      certificate?: pulumi.Input<aws.acm.Certificate>;
+      /**
+       * ID of hosted zone is needed when the `domain` or the `certificate`
+       * arguments are provided.
+       */
+      hostedZoneId?: pulumi.Input<string>;
       /**
        * Path for the load balancer target group health check request.
        *
@@ -76,7 +92,7 @@ export class WebServer extends pulumi.ComponentResource {
   initContainers?: pulumi.Output<EcsService.Container[]>;
   sidecarContainers?: pulumi.Output<EcsService.Container[]>;
   volumes?: pulumi.Output<EcsService.PersistentStorageVolume[]>;
-  certificate?: pulumi.Output<AcmCertificate>;
+  acmCertificate?: AcmCertificate;
   dnsRecords?: pulumi.Output<aws.route53.Record[]>;
 
   constructor(
@@ -86,20 +102,16 @@ export class WebServer extends pulumi.ComponentResource {
   ) {
     super('studion:WebServer', name, args, opts);
     const { vpc, domain, hostedZoneId, certificate } = args;
+    const hasCustomDomain = !!domain || !!certificate;
 
-    if ((domain || certificate) && !hostedZoneId) {
+    if (hasCustomDomain && !hostedZoneId) {
       throw new Error(
-        'HostedZoneId must be provided when domain or certificate are provided',
+        'Provide `hostedZoneId` alongside `domain` and/or `certificate`.',
       );
     }
 
-    const hasCustomDomain = !!domain && !!hostedZoneId;
-    if (certificate) {
-      this.certificate = pulumi.output(certificate);
-    } else if (hasCustomDomain) {
-      this.certificate = pulumi.output(
-        this.createTlsCertificate({ domain, hostedZoneId }),
-      );
+    if (domain && hostedZoneId && !certificate) {
+      this.acmCertificate = this.createTlsCertificate({ domain, hostedZoneId });
     }
 
     this.name = name;
@@ -108,11 +120,16 @@ export class WebServer extends pulumi.ComponentResource {
       {
         vpc,
         port: args.port,
-        certificate: this.certificate?.certificate,
+        certificate: certificate ?? this.acmCertificate?.certificate,
         healthCheckPath: args.healthCheckPath,
         loadBalancingAlgorithmType: args.loadBalancingAlgorithmType,
       },
-      { parent: this },
+      {
+        parent: this,
+        ...(this.acmCertificate
+          ? { dependsOn: [this.acmCertificate.certificateValidation] }
+          : undefined),
+      },
     );
     this.serviceSecurityGroup = this.createSecurityGroup(vpc);
 
@@ -131,10 +148,10 @@ export class WebServer extends pulumi.ComponentResource {
       this.sidecarContainers,
     );
 
-    if (this.certificate) {
+    if (hasCustomDomain && hostedZoneId) {
       this.dnsRecords = this.createDnsRecords(
-        this.certificate,
-        hostedZoneId!,
+        certificate ?? this.acmCertificate!.certificate,
+        hostedZoneId,
         domain,
       );
     }
@@ -329,49 +346,22 @@ export class WebServer extends pulumi.ComponentResource {
   }
 
   private createDnsRecords(
-    certificate: pulumi.Output<AcmCertificate>,
+    certificate: pulumi.Input<aws.acm.Certificate>,
     hostedZoneId: pulumi.Input<string>,
     domain?: pulumi.Input<string>,
   ): pulumi.Output<aws.route53.Record[]> {
-    if (domain) {
-      const record = new aws.route53.Record(
-        `${this.name}-route53-record`,
-        {
-          type: 'A',
-          name: domain,
-          zoneId: hostedZoneId,
-          aliases: [
-            {
-              name: this.lb.lb.dnsName,
-              zoneId: this.lb.lb.zoneId,
-              evaluateTargetHealth: true,
-            },
-          ],
-        },
-        { parent: this },
-      );
+    const certOutput = pulumi.output(certificate);
 
-      return pulumi.output([record]);
-    }
-
-    const records = pulumi
-      .all([
-        certificate.certificate.domainName,
-        certificate.certificate.subjectAlternativeNames,
-      ])
-      .apply(([primaryDomain, sans]) => {
-        const allDomains = [
-          primaryDomain,
-          ...(sans || []).filter(san => san !== primaryDomain),
-        ];
-
-        return allDomains.map(
-          (domain, index) =>
+    return pulumi
+      .all([domain, certOutput.domainName, certOutput.subjectAlternativeNames])
+      .apply(([domain, certDomain, certSans = []]) =>
+        (domain ? [domain] : [...new Set([certDomain, ...certSans])]).map(
+          (alias, index) =>
             new aws.route53.Record(
               `${this.name}-route53-record${index === 0 ? '' : `-${index}`}`,
               {
                 type: 'A',
-                name: domain,
+                name: alias,
                 zoneId: hostedZoneId,
                 aliases: [
                   {
@@ -383,9 +373,7 @@ export class WebServer extends pulumi.ComponentResource {
               },
               { parent: this },
             ),
-        );
-      });
-
-    return records;
+        ),
+      );
   }
 }
