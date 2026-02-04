@@ -60,6 +60,7 @@
     "@aws-sdk/client-kms": "^3.973.5",
     "@aws-sdk/client-rds": "^3.973.5",
     "@aws-sdk/client-route-53": "^3.973.5",
+    "@aws-sdk/client-s3": "^3.982.0",
     "@aws-sdk/client-secrets-manager": "^3.973.5",
     "@aws-sdk/client-servicediscovery": "^3.973.5",
     "@studion/prettier-config": "^0.1.0",
