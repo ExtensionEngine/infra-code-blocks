@@ -10,6 +10,8 @@ export { DatabaseBuilder } from './components/database/builder';
 export { AcmCertificate } from './components/acm-certificate';
 export { Password } from './components/password';
 export { CloudFront } from './components/cloudfront';
+export { StaticSite } from './components/static-site';
+export { S3Assets } from './components/static-site/s3-assets';
 
 import { OtelCollectorBuilder } from './otel/builder';
 import { OtelCollector } from './otel';
