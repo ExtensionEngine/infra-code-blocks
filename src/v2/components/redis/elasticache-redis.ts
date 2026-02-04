@@ -2,6 +2,7 @@ import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
 import * as awsx from '@pulumi/awsx-v3';
 import { commonTags } from '../../../constants';
+import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 
 type RedisArgs = {
   vpc: pulumi.Input<awsx.ec2.Vpc>;
@@ -44,7 +45,7 @@ export class ElastiCacheRedis extends pulumi.ComponentResource {
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:Redis:ElastiCache', name, {}, opts);
-    const argsWithDefaults = Object.assign({}, defaults, args);
+    const argsWithDefaults = mergeWithDefaults(defaults, args);
 
     this.name = name;
     this.vpc = pulumi.output(argsWithDefaults.vpc);

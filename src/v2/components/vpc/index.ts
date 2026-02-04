@@ -2,6 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import * as awsx from '@pulumi/awsx-v3';
 import { commonTags } from '../../../constants';
 import { enums } from '@pulumi/awsx-v3/types';
+import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 
 export type VpcArgs = {
   /**
@@ -28,7 +29,7 @@ export class Vpc extends pulumi.ComponentResource {
   ) {
     super('studion:Vpc', name, {}, opts);
 
-    const argsWithDefaults = Object.assign({}, defaults, args);
+    const argsWithDefaults = mergeWithDefaults(defaults, args);
 
     this.vpc = new awsx.ec2.Vpc(
       `${name}-vpc`,

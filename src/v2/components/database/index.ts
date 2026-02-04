@@ -4,6 +4,7 @@ import * as awsx from '@pulumi/awsx-v3';
 import * as pulumi from '@pulumi/pulumi';
 import { Password } from '../password';
 import { commonTags } from '../../../constants';
+import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 
 export namespace Database {
   export type Instance = {
@@ -72,7 +73,7 @@ export class Database extends pulumi.ComponentResource {
 
     this.name = name;
 
-    const argsWithDefaults = Object.assign({}, defaults, args);
+    const argsWithDefaults = mergeWithDefaults(defaults, args);
     const { vpc, kmsKeyId, enableMonitoring, snapshotIdentifier } =
       argsWithDefaults;
 

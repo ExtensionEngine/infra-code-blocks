@@ -2,6 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws-v7';
 import * as awsx from '@pulumi/awsx-v3';
 import { commonTags } from '../../../constants';
+import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 
 export namespace WebServerLoadBalancer {
   export type Args = {
@@ -59,8 +60,9 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
 
     this.name = name;
     const vpc = pulumi.output(args.vpc);
+    const argsWithDefaults = mergeWithDefaults(defaults, args);
     const { port, certificate, healthCheckPath, loadBalancingAlgorithmType } =
-      args;
+      argsWithDefaults;
 
     this.securityGroup = this.createLbSecurityGroup(vpc.vpcId);
 
@@ -160,7 +162,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
   private createLbTargetGroup(
     port: pulumi.Input<number>,
     vpcId: awsx.ec2.Vpc['vpcId'],
-    healthCheckPath: pulumi.Input<string> | undefined,
+    healthCheckPath: pulumi.Input<string>,
     loadBalancingAlgorithmType?: pulumi.Input<string>,
   ): aws.lb.TargetGroup {
     return new aws.lb.TargetGroup(
@@ -177,7 +179,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
           unhealthyThreshold: 2,
           interval: 60,
           timeout: 5,
-          path: healthCheckPath || defaults.healthCheckPath,
+          path: healthCheckPath,
         },
         tags: { ...commonTags, Name: `${this.name}-target-group` },
       },
