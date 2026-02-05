@@ -2,9 +2,10 @@ import * as aws from '@pulumi/aws-v7';
 import * as awsNative from '@pulumi/aws-native';
 import * as awsx from '@pulumi/awsx-v3';
 import * as pulumi from '@pulumi/pulumi';
-import { Password } from '../password';
 import { commonTags } from '../../shared/common-tags';
+import { DatabaseReplica } from './database-replica';
 import { mergeWithDefaults } from '../../shared/merge-with-defaults';
+import { Password } from '../password';
 
 export namespace Database {
   export type Instance = {
@@ -27,6 +28,20 @@ export namespace Database {
     maxAllocatedStorage?: pulumi.Input<number>;
   };
 
+  export type ReplicaConfig = Partial<
+    Omit<
+      DatabaseReplica.Args,
+      'replicateSourceDb' | keyof DatabaseReplica.Security
+    >
+  > & {
+    /*
+     * Enables monitoring for the replica instance and
+     * reuses the same monitoring role from the primary instance
+     * if you don't provide a custom `monitoringRole`.
+     */
+    enableMonitoring?: pulumi.Input<boolean>;
+  };
+
   export type Args = Instance &
     Credentials &
     Storage & {
@@ -35,6 +50,8 @@ export namespace Database {
       snapshotIdentifier?: pulumi.Input<string>;
       parameterGroupName?: pulumi.Input<string>;
       kmsKeyId?: pulumi.Input<string>;
+      createReplica?: pulumi.Input<boolean>;
+      replicaConfig?: ReplicaConfig;
       tags?: pulumi.Input<{
         [key: string]: pulumi.Input<string>;
       }>;
@@ -63,6 +80,7 @@ export class Database extends pulumi.ComponentResource {
   kmsKeyId: pulumi.Output<string>;
   monitoringRole?: aws.iam.Role;
   encryptedSnapshotCopy?: aws.rds.SnapshotCopy;
+  replica?: DatabaseReplica;
 
   constructor(
     name: string,
@@ -74,8 +92,14 @@ export class Database extends pulumi.ComponentResource {
     this.name = name;
 
     const argsWithDefaults = mergeWithDefaults(defaults, args);
-    const { vpc, kmsKeyId, enableMonitoring, snapshotIdentifier } =
-      argsWithDefaults;
+    const {
+      vpc,
+      kmsKeyId,
+      enableMonitoring,
+      snapshotIdentifier,
+      createReplica,
+      replicaConfig = {},
+    } = argsWithDefaults;
 
     this.vpc = pulumi.output(vpc);
     this.dbSubnetGroup = this.createSubnetGroup();
@@ -101,6 +125,10 @@ export class Database extends pulumi.ComponentResource {
     }
 
     this.instance = this.createDatabaseInstance(argsWithDefaults);
+
+    if (createReplica) {
+      this.replica = this.createDatabaseReplica(replicaConfig);
+    }
 
     this.registerOutputs();
   }
@@ -204,6 +232,25 @@ export class Database extends pulumi.ComponentResource {
       },
       { parent: this },
     );
+  }
+
+  private createDatabaseReplica(config: Database.Args['replicaConfig'] = {}) {
+    const monitoringRole = config.enableMonitoring
+      ? config.monitoringRole || this.monitoringRole
+      : undefined;
+
+    const replica = new DatabaseReplica(
+      `${this.name}-replica`,
+      {
+        replicateSourceDb: this.instance.dbInstanceIdentifier.apply(id => id!),
+        dbSecurityGroup: this.dbSecurityGroup,
+        monitoringRole,
+        ...config,
+      },
+      { parent: this, dependsOn: [this.instance] },
+    );
+
+    return replica;
   }
 
   private createDatabaseInstance(args: Database.Args) {
