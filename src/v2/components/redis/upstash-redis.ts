@@ -1,25 +1,27 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as upstash from '@upstash/pulumi';
-import { Password } from '../../../components/password';
+import { Password } from '../password';
 import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 
-export type RedisArgs = {
-  dbName: pulumi.Input<string>;
-  /**
-   * Primary region for the database
-   * @default 'us-east-1'
-   */
-  primaryRegion?: pulumi.Input<
-    | 'us-east-1'
-    | 'us-west-1'
-    | 'us-west-2'
-    | 'eu-central-1'
-    | 'eu-west-1'
-    | 'sa-east-1'
-    | 'ap-southeast-1'
-    | 'ap-southeast-2'
-  >;
-};
+export namespace UpstashRedis {
+  export type Args = {
+    dbName: pulumi.Input<string>;
+    /**
+     * Primary region for the database
+     * @default 'us-east-1'
+     */
+    primaryRegion?: pulumi.Input<
+      | 'us-east-1'
+      | 'us-west-1'
+      | 'us-west-2'
+      | 'eu-central-1'
+      | 'eu-west-1'
+      | 'sa-east-1'
+      | 'ap-southeast-1'
+      | 'ap-southeast-2'
+    >;
+  };
+}
 
 const defaults = {
   region: 'global',
@@ -27,13 +29,13 @@ const defaults = {
 };
 
 export class UpstashRedis extends pulumi.ComponentResource {
+  name: string;
   instance: upstash.RedisDatabase;
   password: Password;
-  username = 'default';
 
   constructor(
     name: string,
-    args: RedisArgs,
+    args: UpstashRedis.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:Redis:Upstash', name, {}, opts);
@@ -41,8 +43,9 @@ export class UpstashRedis extends pulumi.ComponentResource {
     const dbName = `${pulumi.getProject()}-${pulumi.getStack()}`;
     const argsWithDefaults = mergeWithDefaults({ ...defaults, dbName }, args);
 
+    this.name = name;
     this.instance = new upstash.RedisDatabase(
-      name,
+      `${this.name}-database`,
       {
         databaseName: argsWithDefaults.dbName,
         region: argsWithDefaults.region,
@@ -54,7 +57,7 @@ export class UpstashRedis extends pulumi.ComponentResource {
     );
 
     this.password = new Password(
-      `${name}-database-password`,
+      `${this.name}-database-password`,
       { value: this.instance.password },
       { parent: this },
     );

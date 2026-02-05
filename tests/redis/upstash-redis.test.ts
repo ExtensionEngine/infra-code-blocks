@@ -29,11 +29,6 @@ export function testUpstashRedis(ctx: RedisTestContext) {
     );
     assert.ok(redis.instance.endpoint, 'Redis should have endpoint');
     assert.ok(redis.instance.port, 'Redis should have port');
-    assert.strictEqual(
-      redis.username,
-      'default',
-      'Default username should be defined',
-    );
     assert.ok(
       redis.instance.databaseName.includes(ctx.config.upstashRedisName),
       'Database name should include the base name',
