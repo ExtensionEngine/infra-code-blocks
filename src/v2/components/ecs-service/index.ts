@@ -3,6 +3,7 @@ import * as aws from '@pulumi/aws-v7';
 import * as awsx from '@pulumi/awsx-v3';
 import { CustomSize, Size } from '../../../types/size';
 import { PredefinedSize, commonTags } from '../../../constants';
+import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 import { assumeRolePolicy } from './policies';
 
 const config = new pulumi.Config('aws');
@@ -192,7 +193,7 @@ export class EcsService extends pulumi.ComponentResource {
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:ecs:Service', name, {}, opts);
-    const argsWithDefaults = Object.assign({}, defaults, args);
+    const argsWithDefaults = mergeWithDefaults(defaults, args);
     const taskExecutionRoleInlinePolicies = pulumi.output(
       args.taskExecutionRoleInlinePolicies ||
         defaults.taskExecutionRoleInlinePolicies,

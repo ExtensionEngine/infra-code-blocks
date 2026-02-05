@@ -1,6 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as upstash from '@upstash/pulumi';
 import { Password } from '../../../components/password';
+import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 
 export type RedisArgs = {
   dbName: pulumi.Input<string>;
@@ -37,15 +38,13 @@ export class UpstashRedis extends pulumi.ComponentResource {
   ) {
     super('studion:Redis:Upstash', name, {}, opts);
 
-    const argsWithDefaults = Object.assign({}, defaults, args);
-
-    const dbName =
-      argsWithDefaults.dbName ?? `${pulumi.getProject()}-${pulumi.getStack()}`;
+    const dbName = `${pulumi.getProject()}-${pulumi.getStack()}`;
+    const argsWithDefaults = mergeWithDefaults({ ...defaults, dbName }, args);
 
     this.instance = new upstash.RedisDatabase(
       name,
       {
-        databaseName: dbName,
+        databaseName: argsWithDefaults.dbName,
         region: argsWithDefaults.region,
         primaryRegion: argsWithDefaults.primaryRegion,
         eviction: true,
