@@ -1,3 +1,4 @@
+import { cleanupReplicas, cleanupSnapshots } from './util';
 import { describe, before, after } from 'node:test';
 import {
   DescribeDBInstancesCommand,
@@ -13,7 +14,6 @@ import {
 } from '@aws-sdk/client-ec2';
 import * as assert from 'node:assert';
 import * as automation from '../automation';
-import { cleanupSnapshots } from './util';
 import * as config from './infrastructure/config';
 import { DatabaseTestContext } from './test-context';
 import { EC2Client } from '@aws-sdk/client-ec2';
@@ -52,6 +52,7 @@ describe('Database component deployment', () => {
   });
 
   after(async () => {
+    await cleanupReplicas(ctx);
     await automation.destroy(programArgs);
     await cleanupSnapshots(ctx);
   });
