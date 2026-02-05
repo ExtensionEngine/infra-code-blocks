@@ -11,24 +11,42 @@ export async function deploy(
   args: InlineProgramArgs,
   region?: string,
 ): Promise<OutputMap> {
-  const spinner = createSpinner('Deploying stack...').start();
-  const stack = await LocalWorkspace.createOrSelectStack(args);
-  await stack.setConfig('aws:region', {
-    value: region ?? requireEnv('AWS_REGION'),
-  });
-  const up = await stack.up({ logToStdErr: true });
-  spinner.success({ text: 'Stack deployed' });
+  const spinner = createSpinner().start('Deploying stack...');
 
-  return up.outputs;
+  try {
+    const stack = await LocalWorkspace.createOrSelectStack(args);
+
+    await stack.setConfig('aws:region', {
+      value: region ?? requireEnv('AWS_REGION'),
+    });
+
+    const result = await stack.up({ logToStdErr: true });
+
+    spinner.success('Stack deployed');
+
+    return result.outputs;
+  } catch (err) {
+    spinner.error('Failed to deploy stack!');
+
+    throw err;
+  }
 }
 
 export async function destroy(args: InlineProgramArgs): Promise<DestroyResult> {
-  const spinner = createSpinner('Destroying stack...').start();
-  const stack = await LocalWorkspace.createOrSelectStack(args);
-  const result = await stack.destroy();
-  spinner.success({ text: 'Stack destroyed' });
+  const spinner = createSpinner().start('Destroying stack...');
 
-  return result;
+  try {
+    const stack = await LocalWorkspace.createOrSelectStack(args);
+    const result = await stack.destroy();
+
+    spinner.success('Stack destroyed');
+
+    return result;
+  } catch (err) {
+    spinner.error('Failed to destroy stack!');
+
+    throw err;
+  }
 }
 
 export async function getOutputs(args: InlineProgramArgs): Promise<OutputMap> {
