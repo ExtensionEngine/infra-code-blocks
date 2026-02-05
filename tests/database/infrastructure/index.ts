@@ -103,6 +103,30 @@ const replicaDb = new studion.DatabaseBuilder(`${config.appName}-replica-db`)
   .withReplica()
   .withVpc(vpc.vpc)
   .build({ parent });
+
+const configurableReplicaDb = new studion.DatabaseBuilder(
+  `${config.appName}-config-replica-db`,
+)
+  .withInstance({
+    dbName: config.dbName,
+  })
+  .withCredentials({
+    username: config.dbUsername,
+  })
+  .withParameterGroup(paramGroup.name)
+  .withMonitoring()
+  .withTags(config.tags)
+  .withReplica({
+    enableMonitoring: true,
+    parameterGroupName: paramGroup.name,
+    applyImmediately: config.applyImmediately,
+    allowMajorVersionUpgrade: config.allowMajorVersionUpgrade,
+    autoMinorVersionUpgrade: config.autoMinorVersionUpgrade,
+    tags: config.tags,
+  })
+  .withVpc(vpc.vpc)
+  .build({ parent });
+
 export {
   vpc,
   defaultDb,
@@ -112,4 +136,5 @@ export {
   snapshot,
   snapshotDb,
   replicaDb,
+  configurableReplicaDb,
 };

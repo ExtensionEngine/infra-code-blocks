@@ -13,6 +13,7 @@ export async function cleanupSnapshots(ctx: DatabaseTestContext) {
     ctx.outputs.configurableDb.value,
     ctx.outputs.snapshotDb.value,
     ctx.outputs.replicaDb.value,
+    ctx.outputs.configurableReplicaDb.value,
   ];
   await Promise.all(
     dbs.map(db => deleteSnapshot(ctx, db.instance.dbInstanceIdentifier)),
