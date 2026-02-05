@@ -1,6 +1,7 @@
 import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
 import { commonTags } from '../../../constants';
+import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 
 export namespace DatabaseReplica {
   export type Instance = {
@@ -67,7 +68,7 @@ export class DatabaseReplica extends pulumi.ComponentResource {
     args: DatabaseReplica.Args,
     opts: pulumi.ComponentResourceOptions,
   ) {
-    const argsWithDefaults = Object.assign({}, defaults, args);
+    const argsWithDefaults = mergeWithDefaults(defaults, args);
 
     const monitoringOptions = argsWithDefaults.monitoringRole
       ? {
