@@ -23,10 +23,12 @@ import { it } from 'node:test';
 import { KMSClient } from '@aws-sdk/client-kms';
 import { RDSClient } from '@aws-sdk/client-rds';
 import { requireEnv } from '../util';
+import { SSMClient } from '@aws-sdk/client-ssm';
 import { testConfigurableDb } from './configurable-db.test';
 import { testConfigurableReplica } from './configurable-replica-db.test';
 import { testReplicaDb } from './replica-db.test';
 import { testSnapshotDb } from './snapshot-db.test';
+import { testSSMConnectDb } from './ssm-connect.test';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -43,6 +45,7 @@ const ctx: DatabaseTestContext = {
     ec2: new EC2Client({ region }),
     kms: new KMSClient({ region }),
     iam: new IAMClient({ region }),
+    ssm: new SSMClient({ region }),
   },
 };
 
@@ -214,4 +217,5 @@ describe('Database component deployment', () => {
   describe('With snapshot', () => testSnapshotDb(ctx));
   describe('With replica', () => testReplicaDb(ctx));
   describe('With configurable replica', () => testConfigurableReplica(ctx));
+  describe('With SSM connect', () => testSSMConnectDb(ctx));
 });
