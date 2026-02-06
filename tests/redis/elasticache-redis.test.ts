@@ -10,7 +10,6 @@ import {
   DescribeSecurityGroupsCommand,
   IpPermission,
 } from '@aws-sdk/client-ec2';
-import { defaults as elastiCacheDefaults } from '../../src/v2/components/redis/elasticache-redis';
 import { DescribeTasksCommand, ListTasksCommand } from '@aws-sdk/client-ecs';
 import {
   DescribeLogGroupsCommand,
@@ -32,18 +31,18 @@ export function testElastiCacheRedis(ctx: RedisTestContext) {
     assert.ok(redis.subnetGroup, 'Subnet group should be defined');
     assert.strictEqual(
       redis.cluster.engineVersion,
-      elastiCacheDefaults.engineVersion,
-      `Engine version should be ${elastiCacheDefaults.engineVersion}`,
+      '7.1',
+      `Engine version should be '7.1'`,
     );
     assert.strictEqual(
       redis.cluster.parameterGroupName,
-      elastiCacheDefaults.parameterGroupName,
-      `Parameter group name should be ${elastiCacheDefaults.parameterGroupName}`,
+      'default.redis7',
+      `Parameter group name should be 'default.redis7'`,
     );
     assert.strictEqual(
       redis.cluster.nodeType,
-      elastiCacheDefaults.nodeType,
-      `Node type should be ${elastiCacheDefaults.nodeType}`,
+      'cache.t4g.micro',
+      `Node type should be 'cache.t4g.micro'`,
     );
     assert.strictEqual(redis.cluster.port, 6379, 'Port should be 6379');
   });

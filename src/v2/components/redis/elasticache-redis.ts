@@ -4,29 +4,31 @@ import * as awsx from '@pulumi/awsx-v3';
 import { commonTags } from '../../../constants';
 import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 
-type RedisArgs = {
-  vpc: pulumi.Input<awsx.ec2.Vpc>;
-  /**
-   * Version number of the cache engine to be used
-   * @default '7.1'
-   */
-  engineVersion?: string;
-  /**
-   * Instance type for cache nodes
-   * @default 'cache.t4g.micro'
-   */
-  nodeType?: string;
-  /**
-   * The name of the parameter group to associate with this cache cluster.
-   * @default 'default.redis7'
-   */
-  parameterGroupName?: pulumi.Input<string>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
+export namespace ElastiCacheRedis {
+  export type Args = {
+    vpc: pulumi.Input<awsx.ec2.Vpc>;
+    /**
+     * Version number of the cache engine to be used
+     * @default '7.1'
+     */
+    engineVersion?: string;
+    /**
+     * Instance type for cache nodes
+     * @default 'cache.t4g.micro'
+     */
+    nodeType?: string;
+    /**
+     * The name of the parameter group to associate with this cache cluster.
+     * @default 'default.redis7'
+     */
+    parameterGroupName?: pulumi.Input<string>;
+    tags?: pulumi.Input<{
+      [key: string]: pulumi.Input<string>;
+    }>;
+  };
+}
 
-export const defaults = {
+const defaults = {
   engineVersion: '7.1',
   nodeType: 'cache.t4g.micro',
   parameterGroupName: 'default.redis7',
@@ -41,7 +43,7 @@ export class ElastiCacheRedis extends pulumi.ComponentResource {
 
   constructor(
     name: string,
-    args: RedisArgs,
+    args: ElastiCacheRedis.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:Redis:ElastiCache', name, {}, opts);
@@ -63,10 +65,10 @@ export class ElastiCacheRedis extends pulumi.ComponentResource {
   }
 
   private createRedisCluster(
-    engineVersion: RedisArgs['engineVersion'],
-    nodeType: RedisArgs['nodeType'],
-    parameterGroupName: RedisArgs['parameterGroupName'],
-    tags: RedisArgs['tags'],
+    engineVersion: ElastiCacheRedis.Args['engineVersion'],
+    nodeType: ElastiCacheRedis.Args['nodeType'],
+    parameterGroupName: ElastiCacheRedis.Args['parameterGroupName'],
+    tags: ElastiCacheRedis.Args['tags'],
   ) {
     return new aws.elasticache.Cluster(
       `${this.name}-cluster`,
