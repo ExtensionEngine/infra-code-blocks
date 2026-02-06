@@ -1,23 +1,27 @@
+import * as aws from '@pulumi/aws-v7';
+import * as awsx from '@pulumi/awsx-v3';
 import * as pulumi from '@pulumi/pulumi';
-import * as aws from '@pulumi/aws';
 import { commonTags } from '../../../constants';
+import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 
 const config = new pulumi.Config('aws');
 const awsRegion = config.require('region');
 
 export type Ec2SSMConnectArgs = {
-  vpcId: pulumi.Input<string>;
-  privateSubnetId: pulumi.Input<string>;
-  /**
-   * The IPv4 CIDR block for the VPC.
-   */
-  vpcCidrBlock: pulumi.Input<string>;
+  vpc: pulumi.Input<awsx.ec2.Vpc>;
+  instanceType?: pulumi.Input<string>;
   tags?: pulumi.Input<{
     [key: string]: pulumi.Input<string>;
   }>;
 };
 
+const defaults = {
+  instanceType: 't4g.nano',
+};
+
 export class Ec2SSMConnect extends pulumi.ComponentResource {
+  name: string;
+  vpc: pulumi.Output<awsx.ec2.Vpc>;
   ec2SecurityGroup: aws.ec2.SecurityGroup;
   ssmVpcEndpoint: aws.ec2.VpcEndpoint;
   ec2MessagesVpcEndpoint: aws.ec2.VpcEndpoint;
@@ -29,9 +33,14 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     args: Ec2SSMConnectArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:Ec2BastionSSMConnect', name, {}, opts);
+    super('studion:Ec2SSMConnect', name, {}, opts);
 
-    const subnetId = args.privateSubnetId;
+    const { vpc, instanceType, tags } = mergeWithDefaults(defaults, args);
+
+    this.name = name;
+    this.vpc = pulumi.output(vpc);
+
+    const subnetId = this.vpc.privateSubnetIds.apply(ids => ids[0]);
 
     const AmazonLinux2023_ARM_EC2_AMI = aws.ec2.getAmiOutput({
       filters: [
@@ -48,33 +57,33 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     });
 
     this.ec2SecurityGroup = new aws.ec2.SecurityGroup(
-      `${name}-ec2-security-group`,
+      `${this.name}-ec2-security-group`,
       {
         ingress: [
           {
             protocol: 'tcp',
             fromPort: 22,
             toPort: 22,
-            cidrBlocks: [args.vpcCidrBlock],
+            cidrBlocks: [this.vpc.vpc.cidrBlock],
           },
           {
             protocol: 'tcp',
             fromPort: 443,
             toPort: 443,
-            cidrBlocks: [args.vpcCidrBlock],
+            cidrBlocks: [this.vpc.vpc.cidrBlock],
           },
         ],
         egress: [
           { protocol: '-1', fromPort: 0, toPort: 0, cidrBlocks: ['0.0.0.0/0'] },
         ],
-        vpcId: args.vpcId,
+        vpcId: this.vpc.vpcId,
         tags: commonTags,
       },
       { parent: this },
     );
 
     const role = new aws.iam.Role(
-      `${name}-ec2-role`,
+      `${this.name}-ec2-role`,
       {
         assumeRolePolicy: {
           Version: '2012-10-17',
@@ -94,7 +103,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     );
 
     const ssmPolicyAttachment = new aws.iam.RolePolicyAttachment(
-      `${name}-ssm-policy-attachment`,
+      `${this.name}-ssm-policy-attachment`,
       {
         role: role.name,
         policyArn: 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore',
@@ -103,7 +112,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     );
 
     const ssmProfile = new aws.iam.InstanceProfile(
-      `${name}-ssm-profile`,
+      `${this.name}-ssm-profile`,
       {
         role: role.name,
         tags: commonTags,
@@ -112,27 +121,27 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     );
 
     this.ec2 = new aws.ec2.Instance(
-      `${name}-ec2`,
+      `${this.name}-ec2`,
       {
         ami: AmazonLinux2023_ARM_EC2_AMI.id,
         associatePublicIpAddress: false,
-        instanceType: 't4g.nano',
+        instanceType,
         iamInstanceProfile: ssmProfile.name,
         subnetId,
         vpcSecurityGroupIds: [this.ec2SecurityGroup.id],
         tags: {
           ...commonTags,
-          Name: `${name}-ec2`,
-          ...args.tags,
+          Name: `${this.name}-ec2`,
+          ...tags,
         },
       },
       { parent: this },
     );
 
     this.ssmVpcEndpoint = new aws.ec2.VpcEndpoint(
-      `${name}-ssm-vpc-endpoint`,
+      `${this.name}-ssm-vpc-endpoint`,
       {
-        vpcId: args.vpcId,
+        vpcId: this.vpc.vpcId,
         ipAddressType: 'ipv4',
         serviceName: `com.amazonaws.${awsRegion}.ssm`,
         vpcEndpointType: 'Interface',
@@ -145,9 +154,9 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     );
 
     this.ec2MessagesVpcEndpoint = new aws.ec2.VpcEndpoint(
-      `${name}-ec2messages-vpc-endpoint`,
+      `${this.name}-ec2messages-vpc-endpoint`,
       {
-        vpcId: args.vpcId,
+        vpcId: this.vpc.vpcId,
         ipAddressType: 'ipv4',
         serviceName: `com.amazonaws.${awsRegion}.ec2messages`,
         vpcEndpointType: 'Interface',
@@ -160,9 +169,9 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     );
 
     this.ssmMessagesVpcEndpoint = new aws.ec2.VpcEndpoint(
-      `${name}-ssmmessages-vpc-endpoint`,
+      `${this.name}-ssmmessages-vpc-endpoint`,
       {
-        vpcId: args.vpcId,
+        vpcId: this.vpc.vpcId,
         ipAddressType: 'ipv4',
         serviceName: `com.amazonaws.${awsRegion}.ssmmessages`,
         vpcEndpointType: 'Interface',
