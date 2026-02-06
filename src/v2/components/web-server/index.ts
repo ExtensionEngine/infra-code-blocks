@@ -1,7 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws-v7';
 import * as awsx from '@pulumi/awsx-v3';
-import { commonTags } from '../../../constants';
+import { commonTags } from '../../shared/common-tags';
 import { AcmCertificate } from '../acm-certificate';
 import { EcsService } from '../ecs-service';
 import { WebServerLoadBalancer } from './load-balancer';

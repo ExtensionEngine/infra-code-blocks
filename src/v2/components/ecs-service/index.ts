@@ -2,7 +2,8 @@ import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws-v7';
 import * as awsx from '@pulumi/awsx-v3';
 import { CustomSize, Size } from '../../../types/size';
-import { PredefinedSize, commonTags } from '../../../constants';
+import { PredefinedSize } from '../../../constants';
+import { commonTags } from '../../shared/common-tags';
 import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 import { assumeRolePolicy } from './policies';
 
