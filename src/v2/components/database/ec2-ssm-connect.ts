@@ -23,10 +23,13 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
   name: string;
   vpc: pulumi.Output<awsx.ec2.Vpc>;
   ec2SecurityGroup: aws.ec2.SecurityGroup;
+  role: aws.iam.Role;
+  ssmProfile: aws.iam.InstanceProfile;
   ssmVpcEndpoint: aws.ec2.VpcEndpoint;
   ec2MessagesVpcEndpoint: aws.ec2.VpcEndpoint;
   ssmMessagesVpcEndpoint: aws.ec2.VpcEndpoint;
   ec2: aws.ec2.Instance;
+  ami: pulumi.Output<aws.ec2.GetAmiResult>;
 
   constructor(
     name: string,
@@ -42,7 +45,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
 
     const subnetId = this.vpc.privateSubnetIds.apply(ids => ids[0]);
 
-    const AmazonLinux2023_ARM_EC2_AMI = aws.ec2.getAmiOutput({
+    this.ami = aws.ec2.getAmiOutput({
       filters: [
         { name: 'architecture', values: ['arm64'] },
         { name: 'root-device-type', values: ['ebs'] },
@@ -81,7 +84,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    const role = new aws.iam.Role(
+    this.role = new aws.iam.Role(
       `${this.name}-ec2-role`,
       {
         assumeRolePolicy: {
@@ -104,16 +107,16 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     const ssmPolicyAttachment = new aws.iam.RolePolicyAttachment(
       `${this.name}-ssm-policy-attachment`,
       {
-        role: role.name,
+        role: this.role.name,
         policyArn: 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore',
       },
       { parent: this },
     );
 
-    const ssmProfile = new aws.iam.InstanceProfile(
+    this.ssmProfile = new aws.iam.InstanceProfile(
       `${this.name}-ssm-profile`,
       {
-        role: role.name,
+        role: this.role.name,
         tags: commonTags,
       },
       { parent: this, dependsOn: [ssmPolicyAttachment] },
@@ -122,10 +125,10 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     this.ec2 = new aws.ec2.Instance(
       `${this.name}-ec2`,
       {
-        ami: AmazonLinux2023_ARM_EC2_AMI.id,
+        ami: this.ami.id,
         associatePublicIpAddress: false,
         instanceType,
-        iamInstanceProfile: ssmProfile.name,
+        iamInstanceProfile: this.ssmProfile.name,
         subnetId,
         vpcSecurityGroupIds: [this.ec2SecurityGroup.id],
         tags: {
