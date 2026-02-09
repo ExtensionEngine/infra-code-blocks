@@ -1,6 +1,6 @@
 import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
-import { commonTags } from '../../../constants';
+import { commonTags } from '../../shared/common-tags';
 import { AcmCertificate } from '../acm-certificate';
 import { S3CacheStrategy } from './s3-cache-strategy';
 import { LbCacheStrategy } from './lb-cache-strategy';

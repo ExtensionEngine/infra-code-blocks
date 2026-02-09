@@ -1,6 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws-v7';
-import { commonTags } from '../../../constants';
+import { commonTags } from '../../shared/common-tags';
 
 export namespace AcmCertificate {
   export type Args = {

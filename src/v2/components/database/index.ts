@@ -3,7 +3,7 @@ import * as awsNative from '@pulumi/aws-native';
 import * as awsx from '@pulumi/awsx-v3';
 import * as pulumi from '@pulumi/pulumi';
 import { Password } from '../password';
-import { commonTags } from '../../../constants';
+import { commonTags } from '../../shared/common-tags';
 import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 
 export namespace Database {
