@@ -150,21 +150,21 @@ export class OtelCollectorBuilder {
     prometheusNamespace,
     prometheusWorkspace,
     region,
-    log_group_name: logGroupName,
-    log_stream_name: logStreamName,
-    log_retention: logRetention,
+    log_group_name,
+    log_stream_name,
+    log_retention,
   }: OtelCollectorBuilder.Args): this {
     this._configBuilder.withDefault({
       namespace: pulumi.output(prometheusNamespace),
       endpoint: pulumi.interpolate`${prometheusWorkspace.prometheusEndpoint}api/v1/remote_write`,
       region,
-      log_group_name: logGroupName,
-      log_stream_name: logStreamName,
-      log_retention: logRetention,
+      log_group_name,
+      log_stream_name,
+      log_retention,
     });
     this.createAPSInlinePolicy(prometheusWorkspace);
     this.createAWSXRayPolicy();
-    this.createCloudWatchLogsPolicy(logGroupName);
+    this.createCloudWatchLogsPolicy(log_group_name);
 
     return this;
   }
