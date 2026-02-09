@@ -184,9 +184,9 @@ export class OtelCollectorConfigBuilder {
     namespace,
     endpoint,
     region,
-    log_group_name: logGroupName,
-    log_stream_name: logStreamName,
-    log_retention: logRetention,
+    log_group_name,
+    log_stream_name,
+    log_retention,
   }: OtelCollectorConfigBuilder.Args): this {
     return this.withOTLPReceiver(['http'])
       .withMemoryLimiterProcessor()
@@ -196,9 +196,9 @@ export class OtelCollectorConfigBuilder {
       .withAWSXRayExporter(region)
       .withCloudWatchLogsExporter({
         region,
-        log_group_name: logGroupName,
-        log_stream_name: logStreamName,
-        log_retention: logRetention,
+        log_group_name,
+        log_stream_name,
+        log_retention,
       })
       .withHealthCheckExtension()
       .withMetricsPipeline(
