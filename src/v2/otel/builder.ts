@@ -155,7 +155,7 @@ export class OtelCollectorBuilder {
     log_retention,
   }: OtelCollectorBuilder.Args): this {
     this._configBuilder.withDefault({
-      namespace: pulumi.output(prometheusNamespace),
+      namespace: prometheusNamespace,
       endpoint: pulumi.interpolate`${prometheusWorkspace.prometheusEndpoint}api/v1/remote_write`,
       region,
       log_group_name,
