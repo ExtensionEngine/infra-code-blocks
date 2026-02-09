@@ -217,11 +217,14 @@ describe('Build output', () => {
       });
 
       it('should have withDefault method', () => {
-        expect(builder.withDefault).type.toBeCallableWith(
-          'namespace',
-          new aws.amp.Workspace('name'),
-          'region',
-        );
+        expect(builder.withDefault).type.toBeCallableWith({
+          prometheusNamespace: 'namespace',
+          prometheusWorkspace: new aws.amp.Workspace('name'),
+          region: 'region',
+          log_group_name: 'log-group',
+          log_stream_name: 'log-stream',
+          log_retention: 7,
+        });
       });
 
       it('should have withHealthCheckExtension method', () => {
