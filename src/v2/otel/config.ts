@@ -73,15 +73,15 @@ export class OtelCollectorConfigBuilder {
 
   withCloudWatchLogsExporter({
     region,
-    log_group_name: logGroupName,
-    log_stream_name: logStreamName,
-    log_retention: logRetention,
+    log_group_name,
+    log_stream_name,
+    log_retention,
   }: OtelCollector.AwsCloudWatchLogsExporterConfig): this {
     this._exporters.awscloudwatchlogs = {
       region,
-      log_group_name: logGroupName,
-      ...(logStreamName && { log_stream_name: logStreamName }),
-      ...(logRetention && { log_retention: logRetention }),
+      log_group_name,
+      ...(log_stream_name && { log_stream_name }),
+      ...(log_retention && { log_retention }),
     };
 
     return this;
