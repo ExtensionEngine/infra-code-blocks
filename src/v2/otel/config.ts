@@ -192,6 +192,7 @@ export class OtelCollectorConfigBuilder {
       .withMemoryLimiterProcessor()
       .withBatchProcessor('batch/metrics')
       .withBatchProcessor('batch/traces', 2000, 5000, '2s')
+      .withBatchProcessor('batch/logs', 1024, 5000, '2s')
       .withAPS(namespace, endpoint, region)
       .withAWSXRayExporter(region)
       .withCloudWatchLogsExporter({
@@ -211,7 +212,11 @@ export class OtelCollectorConfigBuilder {
         ['memory_limiter', 'batch/traces'],
         ['awsxray'],
       )
-      .withLogsPipeline(['otlp'], ['memory_limiter'], ['awscloudwatchlogs'])
+      .withLogsPipeline(
+        ['otlp'],
+        ['memory_limiter', 'batch/logs'],
+        ['awscloudwatchlogs'],
+      )
       .withTelemetry();
   }
 
