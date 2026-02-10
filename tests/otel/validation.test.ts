@@ -138,4 +138,61 @@ export function testOtelCollectorConfigBuilderValidation() {
         'memory_limiter processor is not the first processor in the metrics pipeline.',
     });
   });
+
+  it('should throw error when logs pipeline references undefined receiver', () => {
+    const createInvalidConfig = () =>
+      new OtelCollectorConfigBuilder()
+        .withLogsPipeline(['otlp'], [], [])
+        .build();
+
+    assert.throws(createInvalidConfig, {
+      name: 'Error',
+      message: "Receiver 'otlp' is used in logs pipeline but not defined",
+    });
+  });
+
+  it('should throw error when logs pipeline references undefined processor', () => {
+    const createInvalidConfig = () =>
+      new OtelCollectorConfigBuilder()
+        .withOTLPReceiver(['http'])
+        .withLogsPipeline(['otlp'], ['batch'], [])
+        .build();
+
+    assert.throws(createInvalidConfig, {
+      name: 'Error',
+      message: "Processor 'batch' is used in logs pipeline but not defined",
+    });
+  });
+
+  it('should throw error when logs pipeline references undefined exporter', () => {
+    const createInvalidConfig = () =>
+      new OtelCollectorConfigBuilder()
+        .withOTLPReceiver(['http'])
+        .withBatchProcessor()
+        .withLogsPipeline(['otlp'], ['batch'], ['awscloudwatchlogs'])
+        .build();
+
+    assert.throws(createInvalidConfig, {
+      name: 'Error',
+      message:
+        "Exporter 'awscloudwatchlogs' is used in logs pipeline but not defined",
+    });
+  });
+
+  it('should throw error when memory_limiter is not the first processor in logs pipeline', () => {
+    const createInvalidConfig = () =>
+      new OtelCollectorConfigBuilder()
+        .withOTLPReceiver(['http'])
+        .withMemoryLimiterProcessor()
+        .withBatchProcessor()
+        .withDebug()
+        .withLogsPipeline(['otlp'], ['batch', 'memory_limiter'], ['debug'])
+        .build();
+
+    assert.throws(createInvalidConfig, {
+      name: 'Error',
+      message:
+        'memory_limiter processor is not the first processor in the logs pipeline.',
+    });
+  });
 }
