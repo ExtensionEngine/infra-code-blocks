@@ -7,13 +7,15 @@ import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 const config = new pulumi.Config('aws');
 const awsRegion = config.require('region');
 
-export type Ec2SSMConnectArgs = {
-  vpc: pulumi.Input<awsx.ec2.Vpc>;
-  instanceType?: pulumi.Input<string>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
+export namespace Ec2SSMConnect {
+  export type Args = {
+    vpc: pulumi.Input<awsx.ec2.Vpc>;
+    instanceType?: pulumi.Input<string>;
+    tags?: pulumi.Input<{
+      [key: string]: pulumi.Input<string>;
+    }>;
+  };
+}
 
 const defaults = {
   instanceType: 't4g.nano',
@@ -33,7 +35,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
 
   constructor(
     name: string,
-    args: Ec2SSMConnectArgs,
+    args: Ec2SSMConnect.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:Ec2SSMConnect', name, {}, opts);
