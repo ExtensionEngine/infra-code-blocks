@@ -15,6 +15,7 @@ export class DatabaseBuilder {
   private createReplica?: Database.Args['createReplica'];
   private replicaConfig?: Database.Args['replicaConfig'];
   private enableSSMConnect?: Database.Args['enableSSMConnect'];
+  private ssmConnectConfig?: Database.Args['ssmConnectConfig'];
 
   constructor(name: string) {
     this.name = name;
@@ -85,8 +86,11 @@ export class DatabaseBuilder {
     return this;
   }
 
-  public withSSMConnect() {
+  public withSSMConnect(
+    ssmConnectConfig: Database.Args['ssmConnectConfig'] = {},
+  ) {
     this.enableSSMConnect = true;
+    this.ssmConnectConfig = ssmConnectConfig;
 
     return this;
   }
@@ -142,6 +146,7 @@ export class DatabaseBuilder {
         createReplica: this.createReplica,
         replicaConfig: this.replicaConfig,
         enableSSMConnect: this.enableSSMConnect,
+        ssmConnectConfig: this.ssmConnectConfig,
       },
       opts,
     );

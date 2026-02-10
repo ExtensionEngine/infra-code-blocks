@@ -43,6 +43,8 @@ export namespace Database {
     enableMonitoring?: pulumi.Input<boolean>;
   };
 
+  export type SSMConnectConfig = Omit<Ec2SSMConnect.Args, 'vpc'>;
+
   export type Args = Instance &
     Credentials &
     Storage & {
@@ -54,6 +56,7 @@ export namespace Database {
       createReplica?: pulumi.Input<boolean>;
       replicaConfig?: ReplicaConfig;
       enableSSMConnect?: pulumi.Input<boolean>;
+      ssmConnectConfig?: SSMConnectConfig;
       tags?: pulumi.Input<{
         [key: string]: pulumi.Input<string>;
       }>;
@@ -103,6 +106,7 @@ export class Database extends pulumi.ComponentResource {
       createReplica,
       replicaConfig = {},
       enableSSMConnect,
+      ssmConnectConfig = {},
     } = argsWithDefaults;
 
     this.vpc = pulumi.output(vpc);
@@ -135,7 +139,7 @@ export class Database extends pulumi.ComponentResource {
     }
 
     if (enableSSMConnect) {
-      this.ec2SSMConnect = this.createEc2SSMConnect();
+      this.ec2SSMConnect = this.createEc2SSMConnect(ssmConnectConfig);
     }
 
     this.registerOutputs();
@@ -261,11 +265,12 @@ export class Database extends pulumi.ComponentResource {
     return replica;
   }
 
-  private createEc2SSMConnect() {
+  private createEc2SSMConnect(config: Database.Args['ssmConnectConfig'] = {}) {
     return new Ec2SSMConnect(
       `${this.name}-ssm-connect`,
       {
         vpc: this.vpc,
+        ...config,
       },
       { parent: this },
     );
