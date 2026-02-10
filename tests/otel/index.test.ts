@@ -158,12 +158,12 @@ describe('OtelCollectorConfigBuilder', () => {
 
   it('should configure CloudWatch logs exporter', () => {
     const result = new OtelCollectorConfigBuilder()
-      .withCloudWatchLogsExporter({
-        region: awsRegion,
-        log_group_name: logGroupName,
-        log_stream_name: logStreamName,
-        log_retention: logRetention,
-      })
+      .withCloudWatchLogsExporter(
+        awsRegion,
+        logGroupName,
+        logStreamName,
+        logRetention,
+      )
       .build();
 
     const expected = {
@@ -233,12 +233,12 @@ describe('OtelCollectorConfigBuilder', () => {
       .withMemoryLimiterProcessor()
       .withAWSXRayExporter(awsRegion)
       .withDebug()
-      .withCloudWatchLogsExporter({
-        region: awsRegion,
-        log_group_name: logGroupName,
-        log_stream_name: logStreamName,
-        log_retention: logRetention,
-      })
+      .withCloudWatchLogsExporter(
+        awsRegion,
+        logGroupName,
+        logStreamName,
+        logRetention,
+      )
       .withMetricsPipeline(['otlp'], ['memory_limiter', 'batch'], ['debug'])
       .withTracesPipeline(
         ['otlp'],
@@ -315,9 +315,7 @@ describe('OtelCollectorConfigBuilder', () => {
         namespace: prometheusNamespace,
         endpoint: prometheusWriteEndpoint,
         region: awsRegion,
-        log_group_name: logGroupName,
-        log_stream_name: logStreamName,
-        log_retention: logRetention,
+        logGroupName,
       })
       .build();
 
@@ -353,8 +351,6 @@ describe('OtelCollectorConfigBuilder', () => {
         awscloudwatchlogs: {
           region: awsRegion,
           log_group_name: logGroupName,
-          log_stream_name: logStreamName,
-          log_retention: logRetention,
         },
       },
       extensions: {
@@ -400,12 +396,12 @@ describe('OtelCollectorConfigBuilder', () => {
       .withMemoryLimiterProcessor()
       .withAPS(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
       .withAWSXRayExporter(awsRegion)
-      .withCloudWatchLogsExporter({
-        region: awsRegion,
-        log_group_name: logGroupName,
-        log_stream_name: logStreamName,
-        log_retention: logRetention,
-      })
+      .withCloudWatchLogsExporter(
+        awsRegion,
+        logGroupName,
+        logStreamName,
+        logRetention,
+      )
       .withDebug()
       .withTelemetry()
       .withHealthCheckExtension()

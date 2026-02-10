@@ -8,9 +8,11 @@ import { EcsService } from '../components/ecs-service';
 import { OTLPReceiver } from './otlp-receiver';
 
 export namespace OtelCollectorBuilder {
-  export type Args = OtelCollector.AwsCloudWatchLogsExporterConfig & {
+  export type WithDefaultArgs = {
     prometheusNamespace: pulumi.Input<string>;
     prometheusWorkspace: aws.amp.Workspace;
+    region: string;
+    logGroupName: pulumi.Input<string>;
   };
 }
 
@@ -66,10 +68,18 @@ export class OtelCollectorBuilder {
   }
 
   withCloudWatchLogsExporter(
-    cloudWatchConfig: OtelCollector.AwsCloudWatchLogsExporterConfig,
+    region: OtelCollector.AwsCloudWatchLogsExporterConfig['region'],
+    logGroupName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_group_name'],
+    logStreamName?: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'],
+    logRetention?: OtelCollector.AwsCloudWatchLogsExporterConfig['log_retention'],
   ): this {
-    this._configBuilder.withCloudWatchLogsExporter(cloudWatchConfig);
-    this.createCloudWatchLogsPolicy(cloudWatchConfig.log_group_name);
+    this._configBuilder.withCloudWatchLogsExporter(
+      region,
+      logGroupName,
+      logStreamName,
+      logRetention,
+    );
+    this.createCloudWatchLogsPolicy(logGroupName);
 
     return this;
   }
@@ -150,21 +160,17 @@ export class OtelCollectorBuilder {
     prometheusNamespace,
     prometheusWorkspace,
     region,
-    log_group_name,
-    log_stream_name,
-    log_retention,
-  }: OtelCollectorBuilder.Args): this {
+    logGroupName,
+  }: OtelCollectorBuilder.WithDefaultArgs): this {
     this._configBuilder.withDefault({
       namespace: prometheusNamespace,
       endpoint: pulumi.interpolate`${prometheusWorkspace.prometheusEndpoint}api/v1/remote_write`,
       region,
-      log_group_name,
-      log_stream_name,
-      log_retention,
+      logGroupName,
     });
     this.createAPSInlinePolicy(prometheusWorkspace);
     this.createAWSXRayPolicy();
-    this.createCloudWatchLogsPolicy(log_group_name);
+    this.createCloudWatchLogsPolicy(logGroupName);
 
     return this;
   }

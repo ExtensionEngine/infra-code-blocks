@@ -4,8 +4,10 @@ import type { OtelCollector } from '.';
 import type { PrometheusRemoteWriteExporter } from './prometheus-remote-write-exporter';
 
 export namespace OtelCollectorConfigBuilder {
-  export type Args = OtelCollector.AwsCloudWatchLogsExporterConfig &
-    PrometheusRemoteWriteExporter.Config;
+  export type WithDefaultArgs = PrometheusRemoteWriteExporter.Config & {
+    region: string;
+    logGroupName: pulumi.Input<string>;
+  };
 }
 
 export class OtelCollectorConfigBuilder {
@@ -71,17 +73,17 @@ export class OtelCollectorConfigBuilder {
     return this;
   }
 
-  withCloudWatchLogsExporter({
-    region,
-    log_group_name,
-    log_stream_name,
-    log_retention,
-  }: OtelCollector.AwsCloudWatchLogsExporterConfig): this {
+  withCloudWatchLogsExporter(
+    region: OtelCollector.AwsCloudWatchLogsExporterConfig['region'],
+    logGroupName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_group_name'],
+    logStreamName?: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'],
+    logRetention?: OtelCollector.AwsCloudWatchLogsExporterConfig['log_retention'],
+  ): this {
     this._exporters.awscloudwatchlogs = {
       region,
-      log_group_name,
-      ...(log_stream_name && { log_stream_name }),
-      ...(log_retention && { log_retention }),
+      log_group_name: logGroupName,
+      ...(logStreamName && { log_stream_name: logStreamName }),
+      ...(logRetention && { log_retention: logRetention }),
     };
 
     return this;
@@ -184,10 +186,8 @@ export class OtelCollectorConfigBuilder {
     namespace,
     endpoint,
     region,
-    log_group_name,
-    log_stream_name,
-    log_retention,
-  }: OtelCollectorConfigBuilder.Args): this {
+    logGroupName,
+  }: OtelCollectorConfigBuilder.WithDefaultArgs): this {
     return this.withOTLPReceiver(['http'])
       .withMemoryLimiterProcessor()
       .withBatchProcessor('batch/metrics')
@@ -195,12 +195,7 @@ export class OtelCollectorConfigBuilder {
       .withBatchProcessor('batch/logs', 1024, 5000, '2s')
       .withAPS(namespace, endpoint, region)
       .withAWSXRayExporter(region)
-      .withCloudWatchLogsExporter({
-        region,
-        log_group_name,
-        log_stream_name,
-        log_retention,
-      })
+      .withCloudWatchLogsExporter(region, logGroupName)
       .withHealthCheckExtension()
       .withMetricsPipeline(
         ['otlp'],
