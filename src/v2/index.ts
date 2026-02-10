@@ -8,6 +8,7 @@ export { Vpc } from './components/vpc';
 export { Database } from './components/database';
 export { DatabaseBuilder } from './components/database/builder';
 export { DatabaseReplica } from './components/database/database-replica';
+export { Ec2SSMConnect } from './components/database/ec2-ssm-connect';
 export { AcmCertificate } from './components/acm-certificate';
 export { Password } from './components/password';
 export { CloudFront } from './components/cloudfront';
