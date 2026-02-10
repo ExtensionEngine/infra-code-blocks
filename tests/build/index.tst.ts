@@ -259,7 +259,8 @@ describe('Build output', () => {
   });
 
   describe('Database', () => {
-    const { Database, DatabaseBuilder, DatabaseReplica } = studion;
+    const { Database, DatabaseBuilder, DatabaseReplica, Ec2SSMConnect } =
+      studion;
 
     it('should export Database', () => {
       expect(studion).type.toHaveProperty('Database');
@@ -271,6 +272,10 @@ describe('Build output', () => {
 
     it('should export DatabaseReplica', () => {
       expect(studion).type.toHaveProperty('DatabaseReplica');
+    });
+
+    it('should export Ec2SSMConnect', () => {
+      expect(studion).type.toHaveProperty('Ec2SSMConnect');
     });
 
     describe('Instantiation', () => {
@@ -348,6 +353,10 @@ describe('Build output', () => {
       it('should have withReplica method', () => {
         expect(builder.withReplica).type.toBeCallableWith();
       });
+
+      it('should have withSSMConnect method', () => {
+        expect(builder.withSSMConnect).type.toBeCallableWith();
+      });
     });
 
     describe('Replica', () => {
@@ -356,6 +365,17 @@ describe('Build output', () => {
           replicateSourceDb: 'primary-id',
           dbSecurityGroup: new aws.ec2.SecurityGroup('security-group'),
         });
+      });
+    });
+
+    describe('Ec2SSMConnect', () => {
+      it('should construct Ec2SSMConnect', () => {
+        expect(Ec2SSMConnect).type.toBeConstructableWith(
+          'db-test-ssm-connect',
+          {
+            vpc: new awsx.ec2.Vpc('vpcName'),
+          },
+        );
       });
     });
   });
