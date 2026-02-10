@@ -213,12 +213,12 @@ describe('Build output', () => {
       });
 
       it('should have withCloudWatchLogsExporter method', () => {
-        expect(builder.withCloudWatchLogsExporter).type.toBeCallableWith({
-          region: 'region',
-          log_group_name: 'log-group',
-          log_stream_name: 'log-stream',
-          log_retention: 7,
-        });
+        expect(builder.withCloudWatchLogsExporter).type.toBeCallableWith(
+          'region',
+          'log-group',
+          'log-stream',
+          7,
+        );
       });
 
       it('should have withDebug method', () => {
