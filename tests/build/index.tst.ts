@@ -221,9 +221,7 @@ describe('Build output', () => {
           prometheusNamespace: 'namespace',
           prometheusWorkspace: new aws.amp.Workspace('name'),
           region: 'region',
-          log_group_name: 'log-group',
-          log_stream_name: 'log-stream',
-          log_retention: 7,
+          logGroupName: 'log-group',
         });
       });
 
