@@ -7,6 +7,9 @@ const awsRegion = 'us-west-2';
 const prometheusNamespace = 'test-namespace';
 const prometheusWriteEndpoint =
   'https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-12345/api/v1/remote_write';
+const logGroupName = 'cw-test-lg';
+const logStreamName = 'cw-test-ls';
+const logRetention = 7;
 
 const defaultMemoryLimiterConfig = {
   check_interval: '1s',
@@ -153,6 +156,34 @@ describe('OtelCollectorConfigBuilder', () => {
     assert.deepStrictEqual(result, expected);
   });
 
+  it('should configure CloudWatch logs exporter', () => {
+    const result = new OtelCollectorConfigBuilder()
+      .withCloudWatchLogsExporter({
+        region: awsRegion,
+        log_group_name: logGroupName,
+        log_stream_name: logStreamName,
+        log_retention: logRetention,
+      })
+      .build();
+
+    const expected = {
+      receivers: {},
+      processors: {},
+      exporters: {
+        awscloudwatchlogs: {
+          region: awsRegion,
+          log_group_name: logGroupName,
+          log_stream_name: logStreamName,
+          log_retention: logRetention,
+        },
+      },
+      extensions: {},
+      service: { pipelines: {} },
+    };
+
+    assert.deepStrictEqual(result, expected);
+  });
+
   it('should configure health check extension', () => {
     const result = new OtelCollectorConfigBuilder()
       .withHealthCheckExtension()
@@ -202,11 +233,22 @@ describe('OtelCollectorConfigBuilder', () => {
       .withMemoryLimiterProcessor()
       .withAWSXRayExporter(awsRegion)
       .withDebug()
+      .withCloudWatchLogsExporter({
+        region: awsRegion,
+        log_group_name: logGroupName,
+        log_stream_name: logStreamName,
+        log_retention: logRetention,
+      })
       .withMetricsPipeline(['otlp'], ['memory_limiter', 'batch'], ['debug'])
       .withTracesPipeline(
         ['otlp'],
         ['memory_limiter', 'batch'],
         ['awsxray', 'debug'],
+      )
+      .withLogsPipeline(
+        ['otlp'],
+        ['memory_limiter', 'batch'],
+        ['awscloudwatchlogs'],
       )
       .build();
 
@@ -225,6 +267,12 @@ describe('OtelCollectorConfigBuilder', () => {
       exporters: {
         awsxray: { region: awsRegion },
         debug: { verbosity: 'detailed' },
+        awscloudwatchlogs: {
+          region: awsRegion,
+          log_group_name: logGroupName,
+          log_stream_name: logStreamName,
+          log_retention: logRetention,
+        },
       },
       extensions: {},
       service: {
@@ -238,6 +286,11 @@ describe('OtelCollectorConfigBuilder', () => {
             receivers: ['otlp'],
             processors: ['memory_limiter', 'batch'],
             exporters: ['awsxray', 'debug'],
+          },
+          logs: {
+            receivers: ['otlp'],
+            processors: ['memory_limiter', 'batch'],
+            exporters: ['awscloudwatchlogs'],
           },
         },
       },
@@ -258,7 +311,14 @@ describe('OtelCollectorConfigBuilder', () => {
 
   it('should generate default configuration', () => {
     const result = new OtelCollectorConfigBuilder()
-      .withDefault(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
+      .withDefault({
+        namespace: prometheusNamespace,
+        endpoint: prometheusWriteEndpoint,
+        region: awsRegion,
+        log_group_name: logGroupName,
+        log_stream_name: logStreamName,
+        log_retention: logRetention,
+      })
       .build();
 
     const expected = {
@@ -276,6 +336,11 @@ describe('OtelCollectorConfigBuilder', () => {
           send_batch_size: 2000,
           timeout: '2s',
         },
+        'batch/logs': {
+          send_batch_max_size: 5000,
+          send_batch_size: 1024,
+          timeout: '2s',
+        },
         memory_limiter: defaultMemoryLimiterConfig,
       },
       exporters: {
@@ -285,6 +350,12 @@ describe('OtelCollectorConfigBuilder', () => {
           auth: { authenticator: 'sigv4auth' },
         },
         awsxray: { region: awsRegion },
+        awscloudwatchlogs: {
+          region: awsRegion,
+          log_group_name: logGroupName,
+          log_stream_name: logStreamName,
+          log_retention: logRetention,
+        },
       },
       extensions: {
         sigv4auth: {
@@ -306,6 +377,11 @@ describe('OtelCollectorConfigBuilder', () => {
             processors: ['memory_limiter', 'batch/traces'],
             exporters: ['awsxray'],
           },
+          logs: {
+            receivers: ['otlp'],
+            processors: ['memory_limiter', 'batch/logs'],
+            exporters: ['awscloudwatchlogs'],
+          },
         },
         telemetry: {
           logs: { level: 'error' },
@@ -324,6 +400,12 @@ describe('OtelCollectorConfigBuilder', () => {
       .withMemoryLimiterProcessor()
       .withAPS(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
       .withAWSXRayExporter(awsRegion)
+      .withCloudWatchLogsExporter({
+        region: awsRegion,
+        log_group_name: logGroupName,
+        log_stream_name: logStreamName,
+        log_retention: logRetention,
+      })
       .withDebug()
       .withTelemetry()
       .withHealthCheckExtension()
@@ -337,6 +419,11 @@ describe('OtelCollectorConfigBuilder', () => {
         ['otlp'],
         ['memory_limiter', 'batch'],
         ['awsxray', 'debug'],
+      )
+      .withLogsPipeline(
+        ['otlp'],
+        ['memory_limiter', 'batch'],
+        ['awscloudwatchlogs', 'debug'],
       )
       .build();
 
@@ -359,6 +446,12 @@ describe('OtelCollectorConfigBuilder', () => {
           auth: { authenticator: 'sigv4auth' },
         },
         awsxray: { region: awsRegion },
+        awscloudwatchlogs: {
+          region: awsRegion,
+          log_group_name: logGroupName,
+          log_stream_name: logStreamName,
+          log_retention: logRetention,
+        },
         debug: { verbosity: 'detailed' },
       },
       extensions: {
@@ -381,6 +474,11 @@ describe('OtelCollectorConfigBuilder', () => {
             receivers: ['otlp'],
             processors: ['memory_limiter', 'batch'],
             exporters: ['awsxray', 'debug'],
+          },
+          logs: {
+            receivers: ['otlp'],
+            processors: ['memory_limiter', 'batch'],
+            exporters: ['awscloudwatchlogs', 'debug'],
           },
         },
         telemetry: {
