@@ -212,6 +212,15 @@ describe('Build output', () => {
         );
       });
 
+      it('should have withCloudWatchLogsExporter method', () => {
+        expect(builder.withCloudWatchLogsExporter).type.toBeCallableWith({
+          region: 'region',
+          log_group_name: 'log-group',
+          log_stream_name: 'log-stream',
+          log_retention: 7,
+        });
+      });
+
       it('should have withDebug method', () => {
         expect(builder.withDebug).type.toBeCallableWith();
       });
@@ -241,6 +250,10 @@ describe('Build output', () => {
 
       it('should have withMetricsPipeline method', () => {
         expect(builder.withMetricsPipeline).type.toBeCallableWith([], [], []);
+      });
+
+      it('should have withLogsPipeline method', () => {
+        expect(builder.withLogsPipeline).type.toBeCallableWith([], [], []);
       });
 
       it('should have withOTLPReceiver method', () => {
