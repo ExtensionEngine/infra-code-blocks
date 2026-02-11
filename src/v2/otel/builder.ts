@@ -6,14 +6,15 @@ import { OtelCollector } from '.';
 import { OtelCollectorConfigBuilder } from './config';
 import { EcsService } from '../components/ecs-service';
 import { OTLPReceiver } from './otlp-receiver';
+import { PrometheusRemoteWriteExporter } from './prometheus-remote-write-exporter';
 
 export namespace OtelCollectorBuilder {
   export type WithDefaultArgs = {
-    prometheusNamespace: pulumi.Input<string>;
+    prometheusNamespace: PrometheusRemoteWriteExporter.Config['namespace'];
     prometheusWorkspace: aws.amp.Workspace;
     region: string;
-    logGroupName: pulumi.Input<string>;
-    logStreamName: pulumi.Input<string>;
+    logGroupName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_group_name'];
+    logStreamName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'];
   };
 }
 
@@ -165,8 +166,8 @@ export class OtelCollectorBuilder {
     logStreamName,
   }: OtelCollectorBuilder.WithDefaultArgs): this {
     this._configBuilder.withDefault({
-      namespace: prometheusNamespace,
-      endpoint: pulumi.interpolate`${prometheusWorkspace.prometheusEndpoint}api/v1/remote_write`,
+      prometheusNamespace,
+      prometheusEndpoint: pulumi.interpolate`${prometheusWorkspace.prometheusEndpoint}api/v1/remote_write`,
       region,
       logGroupName,
       logStreamName,
