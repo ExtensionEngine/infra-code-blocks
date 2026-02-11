@@ -55,7 +55,15 @@ export class DatabaseReplica extends pulumi.ComponentResource {
     args: DatabaseReplica.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:DatabaseReplica', name, {}, opts);
+    super(
+      'studion:database:DatabaseReplica',
+      name,
+      {},
+      {
+        ...opts,
+        aliases: [...(opts.aliases || []), { type: 'studion:DatabaseReplica' }],
+      },
+    );
 
     this.name = name;
 

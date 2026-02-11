@@ -23,7 +23,15 @@ export class AcmCertificate extends pulumi.ComponentResource {
     args: AcmCertificate.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:acm:Certificate', name, {}, opts);
+    super(
+      'studion:acm-certificate:AcmCertificate',
+      name,
+      {},
+      {
+        ...opts,
+        aliases: [...(opts.aliases || []), { type: 'studion:acm:Certificate' }],
+      },
+    );
 
     this.certificate = new aws.acm.Certificate(
       `${args.domain}-certificate`,

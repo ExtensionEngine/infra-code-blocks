@@ -24,7 +24,7 @@ export class S3CacheStrategy
     args: S3CacheStrategy.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:cf:S3CacheStrategy', name, args, opts);
+    super('studion:cloudfront:S3CacheStrategy', name, args, opts);
 
     this.name = name;
 
@@ -49,7 +49,7 @@ export class S3CacheStrategy
 
   private createCachePolicy() {
     return new aws.cloudfront.CachePolicy(
-      `${this.name}-s3-cache-policy`,
+      `${this.name}-cache-policy`,
       {
         defaultTtl: 86400, // 1 day
         minTtl: 60, // 1 minute
@@ -74,7 +74,7 @@ export class S3CacheStrategy
 
   private createResponseHeadersPolicy() {
     return new aws.cloudfront.ResponseHeadersPolicy(
-      `${this.name}-s3-res-headers-policy`,
+      `${this.name}-res-headers-policy`,
       {
         customHeadersConfig: {
           items: [

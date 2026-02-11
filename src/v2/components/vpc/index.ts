@@ -27,7 +27,7 @@ export class Vpc extends pulumi.ComponentResource {
     args: VpcArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:Vpc', name, {}, opts);
+    super('studion:vpc:Vpc', name, {}, opts);
 
     const argsWithDefaults = mergeWithDefaults(defaults, args);
 

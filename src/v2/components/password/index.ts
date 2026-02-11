@@ -19,7 +19,15 @@ export class Password extends pulumi.ComponentResource {
     args: Password.Args = {},
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:Password', name, {}, opts);
+    super(
+      'studion:password:Password',
+      name,
+      {},
+      {
+        ...opts,
+        aliases: [...(opts.aliases || []), { type: 'studion:Password' }],
+      },
+    );
 
     this.name = name;
     if (args.value) {

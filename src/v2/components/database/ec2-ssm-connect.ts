@@ -38,7 +38,18 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     args: Ec2SSMConnect.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:Ec2SSMConnect', name, {}, opts);
+    super(
+      'studion:database:Ec2SSMConnect',
+      name,
+      {},
+      {
+        ...opts,
+        aliases: [
+          ...(opts.aliases || []),
+          { type: 'studion:Ec2BastionSSMConnect' },
+        ],
+      },
+    );
 
     const { vpc, instanceType, tags } = mergeWithDefaults(defaults, args);
 

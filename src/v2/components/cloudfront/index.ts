@@ -15,7 +15,7 @@ export class CloudFront extends pulumi.ComponentResource {
     args: CloudFront.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:cf:CloudFront', name, args, opts);
+    super('studion:cloudfront:CloudFront', name, args, opts);
 
     this.name = name;
 
@@ -209,7 +209,7 @@ export class CloudFront extends pulumi.ComponentResource {
     tags,
   }: CreateDistributionArgs): aws.cloudfront.Distribution {
     return new aws.cloudfront.Distribution(
-      `${this.name}-cloudfront-distribution`,
+      `${this.name}-distribution`,
       {
         enabled: true,
         isIpv6Enabled: true,

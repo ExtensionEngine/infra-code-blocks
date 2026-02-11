@@ -24,7 +24,7 @@ export class LbCacheStrategy
     args: LbCacheStrategy.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:cf:LbCacheStrategy', name, args, opts);
+    super('studion:cloudfront:LbCacheStrategy', name, args, opts);
 
     this.name = name;
 
@@ -60,7 +60,7 @@ export class LbCacheStrategy
 
   private createCachePolicy() {
     return new aws.cloudfront.CachePolicy(
-      `${this.name}-lb-cache-policy`,
+      `${this.name}-cache-policy`,
       {
         defaultTtl: 0,
         minTtl: 0,
@@ -85,7 +85,7 @@ export class LbCacheStrategy
 
   private createResponseHeadersPolicy() {
     return new aws.cloudfront.ResponseHeadersPolicy(
-      `${this.name}-lb-res-headers-policy`,
+      `${this.name}-res-headers-policy`,
       {
         customHeadersConfig: {
           items: [

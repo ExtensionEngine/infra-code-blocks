@@ -22,7 +22,7 @@ export class S3Assets extends pulumi.ComponentResource {
     args: S3Assets.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:ss:S3Assets', name, args, opts);
+    super('studion:static-site:S3Assets', name, args, opts);
 
     this.name = name;
 
