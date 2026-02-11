@@ -259,7 +259,7 @@ describe('Build output', () => {
   });
 
   describe('Database', () => {
-    const { Database, DatabaseBuilder } = studion;
+    const { Database, DatabaseBuilder, DatabaseReplica } = studion;
 
     it('should export Database', () => {
       expect(studion).type.toHaveProperty('Database');
@@ -267,6 +267,10 @@ describe('Build output', () => {
 
     it('should export DatabaseBuilder', () => {
       expect(studion).type.toHaveProperty('DatabaseBuilder');
+    });
+
+    it('should export DatabaseReplica', () => {
+      expect(studion).type.toHaveProperty('DatabaseReplica');
     });
 
     describe('Instantiation', () => {
@@ -338,6 +342,19 @@ describe('Build output', () => {
         expect(builder.withTags).type.toBeCallableWith({
           Project: 'db-test',
           Environment: 'dev',
+        });
+      });
+
+      it('should have withReplica method', () => {
+        expect(builder.withReplica).type.toBeCallableWith();
+      });
+    });
+
+    describe('Replica', () => {
+      it('should construct DatabaseReplica', () => {
+        expect(DatabaseReplica).type.toBeConstructableWith('db-test-replica', {
+          replicateSourceDb: 'primary-id',
+          dbSecurityGroup: new aws.ec2.SecurityGroup('security-group'),
         });
       });
     });
