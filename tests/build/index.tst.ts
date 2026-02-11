@@ -4,6 +4,7 @@ import { describe, expect, it } from 'tstyche';
 import { next as studion } from '@studion/infra-code-blocks';
 import { OtelCollector } from '../../dist/v2/otel';
 import { OtelCollectorBuilder } from '../../dist/v2/otel/builder';
+import { log } from 'console';
 
 describe('Build output', () => {
   describe('ECS Service', () => {
@@ -222,6 +223,7 @@ describe('Build output', () => {
           prometheusWorkspace: new aws.amp.Workspace('name'),
           region: 'region',
           logGroupName: 'log-group',
+          logStreamName: 'log-stream',
         });
       });
 

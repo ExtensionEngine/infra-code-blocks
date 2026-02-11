@@ -13,6 +13,7 @@ export namespace OtelCollectorBuilder {
     prometheusWorkspace: aws.amp.Workspace;
     region: string;
     logGroupName: pulumi.Input<string>;
+    logStreamName: pulumi.Input<string>;
   };
 }
 
@@ -70,7 +71,7 @@ export class OtelCollectorBuilder {
   withCloudWatchLogsExporter(
     region: OtelCollector.AwsCloudWatchLogsExporterConfig['region'],
     logGroupName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_group_name'],
-    logStreamName?: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'],
+    logStreamName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'],
     logRetention?: OtelCollector.AwsCloudWatchLogsExporterConfig['log_retention'],
   ): this {
     this._configBuilder.withCloudWatchLogsExporter(
@@ -161,12 +162,14 @@ export class OtelCollectorBuilder {
     prometheusWorkspace,
     region,
     logGroupName,
+    logStreamName,
   }: OtelCollectorBuilder.WithDefaultArgs): this {
     this._configBuilder.withDefault({
       namespace: prometheusNamespace,
       endpoint: pulumi.interpolate`${prometheusWorkspace.prometheusEndpoint}api/v1/remote_write`,
       region,
       logGroupName,
+      logStreamName,
     });
     this.createAPSInlinePolicy(prometheusWorkspace);
     this.createAWSXRayPolicy();

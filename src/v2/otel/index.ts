@@ -29,7 +29,7 @@ export namespace OtelCollector {
   export type AwsCloudWatchLogsExporterConfig = {
     region: string;
     log_group_name: pulumi.Input<string>;
-    log_stream_name?: pulumi.Input<string>;
+    log_stream_name: pulumi.Input<string>;
     log_retention?: number;
   };
 
