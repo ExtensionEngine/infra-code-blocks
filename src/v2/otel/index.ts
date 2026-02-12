@@ -26,6 +26,13 @@ export namespace OtelCollector {
     endpoint?: string;
   };
 
+  export type AwsCloudWatchLogsExporterConfig = {
+    region: string;
+    log_group_name: pulumi.Input<string>;
+    log_stream_name: pulumi.Input<string>;
+    log_retention?: number;
+  };
+
   export type DebugExportedConfig = {
     verbosity: string;
   };
@@ -34,6 +41,7 @@ export namespace OtelCollector {
     prometheusremotewrite?: PrometheusRemoteWriteExporter.Config;
     awsxray?: AwsXRayExporterConfig;
     debug?: DebugExportedConfig;
+    awscloudwatchlogs?: AwsCloudWatchLogsExporterConfig;
   };
   export type ExporterType = keyof Exporter;
 
@@ -76,6 +84,7 @@ export namespace OtelCollector {
     pipelines: {
       metrics?: PipelineConfig;
       traces?: PipelineConfig;
+      logs?: PipelineConfig;
     };
     extensions?: ExtensionType[];
     telemetry?: TelemetryConfig;

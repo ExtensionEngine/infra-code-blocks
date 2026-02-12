@@ -6,6 +6,17 @@ import { OtelCollector } from '.';
 import { OtelCollectorConfigBuilder } from './config';
 import { EcsService } from '../components/ecs-service';
 import { OTLPReceiver } from './otlp-receiver';
+import { PrometheusRemoteWriteExporter } from './prometheus-remote-write-exporter';
+
+export namespace OtelCollectorBuilder {
+  export type WithDefaultArgs = {
+    prometheusNamespace: PrometheusRemoteWriteExporter.Config['namespace'];
+    prometheusWorkspace: aws.amp.Workspace;
+    region: string;
+    logGroupName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_group_name'];
+    logStreamName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'];
+  };
+}
 
 export class OtelCollectorBuilder {
   private readonly _serviceName: pulumi.Output<string>;
@@ -54,6 +65,23 @@ export class OtelCollectorBuilder {
   withAWSXRayExporter(region: string): this {
     this._configBuilder.withAWSXRayExporter(region);
     this.createAWSXRayPolicy();
+
+    return this;
+  }
+
+  withCloudWatchLogsExporter(
+    region: OtelCollector.AwsCloudWatchLogsExporterConfig['region'],
+    logGroupName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_group_name'],
+    logStreamName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'],
+    logRetention?: OtelCollector.AwsCloudWatchLogsExporterConfig['log_retention'],
+  ): this {
+    this._configBuilder.withCloudWatchLogsExporter(
+      region,
+      logGroupName,
+      logStreamName,
+      logRetention,
+    );
+    this.createCloudWatchLogsPolicy(logGroupName);
 
     return this;
   }
@@ -120,18 +148,33 @@ export class OtelCollectorBuilder {
     return this;
   }
 
-  withDefault(
-    prometheusNamespace: pulumi.Input<string>,
-    prometheusWorkspace: aws.amp.Workspace,
-    awsRegion: string,
+  withLogsPipeline(
+    receivers: OtelCollector.ReceiverType[],
+    processors: OtelCollector.ProcessorType[],
+    exporters: OtelCollector.ExporterType[],
   ): this {
-    this._configBuilder.withDefault(
-      pulumi.output(prometheusNamespace),
-      pulumi.interpolate`${prometheusWorkspace.prometheusEndpoint}api/v1/remote_write`,
-      awsRegion,
-    );
+    this._configBuilder.withLogsPipeline(receivers, processors, exporters);
+
+    return this;
+  }
+
+  withDefault({
+    prometheusNamespace,
+    prometheusWorkspace,
+    region,
+    logGroupName,
+    logStreamName,
+  }: OtelCollectorBuilder.WithDefaultArgs): this {
+    this._configBuilder.withDefault({
+      prometheusNamespace,
+      prometheusEndpoint: pulumi.interpolate`${prometheusWorkspace.prometheusEndpoint}api/v1/remote_write`,
+      region,
+      logGroupName,
+      logStreamName,
+    });
     this.createAPSInlinePolicy(prometheusWorkspace);
     this.createAWSXRayPolicy();
+    this.createCloudWatchLogsPolicy(logGroupName);
 
     return this;
   }
@@ -186,6 +229,37 @@ export class OtelCollectorBuilder {
           ],
         }),
       }));
+
+    this._taskRoleInlinePolicies.push(policy);
+  }
+
+  private createCloudWatchLogsPolicy(logGroupName: pulumi.Input<string>) {
+    const policy: pulumi.Output<EcsService.RoleInlinePolicy> = pulumi
+      .all([this._serviceName, logGroupName])
+      .apply(([serviceName, logGroupName]) => {
+        return {
+          name: `${serviceName}-task-role-cloudwatch-logs`,
+          policy: JSON.stringify({
+            Version: '2012-10-17',
+            Statement: [
+              {
+                Effect: 'Allow',
+                Action: ['logs:CreateLogGroup', 'logs:PutRetentionPolicy'],
+                Resource: '*',
+              },
+              {
+                Effect: 'Allow',
+                Action: [
+                  'logs:CreateLogStream',
+                  'logs:DescribeLogStreams',
+                  'logs:PutLogEvents',
+                ],
+                Resource: `arn:aws:logs:*:*:log-group:${logGroupName}:*`,
+              },
+            ],
+          }),
+        };
+      });
 
     this._taskRoleInlinePolicies.push(policy);
   }

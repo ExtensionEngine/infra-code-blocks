@@ -4,6 +4,7 @@ import { describe, expect, it } from 'tstyche';
 import { next as studion } from '@studion/infra-code-blocks';
 import { OtelCollector } from '../../dist/v2/otel';
 import { OtelCollectorBuilder } from '../../dist/v2/otel/builder';
+import { log } from 'console';
 
 describe('Build output', () => {
   describe('ECS Service', () => {
@@ -217,11 +218,13 @@ describe('Build output', () => {
       });
 
       it('should have withDefault method', () => {
-        expect(builder.withDefault).type.toBeCallableWith(
-          'namespace',
-          new aws.amp.Workspace('name'),
-          'region',
-        );
+        expect(builder.withDefault).type.toBeCallableWith({
+          prometheusNamespace: 'namespace',
+          prometheusWorkspace: new aws.amp.Workspace('name'),
+          region: 'region',
+          logGroupName: 'log-group',
+          logStreamName: 'log-stream',
+        });
       });
 
       it('should have withHealthCheckExtension method', () => {

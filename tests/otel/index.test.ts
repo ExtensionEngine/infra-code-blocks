@@ -7,6 +7,7 @@ const awsRegion = 'us-west-2';
 const prometheusNamespace = 'test-namespace';
 const prometheusWriteEndpoint =
   'https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-12345/api/v1/remote_write';
+const logGroupName = 'cw-test-lg';
 
 const defaultMemoryLimiterConfig = {
   check_interval: '1s',
@@ -258,7 +259,12 @@ describe('OtelCollectorConfigBuilder', () => {
 
   it('should generate default configuration', () => {
     const result = new OtelCollectorConfigBuilder()
-      .withDefault(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
+      .withDefault({
+        namespace: prometheusNamespace,
+        endpoint: prometheusWriteEndpoint,
+        region: awsRegion,
+        logGroupName,
+      })
       .build();
 
     const expected = {
@@ -276,6 +282,11 @@ describe('OtelCollectorConfigBuilder', () => {
           send_batch_size: 2000,
           timeout: '2s',
         },
+        'batch/logs': {
+          send_batch_max_size: 5000,
+          send_batch_size: 1024,
+          timeout: '2s',
+        },
         memory_limiter: defaultMemoryLimiterConfig,
       },
       exporters: {
@@ -285,6 +296,10 @@ describe('OtelCollectorConfigBuilder', () => {
           auth: { authenticator: 'sigv4auth' },
         },
         awsxray: { region: awsRegion },
+        awscloudwatchlogs: {
+          region: awsRegion,
+          log_group_name: logGroupName,
+        },
       },
       extensions: {
         sigv4auth: {
@@ -305,6 +320,11 @@ describe('OtelCollectorConfigBuilder', () => {
             receivers: ['otlp'],
             processors: ['memory_limiter', 'batch/traces'],
             exporters: ['awsxray'],
+          },
+          logs: {
+            receivers: ['otlp'],
+            processors: ['memory_limiter', 'batch/logs'],
+            exporters: ['awscloudwatchlogs'],
           },
         },
         telemetry: {

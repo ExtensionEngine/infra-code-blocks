@@ -1,6 +1,17 @@
 import * as pulumi from '@pulumi/pulumi';
 import { OTLPReceiver, Protocol } from './otlp-receiver';
 import type { OtelCollector } from '.';
+import type { PrometheusRemoteWriteExporter } from './prometheus-remote-write-exporter';
+
+export namespace OtelCollectorConfigBuilder {
+  export type WithDefaultArgs = {
+    prometheusNamespace: PrometheusRemoteWriteExporter.Config['namespace'];
+    prometheusEndpoint: PrometheusRemoteWriteExporter.Config['endpoint'];
+    region: string;
+    logGroupName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_group_name'];
+    logStreamName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'];
+  };
+}
 
 export class OtelCollectorConfigBuilder {
   private readonly _receivers: OtelCollector.Receiver = {};
@@ -61,6 +72,22 @@ export class OtelCollectorConfigBuilder {
 
   withAWSXRayExporter(region: string): this {
     this._exporters.awsxray = { region };
+
+    return this;
+  }
+
+  withCloudWatchLogsExporter(
+    region: OtelCollector.AwsCloudWatchLogsExporterConfig['region'],
+    logGroupName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_group_name'],
+    logStreamName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'],
+    logRetention?: OtelCollector.AwsCloudWatchLogsExporterConfig['log_retention'],
+  ): this {
+    this._exporters.awscloudwatchlogs = {
+      region,
+      log_group_name: logGroupName,
+      log_stream_name: logStreamName,
+      ...(logRetention && { log_retention: logRetention }),
+    };
 
     return this;
   }
@@ -144,17 +171,35 @@ export class OtelCollectorConfigBuilder {
     return this;
   }
 
-  withDefault(
-    prometheusNamespace: pulumi.Input<string>,
-    prometheusWriteEndpoint: pulumi.Input<string>,
-    awsRegion: string,
+  withLogsPipeline(
+    receivers: OtelCollector.ReceiverType[],
+    processors: OtelCollector.ProcessorType[],
+    exporters: OtelCollector.ExporterType[],
   ): this {
+    this._service.pipelines.logs = {
+      receivers,
+      processors,
+      exporters,
+    };
+
+    return this;
+  }
+
+  withDefault({
+    prometheusNamespace,
+    prometheusEndpoint,
+    region,
+    logGroupName,
+    logStreamName,
+  }: OtelCollectorConfigBuilder.WithDefaultArgs): this {
     return this.withOTLPReceiver(['http'])
       .withMemoryLimiterProcessor()
       .withBatchProcessor('batch/metrics')
       .withBatchProcessor('batch/traces', 2000, 5000, '2s')
-      .withAPS(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
-      .withAWSXRayExporter(awsRegion)
+      .withBatchProcessor('batch/logs', 1024, 5000, '2s')
+      .withAPS(prometheusNamespace, prometheusEndpoint, region)
+      .withAWSXRayExporter(region)
+      .withCloudWatchLogsExporter(region, logGroupName, logStreamName)
       .withHealthCheckExtension()
       .withMetricsPipeline(
         ['otlp'],
@@ -166,14 +211,21 @@ export class OtelCollectorConfigBuilder {
         ['memory_limiter', 'batch/traces'],
         ['awsxray'],
       )
+      .withLogsPipeline(
+        ['otlp'],
+        ['memory_limiter', 'batch/logs'],
+        ['awscloudwatchlogs'],
+      )
       .withTelemetry();
   }
 
   build(): OtelCollector.Config {
     this.validatePipelineComponents('metrics');
     this.validatePipelineComponents('traces');
+    this.validatePipelineComponents('logs');
     this.validatePipelineProcessorOrder('metrics');
     this.validatePipelineProcessorOrder('traces');
+    this.validatePipelineProcessorOrder('logs');
 
     // FIX: Fix type inference
     const extensions = Object.keys(
@@ -194,7 +246,7 @@ export class OtelCollectorConfigBuilder {
   }
 
   private validatePipelineProcessorOrder(
-    pipelineType: 'metrics' | 'traces',
+    pipelineType: 'metrics' | 'traces' | 'logs',
   ): void {
     const pipeline = this._service.pipelines[pipelineType];
     if (!pipeline) return;
@@ -210,7 +262,9 @@ export class OtelCollectorConfigBuilder {
     }
   }
 
-  private validatePipelineComponents(pipelineType: 'metrics' | 'traces'): void {
+  private validatePipelineComponents(
+    pipelineType: 'metrics' | 'traces' | 'logs',
+  ): void {
     this._service.pipelines[pipelineType]?.receivers.forEach(receiver => {
       if (!this._receivers[receiver]) {
         throw new Error(
