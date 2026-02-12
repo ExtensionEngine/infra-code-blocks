@@ -193,7 +193,15 @@ export class EcsService extends pulumi.ComponentResource {
     args: EcsService.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:ecs:Service', name, {}, opts);
+    super(
+      'studion:ecs-service:EcsService',
+      name,
+      {},
+      {
+        ...opts,
+        aliases: [...(opts.aliases || []), { type: 'studion:ecs:Service' }],
+      },
+    );
     const argsWithDefaults = mergeWithDefaults(defaults, args);
     const taskExecutionRoleInlinePolicies = pulumi.output(
       args.taskExecutionRoleInlinePolicies ||

@@ -46,7 +46,7 @@ export class ElastiCacheRedis extends pulumi.ComponentResource {
     args: ElastiCacheRedis.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:Redis:ElastiCache', name, {}, opts);
+    super('studion:redis:ElastiCacheRedis', name, {}, opts);
     const argsWithDefaults = mergeWithDefaults(defaults, args);
 
     this.name = name;

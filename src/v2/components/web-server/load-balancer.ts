@@ -56,7 +56,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
     args: WebServerLoadBalancer.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:WebServerLoadBalancer', name, args, opts);
+    super('studion:web-server:WebServerLoadBalancer', name, args, opts);
 
     this.name = name;
     const vpc = pulumi.output(args.vpc);

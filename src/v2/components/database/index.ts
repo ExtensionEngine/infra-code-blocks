@@ -93,7 +93,15 @@ export class Database extends pulumi.ComponentResource {
     args: Database.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:Database', name, {}, opts);
+    super(
+      'studion:database:Database',
+      name,
+      {},
+      {
+        ...opts,
+        aliases: [...(opts.aliases || []), { type: 'studion:Database' }],
+      },
+    );
 
     this.name = name;
 

@@ -34,7 +34,7 @@ export class StaticSite extends pulumi.ComponentResource {
     args: StaticSite.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:ss:StaticSite', name, args, {
+    super('studion:static-site:StaticSite', name, args, {
       ...opts,
       aliases: [...(opts.aliases || []), { type: 'studion:StaticSite' }],
     });

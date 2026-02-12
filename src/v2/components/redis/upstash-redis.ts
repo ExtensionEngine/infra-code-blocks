@@ -38,7 +38,15 @@ export class UpstashRedis extends pulumi.ComponentResource {
     args: UpstashRedis.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:Redis:Upstash', name, {}, opts);
+    super(
+      'studion:redis:UpstashRedis',
+      name,
+      {},
+      {
+        ...opts,
+        aliases: [...(opts.aliases || []), { type: 'studion:Redis' }],
+      },
+    );
 
     const dbName = `${pulumi.getProject()}-${pulumi.getStack()}`;
     const argsWithDefaults = mergeWithDefaults({ ...defaults, dbName }, args);
