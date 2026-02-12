@@ -4,6 +4,7 @@ import * as awsx from '@pulumi/awsx-v3';
 import * as pulumi from '@pulumi/pulumi';
 import { commonTags } from '../../shared/common-tags';
 import { DatabaseReplica } from './database-replica';
+import { Ec2SSMConnect } from './ec2-ssm-connect';
 import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 import { Password } from '../password';
 
@@ -42,6 +43,8 @@ export namespace Database {
     enableMonitoring?: pulumi.Input<boolean>;
   };
 
+  export type SSMConnectConfig = Omit<Ec2SSMConnect.Args, 'vpc'>;
+
   export type Args = Instance &
     Credentials &
     Storage & {
@@ -52,6 +55,8 @@ export namespace Database {
       kmsKeyId?: pulumi.Input<string>;
       createReplica?: pulumi.Input<boolean>;
       replicaConfig?: ReplicaConfig;
+      enableSSMConnect?: pulumi.Input<boolean>;
+      ssmConnectConfig?: SSMConnectConfig;
       tags?: pulumi.Input<{
         [key: string]: pulumi.Input<string>;
       }>;
@@ -81,6 +86,7 @@ export class Database extends pulumi.ComponentResource {
   monitoringRole?: aws.iam.Role;
   encryptedSnapshotCopy?: aws.rds.SnapshotCopy;
   replica?: DatabaseReplica;
+  ec2SSMConnect?: Ec2SSMConnect;
 
   constructor(
     name: string,
@@ -99,6 +105,8 @@ export class Database extends pulumi.ComponentResource {
       snapshotIdentifier,
       createReplica,
       replicaConfig = {},
+      enableSSMConnect,
+      ssmConnectConfig = {},
     } = argsWithDefaults;
 
     this.vpc = pulumi.output(vpc);
@@ -128,6 +136,10 @@ export class Database extends pulumi.ComponentResource {
 
     if (createReplica) {
       this.replica = this.createDatabaseReplica(replicaConfig);
+    }
+
+    if (enableSSMConnect) {
+      this.ec2SSMConnect = this.createEc2SSMConnect(ssmConnectConfig);
     }
 
     this.registerOutputs();
@@ -251,6 +263,17 @@ export class Database extends pulumi.ComponentResource {
     );
 
     return replica;
+  }
+
+  private createEc2SSMConnect(config: Database.Args['ssmConnectConfig'] = {}) {
+    return new Ec2SSMConnect(
+      `${this.name}-ssm-connect`,
+      {
+        vpc: this.vpc,
+        ...config,
+      },
+      { parent: this },
+    );
   }
 
   private createDatabaseInstance(args: Database.Args) {

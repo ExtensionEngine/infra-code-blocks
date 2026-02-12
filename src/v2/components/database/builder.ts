@@ -14,6 +14,8 @@ export class DatabaseBuilder {
   private tags?: Database.Args['tags'];
   private createReplica?: Database.Args['createReplica'];
   private replicaConfig?: Database.Args['replicaConfig'];
+  private enableSSMConnect?: Database.Args['enableSSMConnect'];
+  private ssmConnectConfig?: Database.Args['ssmConnectConfig'];
 
   constructor(name: string) {
     this.name = name;
@@ -84,6 +86,15 @@ export class DatabaseBuilder {
     return this;
   }
 
+  public withSSMConnect(
+    ssmConnectConfig: Database.Args['ssmConnectConfig'] = {},
+  ) {
+    this.enableSSMConnect = true;
+    this.ssmConnectConfig = ssmConnectConfig;
+
+    return this;
+  }
+
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
     if (!this.snapshotIdentifier && !this.instanceConfig?.dbName) {
       throw new Error(
@@ -134,6 +145,8 @@ export class DatabaseBuilder {
         tags: this.tags,
         createReplica: this.createReplica,
         replicaConfig: this.replicaConfig,
+        enableSSMConnect: this.enableSSMConnect,
+        ssmConnectConfig: this.ssmConnectConfig,
       },
       opts,
     );
