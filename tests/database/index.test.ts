@@ -1,3 +1,4 @@
+import { cleanupReplicas, cleanupSnapshots } from './util';
 import { describe, before, after } from 'node:test';
 import {
   DescribeDBInstancesCommand,
@@ -13,7 +14,6 @@ import {
 } from '@aws-sdk/client-ec2';
 import * as assert from 'node:assert';
 import * as automation from '../automation';
-import { cleanupSnapshots } from './util';
 import * as config from './infrastructure/config';
 import { DatabaseTestContext } from './test-context';
 import { EC2Client } from '@aws-sdk/client-ec2';
@@ -24,6 +24,8 @@ import { KMSClient } from '@aws-sdk/client-kms';
 import { RDSClient } from '@aws-sdk/client-rds';
 import { requireEnv } from '../util';
 import { testConfigurableDb } from './configurable-db.test';
+import { testConfigurableReplica } from './configurable-replica-db.test';
+import { testReplicaDb } from './replica-db.test';
 import { testSnapshotDb } from './snapshot-db.test';
 
 const programArgs: InlineProgramArgs = {
@@ -50,6 +52,7 @@ describe('Database component deployment', () => {
   });
 
   after(async () => {
+    await cleanupReplicas(ctx);
     await automation.destroy(programArgs);
     await cleanupSnapshots(ctx);
   });
@@ -209,4 +212,6 @@ describe('Database component deployment', () => {
 
   describe('With configurable options', () => testConfigurableDb(ctx));
   describe('With snapshot', () => testSnapshotDb(ctx));
+  describe('With replica', () => testReplicaDb(ctx));
+  describe('With configurable replica', () => testConfigurableReplica(ctx));
 });

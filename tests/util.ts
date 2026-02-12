@@ -21,8 +21,11 @@ export function requireEnv(name: string): string {
   return value;
 }
 
-export function backOff<T>(request: () => Promise<T>): Promise<T> {
-  return backOffFn(request, backOffDefaults);
+export function backOff<T>(
+  request: () => Promise<T>,
+  opts: BackoffOptions = {},
+): Promise<T> {
+  return backOffFn(request, { ...backOffDefaults, ...opts });
 }
 
 export function unwrapOutputs<T extends Record<string, any>>(

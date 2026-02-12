@@ -4,9 +4,12 @@ import type { OtelCollector } from '.';
 import type { PrometheusRemoteWriteExporter } from './prometheus-remote-write-exporter';
 
 export namespace OtelCollectorConfigBuilder {
-  export type WithDefaultArgs = PrometheusRemoteWriteExporter.Config & {
+  export type WithDefaultArgs = {
+    prometheusNamespace: PrometheusRemoteWriteExporter.Config['namespace'];
+    prometheusEndpoint: PrometheusRemoteWriteExporter.Config['endpoint'];
     region: string;
-    logGroupName: pulumi.Input<string>;
+    logGroupName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_group_name'];
+    logStreamName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'];
   };
 }
 
@@ -76,13 +79,13 @@ export class OtelCollectorConfigBuilder {
   withCloudWatchLogsExporter(
     region: OtelCollector.AwsCloudWatchLogsExporterConfig['region'],
     logGroupName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_group_name'],
-    logStreamName?: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'],
+    logStreamName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'],
     logRetention?: OtelCollector.AwsCloudWatchLogsExporterConfig['log_retention'],
   ): this {
     this._exporters.awscloudwatchlogs = {
       region,
       log_group_name: logGroupName,
-      ...(logStreamName && { log_stream_name: logStreamName }),
+      log_stream_name: logStreamName,
       ...(logRetention && { log_retention: logRetention }),
     };
 
@@ -183,19 +186,20 @@ export class OtelCollectorConfigBuilder {
   }
 
   withDefault({
-    namespace,
-    endpoint,
+    prometheusNamespace,
+    prometheusEndpoint,
     region,
     logGroupName,
+    logStreamName,
   }: OtelCollectorConfigBuilder.WithDefaultArgs): this {
     return this.withOTLPReceiver(['http'])
       .withMemoryLimiterProcessor()
       .withBatchProcessor('batch/metrics')
       .withBatchProcessor('batch/traces', 2000, 5000, '2s')
       .withBatchProcessor('batch/logs', 1024, 5000, '2s')
-      .withAPS(namespace, endpoint, region)
+      .withAPS(prometheusNamespace, prometheusEndpoint, region)
       .withAWSXRayExporter(region)
-      .withCloudWatchLogsExporter(region, logGroupName)
+      .withCloudWatchLogsExporter(region, logGroupName, logStreamName)
       .withHealthCheckExtension()
       .withMetricsPipeline(
         ['otlp'],

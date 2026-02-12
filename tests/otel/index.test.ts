@@ -5,7 +5,7 @@ import { testOtelCollectorConfigBuilderValidation } from './validation.test';
 
 const awsRegion = 'us-west-2';
 const prometheusNamespace = 'test-namespace';
-const prometheusWriteEndpoint =
+const prometheusEndpoint =
   'https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-12345/api/v1/remote_write';
 const logGroupName = 'cw-test-lg';
 const logStreamName = 'cw-test-ls';
@@ -110,7 +110,7 @@ describe('OtelCollectorConfigBuilder', () => {
 
   it('should configure Amazon Prometheus Service (APS) exporter', () => {
     const result = new OtelCollectorConfigBuilder()
-      .withAPS(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
+      .withAPS(prometheusNamespace, prometheusEndpoint, awsRegion)
       .build();
 
     const expected = {
@@ -119,7 +119,7 @@ describe('OtelCollectorConfigBuilder', () => {
       exporters: {
         prometheusremotewrite: {
           namespace: prometheusNamespace,
-          endpoint: prometheusWriteEndpoint,
+          endpoint: prometheusEndpoint,
           auth: { authenticator: 'sigv4auth' },
         },
       },
@@ -312,10 +312,11 @@ describe('OtelCollectorConfigBuilder', () => {
   it('should generate default configuration', () => {
     const result = new OtelCollectorConfigBuilder()
       .withDefault({
-        namespace: prometheusNamespace,
-        endpoint: prometheusWriteEndpoint,
+        prometheusNamespace,
+        prometheusEndpoint,
         region: awsRegion,
         logGroupName,
+        logStreamName,
       })
       .build();
 
@@ -344,13 +345,14 @@ describe('OtelCollectorConfigBuilder', () => {
       exporters: {
         prometheusremotewrite: {
           namespace: prometheusNamespace,
-          endpoint: prometheusWriteEndpoint,
+          endpoint: prometheusEndpoint,
           auth: { authenticator: 'sigv4auth' },
         },
         awsxray: { region: awsRegion },
         awscloudwatchlogs: {
           region: awsRegion,
           log_group_name: logGroupName,
+          log_stream_name: logStreamName,
         },
       },
       extensions: {
@@ -394,7 +396,7 @@ describe('OtelCollectorConfigBuilder', () => {
       .withOTLPReceiver(['http'])
       .withBatchProcessor()
       .withMemoryLimiterProcessor()
-      .withAPS(prometheusNamespace, prometheusWriteEndpoint, awsRegion)
+      .withAPS(prometheusNamespace, prometheusEndpoint, awsRegion)
       .withAWSXRayExporter(awsRegion)
       .withCloudWatchLogsExporter(
         awsRegion,
@@ -438,7 +440,7 @@ describe('OtelCollectorConfigBuilder', () => {
       exporters: {
         prometheusremotewrite: {
           namespace: prometheusNamespace,
-          endpoint: prometheusWriteEndpoint,
+          endpoint: prometheusEndpoint,
           auth: { authenticator: 'sigv4auth' },
         },
         awsxray: { region: awsRegion },

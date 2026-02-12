@@ -1,11 +1,10 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws-v7';
 import * as awsx from '@pulumi/awsx-v3';
-import { CustomSize, Size } from '../../../types/size';
-import { PredefinedSize } from '../../../constants';
 import { commonTags } from '../../shared/common-tags';
 import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 import { assumeRolePolicy } from './policies';
+import { TaskSize, parseTaskSize } from './task-size';
 
 const config = new pulumi.Config('aws');
 const awsRegion = config.require('region');
@@ -96,10 +95,11 @@ export namespace EcsService {
      * - `medium` (0.5 vCPU, 1 GB memory)
      * - `large` (1 vCPU memory, 2 GB memory)
      * - `xlarge` (2 vCPU, 4 GB memory)
-     *
+     * - `2xlarge` (4 vCPU, 8 GB memory)
+     * - `3xlarge` (8 vCPU, 16 GB memory)
      * @default "small"
      */
-    size?: pulumi.Input<Size>;
+    size?: pulumi.Input<TaskSize>;
     /**
      * Custom service security group
      * In case no security group is provided, default security group will be automatically created.
@@ -272,11 +272,11 @@ export class EcsService extends pulumi.ComponentResource {
     volumes: pulumi.Output<EcsService.PersistentStorageVolume[]>,
     taskExecutionRole: aws.iam.Role,
     taskRole: aws.iam.Role,
-    size: pulumi.Input<Size>,
+    size: pulumi.Input<TaskSize>,
     tags: pulumi.Input<EcsService.Tags>,
   ): pulumi.Output<aws.ecs.TaskDefinition> {
     const stack = pulumi.getStack();
-    const { cpu, memory } = pulumi.output(size).apply(parseSize);
+    const { cpu, memory } = pulumi.output(size).apply(parseTaskSize);
     const containerDefinitions = containers.map(container => {
       return this.createContainerDefinition(container);
     });
@@ -669,18 +669,4 @@ export class EcsService extends pulumi.ComponentResource {
 
     return { fileSystem: efs, accessPoint };
   }
-}
-
-function parseSize(size: Size): { cpu: string; memory: string } {
-  const mapCapabilities = ({ cpu, memory }: CustomSize) => ({
-    cpu: String(cpu),
-    memory: String(memory),
-  });
-  if (typeof size === 'string') {
-    return mapCapabilities(PredefinedSize[size]);
-  }
-  if (typeof size === 'object') {
-    return mapCapabilities(size);
-  }
-  throw Error('Incorrect EcsService size argument');
 }
