@@ -63,6 +63,7 @@
     "@aws-sdk/client-s3": "^3.982.0",
     "@aws-sdk/client-secrets-manager": "^3.973.5",
     "@aws-sdk/client-servicediscovery": "^3.973.5",
+    "@aws-sdk/client-ssm": "^3.986.0",
     "@studion/prettier-config": "^0.1.0",
     "@types/node": "^22",
     "exponential-backoff": "^3.1.2",

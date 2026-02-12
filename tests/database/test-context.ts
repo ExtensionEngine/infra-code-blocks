@@ -3,6 +3,7 @@ import { IAMClient } from '@aws-sdk/client-iam';
 import { KMSClient } from '@aws-sdk/client-kms';
 import { OutputMap } from '@pulumi/pulumi/automation';
 import { RDSClient } from '@aws-sdk/client-rds';
+import { SSMClient } from '@aws-sdk/client-ssm';
 
 interface ConfigContext {
   config: DatabaseTestConfig;
@@ -35,6 +36,7 @@ interface AwsContext {
     ec2: EC2Client;
     kms: KMSClient;
     iam: IAMClient;
+    ssm: SSMClient;
   };
 }
 

@@ -127,6 +127,19 @@ const configurableReplicaDb = new studion.DatabaseBuilder(
   .withVpc(vpc.vpc)
   .build({ parent });
 
+const ssmConnectDb = new studion.DatabaseBuilder(
+  `${config.appName}-ssm-connect-db`,
+)
+  .withInstance({
+    dbName: config.dbName,
+  })
+  .withCredentials({
+    username: config.dbUsername,
+  })
+  .withSSMConnect()
+  .withVpc(vpc.vpc)
+  .build({ parent });
+
 export {
   vpc,
   defaultDb,
@@ -137,4 +150,5 @@ export {
   snapshotDb,
   replicaDb,
   configurableReplicaDb,
+  ssmConnectDb,
 };
