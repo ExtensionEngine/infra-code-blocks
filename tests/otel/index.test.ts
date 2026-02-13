@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert';
-import { OtelCollectorConfigBuilder } from '../../src/v2/otel/config';
+import { OtelCollectorConfigBuilder } from '../../src/otel/config';
 import { testOtelCollectorConfigBuilderValidation } from './validation.test';
 
 const awsRegion = 'us-west-2';

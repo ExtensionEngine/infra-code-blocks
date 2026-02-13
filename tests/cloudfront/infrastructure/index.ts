@@ -1,6 +1,6 @@
 import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
-import { next as studion } from '@studion/infra-code-blocks';
+import * as studion from '@studion/infra-code-blocks';
 import * as util from '../../util';
 import * as config from './config';
 import { OriginFactory } from './origin-factory';

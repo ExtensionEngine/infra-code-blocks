@@ -13,7 +13,7 @@ import {
   SubnetState,
   VpcState,
 } from '@aws-sdk/client-ec2';
-import { defaults as vpcDefaults } from '../../src/v2/components/vpc';
+import { defaults as vpcDefaults } from '../../src/components/vpc';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',

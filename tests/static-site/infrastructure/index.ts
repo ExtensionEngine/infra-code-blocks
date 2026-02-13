@@ -1,6 +1,6 @@
 import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
-import { next as studion } from '@studion/infra-code-blocks';
+import * as studion from '@studion/infra-code-blocks';
 import * as config from './config';
 
 const hostedZoneId = process.env.ICB_HOSTED_ZONE_ID;

@@ -1,6 +1,6 @@
 import { CloudFrontClient } from '@aws-sdk/client-cloudfront';
 import { S3Client } from '@aws-sdk/client-s3';
-import { next as studion } from '@studion/infra-code-blocks';
+import * as studion from '@studion/infra-code-blocks';
 import { AwsContext, ConfigContext, PulumiProgramContext } from '../types';
 
 interface Config {
