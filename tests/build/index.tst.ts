@@ -1,10 +1,7 @@
 import * as aws from '@pulumi/aws-v7';
 import * as awsx from '@pulumi/awsx-v3';
 import { describe, expect, it } from 'tstyche';
-import { next as studion } from '@studion/infra-code-blocks';
-import { OtelCollector } from '../../dist/v2/otel';
-import { OtelCollectorBuilder } from '../../dist/v2/otel/builder';
-import { log } from 'console';
+import * as studion from '@studion/infra-code-blocks';
 
 describe('Build output', () => {
   describe('ECS Service', () => {
@@ -109,7 +106,7 @@ describe('Build output', () => {
 
       it('should have withOtelCollector method', () => {
         expect(builder.withOtelCollector).type.toBeCallableWith(
-          new OtelCollector('serviceName', 'testEnv', {
+          new studion.openTelemetry.OtelCollector('serviceName', 'testEnv', {
             receivers: {},
             processors: {},
             exporters: {},
@@ -186,7 +183,10 @@ describe('Build output', () => {
     });
 
     describe('Builder', () => {
-      const builder = new OtelCollectorBuilder('serviceName', 'testEnv');
+      const builder = new studion.openTelemetry.OtelCollectorBuilder(
+        'serviceName',
+        'testEnv',
+      );
 
       it('should have build method', () => {
         expect(builder.build).type.toBeCallableWith();

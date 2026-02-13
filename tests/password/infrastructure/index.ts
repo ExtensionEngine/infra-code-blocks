@@ -1,4 +1,4 @@
-import { next as studion } from '@studion/infra-code-blocks';
+import * as studion from '@studion/infra-code-blocks';
 
 const appName = 'password-test';
 

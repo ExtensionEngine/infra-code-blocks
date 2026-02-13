@@ -1,6 +1,6 @@
 import { it } from 'node:test';
 import * as assert from 'node:assert';
-import { OtelCollectorConfigBuilder } from '../../src/v2/otel/config';
+import { OtelCollectorConfigBuilder } from '../../src/otel/config';
 
 export function testOtelCollectorConfigBuilderValidation() {
   it('should throw error when no OTLP receiver protocols are provided', () => {

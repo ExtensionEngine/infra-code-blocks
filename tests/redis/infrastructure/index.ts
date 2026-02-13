@@ -1,7 +1,7 @@
 import * as aws from '@pulumi/aws-v7';
 import * as pulumi from '@pulumi/pulumi';
 import * as upstash from '@upstash/pulumi';
-import { next as studion } from '@studion/infra-code-blocks';
+import * as studion from '@studion/infra-code-blocks';
 import * as util from '../../util';
 
 const appName = 'redis-test';

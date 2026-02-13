@@ -1,6 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import { OutputMap } from '@pulumi/pulumi/automation';
-import { next as studion } from '@studion/infra-code-blocks';
+import * as studion from '@studion/infra-code-blocks';
 import { backOff as backOffFn, BackoffOptions } from 'exponential-backoff';
 
 const backOffDefaults: BackoffOptions = {

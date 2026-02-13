@@ -8,7 +8,7 @@ import {
 import { backOff } from '../util';
 import { createSpinner } from 'nanospinner';
 import { DatabaseTestContext } from './test-context';
-import { next as studion } from '@studion/infra-code-blocks';
+import * as studion from '@studion/infra-code-blocks';
 
 export async function cleanupSnapshots(ctx: DatabaseTestContext) {
   const spinner = createSpinner('Deleting snapshots...').start();
