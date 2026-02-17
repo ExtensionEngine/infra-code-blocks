@@ -49,9 +49,9 @@ export class CloudFront extends pulumi.ComponentResource {
       origins: this.createDistributionOrigins(behaviors),
       defaultCache: this.getCacheBehavior(defaultBehavior),
       orderedCaches: orderedBehaviors.length
-        ? orderedBehaviors.map(it => ({
+        ? orderedBehaviors.map((it, idx) => ({
             pathPattern: it.pathPattern,
-            ...this.getCacheBehavior(it),
+            ...this.getCacheBehavior(it, idx),
           }))
         : undefined,
       domain,
@@ -115,10 +115,14 @@ export class CloudFront extends pulumi.ComponentResource {
 
   private getCacheBehavior(
     behavior: CloudFront.Behavior,
+    order?: number,
   ): aws.types.input.cloudfront.DistributionDefaultCacheBehavior {
     const isDefault = isDefaultBehavior(behavior);
-    const getStrategyName = (backend: string) =>
-      `${this.name}-${backend}-${isDefault ? 'default' : 'ordered'}-cache-strategy`;
+    const getStrategyName = (backend: string) => {
+      const suffix = isDefault ? 'default' : `ordered-${order}`;
+
+      return `${this.name}-${backend}-cache-strategy-${suffix}`;
+    };
 
     if (isS3BehaviorType(behavior)) {
       const strategy = new S3CacheStrategy(
