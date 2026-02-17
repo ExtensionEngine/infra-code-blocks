@@ -41,6 +41,8 @@ const ctx: CloudFrontTestContext = {
       infraConfig.cfWithVariousBehaviorsLbPathPattern,
     cfWithVariousBehaviorsS3PathPattern:
       infraConfig.cfWithVariousBehaviorsS3PathPattern,
+    cfWithVariousBehaviorsS3TtlPathPattern:
+      infraConfig.cfWithVariousBehaviorsS3TtlPathPattern,
     cfWithVariousBehaviorsCustomOriginProtocolPolicy:
       infraConfig.cfWithVariousBehaviorsCustomOriginProtocolPolicy,
     cfWithVariousBehaviorsCustomDefaultRootObject:

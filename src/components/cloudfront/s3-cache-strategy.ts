@@ -6,6 +6,7 @@ export namespace S3CacheStrategy {
   export type Args = {
     pathPattern: string;
     bucket: pulumi.Input<aws.s3.Bucket>;
+    cacheTtl?: pulumi.Input<number>;
   };
 }
 
@@ -28,10 +29,10 @@ export class S3CacheStrategy
 
     this.name = name;
 
-    const { pathPattern, bucket } = args;
+    const { pathPattern, bucket, cacheTtl } = args;
 
     this.pathPattern = pathPattern;
-    this.cachePolicy = this.createCachePolicy();
+    this.cachePolicy = this.createCachePolicy(cacheTtl);
     this.responseHeadersPolicy = this.createResponseHeadersPolicy();
 
     this.config = {
@@ -47,13 +48,15 @@ export class S3CacheStrategy
     this.registerOutputs();
   }
 
-  private createCachePolicy() {
+  private createCachePolicy(ttl?: S3CacheStrategy.Args['cacheTtl']) {
+    const enableEncoding = pulumi.output(ttl).apply(val => val !== 0);
+
     return new aws.cloudfront.CachePolicy(
       `${this.name}-cache-policy`,
       {
-        defaultTtl: 86400, // 1 day
-        minTtl: 60, // 1 minute
-        maxTtl: 31536000, // 1 year
+        defaultTtl: ttl ?? 86400, // default to 1 day
+        minTtl: ttl ?? 60, // default to 1 minute
+        maxTtl: ttl ?? 31536000, // default to 1 year
         parametersInCacheKeyAndForwardedToOrigin: {
           cookiesConfig: {
             cookieBehavior: 'none',
@@ -64,8 +67,8 @@ export class S3CacheStrategy
           queryStringsConfig: {
             queryStringBehavior: 'none',
           },
-          enableAcceptEncodingGzip: true,
-          enableAcceptEncodingBrotli: true,
+          enableAcceptEncodingGzip: enableEncoding,
+          enableAcceptEncodingBrotli: enableEncoding,
         },
       },
       { parent: this },

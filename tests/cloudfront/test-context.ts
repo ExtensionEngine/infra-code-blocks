@@ -16,6 +16,7 @@ interface Config {
   cfMinimalDefaultRootObject: string;
   cfWithVariousBehaviorsLbPathPattern: string;
   cfWithVariousBehaviorsS3PathPattern: string;
+  cfWithVariousBehaviorsS3TtlPathPattern: string;
   cfWithVariousBehaviorsCustomOriginProtocolPolicy: string;
   cfWithVariousBehaviorsCustomDefaultRootObject: string;
   cfWithVariousBehaviorsCustomAllowedMethods: string[];
@@ -36,6 +37,7 @@ export interface ProgramOutput {
   loadBalancer: aws.lb.LoadBalancer;
   s3WebsiteBucket: aws.s3.Bucket;
   s3WebsiteBucketConfig: aws.s3.BucketWebsiteConfiguration;
+  s3TtlWebsiteBucket: aws.s3.Bucket;
   customWebsiteBucket: aws.s3.Bucket;
   customWebsiteBucketConfig: aws.s3.BucketWebsiteConfiguration;
   customCachePolicy: aws.cloudfront.CachePolicy;

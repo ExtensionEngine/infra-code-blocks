@@ -127,7 +127,11 @@ export class CloudFront extends pulumi.ComponentResource {
     if (isS3BehaviorType(behavior)) {
       const strategy = new S3CacheStrategy(
         getStrategyName('s3'),
-        { pathPattern: behavior.pathPattern, bucket: behavior.bucket },
+        {
+          pathPattern: behavior.pathPattern,
+          bucket: behavior.bucket,
+          cacheTtl: behavior.cacheTtl,
+        },
         { parent: this },
       );
 
@@ -301,6 +305,11 @@ export namespace CloudFront {
     type: BehaviorType.S3;
     bucket: pulumi.Input<aws.s3.Bucket>;
     websiteConfig: pulumi.Input<aws.s3.BucketWebsiteConfiguration>;
+    /**
+     * Override TTLs of the default cache policy. Suitable when more control is
+     * needed to set up unified TTL on the default cache policy.
+     */
+    cacheTtl?: pulumi.Input<number>;
   };
 
   export type LbBehavior = BehaviorBase & {
