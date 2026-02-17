@@ -1,6 +1,7 @@
 export const appName = 'cloudfront-test';
 
 export const baseDomain = `cf.${process.env.ICB_DOMAIN_NAME}`;
+
 export const defaultDomain = `dmn.${baseDomain}`;
 
 export const certificateDomain = `crt.${baseDomain}`;
@@ -20,6 +21,8 @@ export const cfMinimalDefaultRootObject = 'index.html';
 export const cfWithVariousBehaviorsLbPathPattern = '/api/*';
 
 export const cfWithVariousBehaviorsS3PathPattern = '/www/*';
+
+export const cfWithVariousBehaviorsS3TtlPathPattern = '/www-ttl/*';
 
 export const cfWithVariousBehaviorsCustomOriginProtocolPolicy = 'http-only';
 

@@ -16,7 +16,7 @@ export function testCloudFrontWithVariousBehaviors(ctx: CloudFrontTestContext) {
     const dist = cf.distribution;
     const origins = dist.origins as unknown as Unwrap<typeof dist.origins>;
 
-    assert.strictEqual(origins.length, 3, 'Origins should have length of 3');
+    assert.strictEqual(origins.length, 4, 'Origins should have length of 4');
   });
 
   it('should have origin for LB behavior correctly configured', () => {
@@ -117,8 +117,8 @@ export function testCloudFrontWithVariousBehaviors(ctx: CloudFrontTestContext) {
 
     assert.strictEqual(
       orderedCacheBehaviors?.length,
-      2,
-      'Ordered cache behaviors should have length of 2',
+      3,
+      'Ordered cache behaviors should have length of 3',
     );
   });
 
@@ -359,6 +359,125 @@ export function testCloudFrontWithVariousBehaviors(ctx: CloudFrontTestContext) {
         },
       },
       'Response headers policy of S3 ordered cache behavior must be correctly configured',
+    );
+  });
+
+  it('should have ordered cache behavior for S3 with TTL behavior correctly configured', () => {
+    const cf = ctx.outputs!.cfWithVariousBehaviors;
+    const s3TtlBucket = ctx.outputs!.s3TtlWebsiteBucket;
+    const dist = cf.distribution;
+    const orderedCacheBehaviors =
+      dist.orderedCacheBehaviors as unknown as Unwrap<
+        typeof dist.orderedCacheBehaviors
+      >;
+    const s3TtlCache = orderedCacheBehaviors?.find(
+      it =>
+        it.pathPattern === ctx.config.cfWithVariousBehaviorsS3TtlPathPattern,
+    );
+
+    assert.partialDeepStrictEqual(
+      s3TtlCache,
+      {
+        targetOriginId: s3TtlBucket.arn,
+        allowedMethods: ['GET', 'HEAD'],
+        cachedMethods: ['GET', 'HEAD'],
+        compress: true,
+        viewerProtocolPolicy: 'redirect-to-https',
+        originRequestPolicyId: '',
+      },
+      'S3 with TTL ordered cache behavior must be correctly configured',
+    );
+  });
+
+  it('should have cache policy of S3 with TTL ordered cache behavior correctly configured', async () => {
+    const cf = ctx.outputs!.cfWithVariousBehaviors;
+    const dist = cf.distribution;
+    const orderedCacheBehaviors =
+      dist.orderedCacheBehaviors as unknown as Unwrap<
+        typeof dist.orderedCacheBehaviors
+      >;
+    const s3TtlCache = orderedCacheBehaviors?.find(
+      it =>
+        it.pathPattern === ctx.config.cfWithVariousBehaviorsS3TtlPathPattern,
+    );
+
+    const command = new GetCachePolicyCommand({
+      Id: s3TtlCache!.cachePolicyId,
+    });
+    const response = await ctx.clients.cf.send(command);
+    const cachePolicy = response.CachePolicy;
+
+    assert.partialDeepStrictEqual(
+      cachePolicy?.CachePolicyConfig,
+      {
+        DefaultTTL: 0,
+        MinTTL: 0,
+        MaxTTL: 0,
+        ParametersInCacheKeyAndForwardedToOrigin: {
+          CookiesConfig: {
+            CookieBehavior: 'none',
+          },
+          HeadersConfig: {
+            HeaderBehavior: 'none',
+          },
+          QueryStringsConfig: {
+            QueryStringBehavior: 'none',
+          },
+          EnableAcceptEncodingGzip: false,
+          EnableAcceptEncodingBrotli: false,
+        },
+      },
+      'Cache policy of S3 with TTL ordered cache behavior must be correctly configured',
+    );
+  });
+
+  it('should have response headers policy of S3 with TTL ordered cache behavior correctly configured', async () => {
+    const cf = ctx.outputs!.cfWithVariousBehaviors;
+    const dist = cf.distribution;
+    const orderedCacheBehaviors =
+      dist.orderedCacheBehaviors as unknown as Unwrap<
+        typeof dist.orderedCacheBehaviors
+      >;
+    const s3TtlCache = orderedCacheBehaviors?.find(
+      it =>
+        it.pathPattern === ctx.config.cfWithVariousBehaviorsS3TtlPathPattern,
+    );
+
+    const command = new GetResponseHeadersPolicyCommand({
+      Id: s3TtlCache!.responseHeadersPolicyId,
+    });
+    const response = await ctx.clients.cf.send(command);
+    const responseHeadersPolicy = response.ResponseHeadersPolicy;
+
+    assert.partialDeepStrictEqual(
+      responseHeadersPolicy?.ResponseHeadersPolicyConfig,
+      {
+        CustomHeadersConfig: {
+          Items: [
+            {
+              Header: 'Cache-Control',
+              Value: 'no-cache',
+              Override: false,
+            },
+          ],
+        },
+        SecurityHeadersConfig: {
+          ContentTypeOptions: {
+            Override: true,
+          },
+          FrameOptions: {
+            FrameOption: 'DENY',
+            Override: true,
+          },
+          StrictTransportSecurity: {
+            AccessControlMaxAgeSec: 31536000,
+            IncludeSubdomains: true,
+            Preload: true,
+            Override: true,
+          },
+        },
+      },
+      'Response headers policy of S3 with TTL ordered cache behavior must be correctly configured',
     );
   });
 

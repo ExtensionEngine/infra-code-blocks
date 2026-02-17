@@ -35,6 +35,9 @@ const [s3WebsiteBucket, s3WebsiteBucketConfig] = originFactory.getWebsiteBucket(
   's3-site',
   'www/',
 );
+const [s3TtlWebsiteBucket, s3TtlWebsiteBucketConfig] =
+  originFactory.getWebsiteBucket('s3-ttl-site', 'www-ttl/');
+
 const loadBalancer = originFactory.getLoadBalancer(
   'ws',
   vpc.vpc,
@@ -164,6 +167,13 @@ const cfWithVariousBehaviors = new studion.CloudFront(
         websiteConfig: s3WebsiteBucketConfig,
       },
       {
+        type: studion.CloudFront.BehaviorType.S3,
+        pathPattern: config.cfWithVariousBehaviorsS3TtlPathPattern,
+        bucket: s3TtlWebsiteBucket,
+        websiteConfig: s3TtlWebsiteBucketConfig,
+        cacheTtl: 0,
+      },
+      {
         type: studion.CloudFront.BehaviorType.CUSTOM,
         pathPattern: '*',
         originId: customWebsiteBucket.id,
@@ -192,6 +202,7 @@ export {
   loadBalancer,
   s3WebsiteBucket,
   s3WebsiteBucketConfig,
+  s3TtlWebsiteBucket,
   customWebsiteBucket,
   customWebsiteBucketConfig,
   customCachePolicy,
