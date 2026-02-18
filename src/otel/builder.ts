@@ -1,5 +1,5 @@
 import * as pulumi from '@pulumi/pulumi';
-import * as aws from '@pulumi/aws-v7';
+import * as aws from '@pulumi/aws';
 import * as batchProcessor from './batch-processor';
 import * as memoryLimiterProcessor from './memory-limiter-processor';
 import { OtelCollector } from '.';

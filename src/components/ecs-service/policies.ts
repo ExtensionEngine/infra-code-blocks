@@ -1,4 +1,4 @@
-import * as aws from '@pulumi/aws-v7';
+import * as aws from '@pulumi/aws';
 
 export const assumeRolePolicy: aws.iam.PolicyDocument = {
   Version: '2012-10-17',

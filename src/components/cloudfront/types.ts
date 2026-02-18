@@ -1,4 +1,4 @@
-import * as aws from '@pulumi/aws-v7';
+import * as aws from '@pulumi/aws';
 
 export interface CacheStrategy {
   pathPattern: string;

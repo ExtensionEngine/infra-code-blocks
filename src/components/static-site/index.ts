@@ -1,5 +1,5 @@
 import * as pulumi from '@pulumi/pulumi';
-import * as aws from '@pulumi/aws-v7';
+import * as aws from '@pulumi/aws';
 import { CacheRuleTtl, parseCacheRuleTtl } from './cache-rule-ttl';
 import { S3Assets } from './s3-assets';
 import { CloudFront } from '../cloudfront';

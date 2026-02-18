@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as aws from '@pulumi/aws-v7';
-import * as awsx from '@pulumi/awsx-v3';
+import * as aws from '@pulumi/aws';
+import * as awsx from '@pulumi/awsx';
 import * as pulumi from '@pulumi/pulumi';
 import mime from 'mime';
 import * as studion from '@studion/infra-code-blocks';

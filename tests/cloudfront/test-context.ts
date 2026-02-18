@@ -1,6 +1,6 @@
 import { CloudFrontClient } from '@aws-sdk/client-cloudfront';
 import { Route53Client } from '@aws-sdk/client-route-53';
-import * as aws from '@pulumi/aws-v7';
+import * as aws from '@pulumi/aws';
 import * as studion from '@studion/infra-code-blocks';
 import { AwsContext, ConfigContext, PulumiProgramContext } from '../types';
 
