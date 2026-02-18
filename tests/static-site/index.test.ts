@@ -18,6 +18,8 @@ import * as infraConfig from './infrastructure/config';
 import {
   CloudFrontClient,
   GetDistributionCommand,
+  GetDistributionConfigCommand,
+  GetCachePolicyCommand,
 } from '@aws-sdk/client-cloudfront';
 
 requireEnv('ICB_DOMAIN_NAME');
@@ -93,6 +95,65 @@ describe('StaticSite component deployment', () => {
       },
       'Distribution should have correct tags',
     );
+  });
+
+  it('should create CloudFront distribution with correct cache behaviors and policies', async () => {
+    const staticSite = ctx.outputs!.staticSite;
+    const { id } = staticSite.cf.distribution;
+    const Id = id as unknown as Unwrap<typeof id>;
+
+    const command = new GetDistributionConfigCommand({ Id });
+    const response = await ctx.clients.cf.send(command);
+    const config = response.DistributionConfig;
+
+    assert.ok(
+      config?.DefaultCacheBehavior,
+      'Distribution should have default cache behavior',
+    );
+    assert.strictEqual(
+      config.CacheBehaviors?.Quantity,
+      2,
+      'Distribution should have two ordered cache behaviors',
+    );
+
+    const defaultCachePolicyId = config.DefaultCacheBehavior.CachePolicyId;
+    const assetsCachePolicyId = config.CacheBehaviors.Items?.find(
+      it => it.PathPattern === '/assets/*',
+    )?.CachePolicyId;
+    const uploadsCachePolicyId = config.CacheBehaviors.Items?.find(
+      it => it.PathPattern === '/uploads/*',
+    )?.CachePolicyId;
+
+    assert.ok(
+      defaultCachePolicyId,
+      'Distribution should have default cache behavior with cache policy',
+    );
+    assert.ok(
+      assetsCachePolicyId,
+      'Distribution should have assets cache behavior with cache policy',
+    );
+    assert.ok(
+      uploadsCachePolicyId,
+      'Distribution should have uploads cache behavior with cache policy',
+    );
+
+    const assertCachePolicy = async (cpId: string, ttl: number) => {
+      const cmd = new GetCachePolicyCommand({ Id: cpId });
+      const res = await ctx.clients.cf.send(cmd);
+
+      assert.partialDeepStrictEqual(
+        res.CachePolicy?.CachePolicyConfig,
+        {
+          DefaultTTL: ttl,
+          MinTTL: ttl,
+          MaxTTL: ttl,
+        },
+        `Distribution cache policy should have TTL values set to ${ttl}`,
+      );
+    };
+
+    assertCachePolicy(defaultCachePolicyId, 0);
+    assertCachePolicy(uploadsCachePolicyId, 60);
   });
 
   it('should create S3 website bucket', async () => {
