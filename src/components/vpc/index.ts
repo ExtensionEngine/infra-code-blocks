@@ -1,7 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
-import * as awsx from '@pulumi/awsx-v3';
+import * as awsx from '@pulumi/awsx';
 import { commonTags } from '../../shared/common-tags';
-import { enums } from '@pulumi/awsx-v3/types';
+import { enums } from '@pulumi/awsx/types';
 import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 
 export type VpcArgs = {

@@ -1,5 +1,5 @@
-import * as aws from '@pulumi/aws-v7';
-import * as awsx from '@pulumi/awsx-v3';
+import * as aws from '@pulumi/aws';
+import * as awsx from '@pulumi/awsx';
 import { describe, expect, it } from 'tstyche';
 import * as studion from '@studion/infra-code-blocks';
 

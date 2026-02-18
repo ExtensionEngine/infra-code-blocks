@@ -1,5 +1,5 @@
 import * as studion from '@studion/infra-code-blocks';
-import * as aws from '@pulumi/aws-v7';
+import * as aws from '@pulumi/aws';
 import * as infraConfig from './config';
 
 const appName = 'acm-certificate-test';

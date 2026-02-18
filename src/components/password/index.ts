@@ -1,4 +1,4 @@
-import * as aws from '@pulumi/aws-v7';
+import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
 import * as random from '@pulumi/random';
 import { commonTags } from '../../shared/common-tags';

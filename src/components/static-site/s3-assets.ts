@@ -1,5 +1,5 @@
 import * as pulumi from '@pulumi/pulumi';
-import * as aws from '@pulumi/aws-v7';
+import * as aws from '@pulumi/aws';
 import { commonTags } from '../../shared/common-tags';
 
 export namespace S3Assets {
