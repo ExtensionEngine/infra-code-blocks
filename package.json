@@ -84,7 +84,10 @@
   "overrides": {
     "@pulumi/pulumi": {
       "glob": "10.5.0",
-      "tar": "7.5.7"
+      "tar": "7.5.9"
+    },
+    "@aws-sdk/core": {
+      "fast-xml-parser": "5.3.6"
     }
   },
   "publishConfig": {
