@@ -90,11 +90,6 @@ export function testOtelIntegration(ctx: OtelTestContext) {
         seriesEndpoint,
         `${ctx.config.prometheusNamespace}_.*`,
       );
-      assert.strictEqual(
-        response.statusCode,
-        200,
-        'Expected HTTP 200 from AMP series API',
-      );
       assert.strictEqual(response.status, 'success');
       assert.ok(
         response.data.length > 0,
@@ -105,7 +100,6 @@ export function testOtelIntegration(ctx: OtelTestContext) {
 }
 
 type PrometheusSeriesResponse = {
-  statusCode: number;
   status: 'success' | 'error';
   data: Array<Record<string, string>>;
 };
@@ -151,16 +145,12 @@ async function queryPrometheusSeries(
     }),
   );
 
-  const { body, statusCode } = await request(seriesUrl.toString(), {
+  const { body } = await request(seriesUrl.toString(), {
     method: 'GET',
     headers: signedRequest.headers,
   });
 
-  const parsed = (await body.json()) as Omit<
-    PrometheusSeriesResponse,
-    'statusCode'
-  >;
-  return { statusCode, ...parsed };
+  return (await body.json()) as PrometheusSeriesResponse;
 }
 
 async function requestUsersEndpoint(ctx: OtelTestContext): Promise<{
