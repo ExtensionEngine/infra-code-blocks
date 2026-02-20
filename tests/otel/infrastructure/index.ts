@@ -2,13 +2,7 @@ import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
 import * as studion from '@studion/infra-code-blocks';
 import { getCommonVpc } from '../../util';
-import {
-  appImage,
-  appPort,
-  appName,
-  cloudwatchLogRetention,
-  prometheusNamespace,
-} from './config';
+import { appImage, appPort, appName, prometheusNamespace } from './config';
 
 const stackName = pulumi.getStack();
 const parent = new pulumi.ComponentResource(
@@ -24,21 +18,11 @@ const cloudWatchLogGroupName = `/otel/test/${appName}-${stackName}`;
 const cloudWatchLogStreamName = `${appName}-stream`;
 
 const vpc = getCommonVpc();
-const cluster = new aws.ecs.Cluster(
-  `${appName}-cluster`,
-  {
-    name: `${appName}-cluster-${stackName}`,
-    tags,
-  },
-  { parent },
-);
+const cluster = new aws.ecs.Cluster(`${appName}-cluster`, { tags }, { parent });
 
 const prometheusWorkspace = new aws.amp.Workspace(
   `${appName}-workspace`,
-  {
-    alias: `${appName}-${stackName}`,
-    tags,
-  },
+  { tags },
   { parent },
 );
 
@@ -46,7 +30,6 @@ const cloudWatchLogGroup = new aws.cloudwatch.LogGroup(
   `${appName}-log-group`,
   {
     name: cloudWatchLogGroupName,
-    retentionInDays: cloudwatchLogRetention,
     tags,
   },
   { parent },
@@ -83,7 +66,7 @@ const webServer = new studion.WebServerBuilder(appName)
   .configureEcs(ecs)
   .withVpc(vpc.vpc)
   .withOtelCollector(otelCollector)
-  .build({ parent, dependsOn: [cloudWatchLogGroup] });
+  .build({ parent });
 
 export {
   webServer,

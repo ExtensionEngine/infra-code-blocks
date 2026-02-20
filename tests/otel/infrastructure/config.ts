@@ -6,7 +6,6 @@ export const appPort = 3000;
 export const usersPath = '/users';
 export const errorPath = '/error';
 
-export const cloudwatchLogRetention = 1;
 export const prometheusNamespace = 'icb_otel_integration';
 
 export const exponentialBackOffConfig = {
