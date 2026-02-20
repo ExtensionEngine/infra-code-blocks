@@ -100,10 +100,15 @@ export class WebServer extends pulumi.ComponentResource {
     args: WebServer.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:web-server:WebServer', name, args, {
-      ...opts,
-      aliases: [...(opts.aliases || []), { type: 'studion:WebServer' }],
-    });
+    super(
+      'studion:web-server:WebServer',
+      name,
+      {},
+      {
+        ...opts,
+        aliases: [...(opts.aliases || []), { type: 'studion:WebServer' }],
+      },
+    );
     const { vpc, domain, hostedZoneId, certificate } = args;
     const hasCustomDomain = !!domain || !!certificate;
 

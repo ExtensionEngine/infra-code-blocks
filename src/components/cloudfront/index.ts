@@ -15,7 +15,7 @@ export class CloudFront extends pulumi.ComponentResource {
     args: CloudFront.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:cloudfront:CloudFront', name, args, opts);
+    super('studion:cloudfront:CloudFront', name, {}, opts);
 
     this.name = name;
 
