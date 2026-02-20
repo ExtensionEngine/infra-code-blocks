@@ -59,10 +59,15 @@ export class StaticSite extends pulumi.ComponentResource {
     args: StaticSite.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:static-site:StaticSite', name, args, {
-      ...opts,
-      aliases: [...(opts.aliases || []), { type: 'studion:StaticSite' }],
-    });
+    super(
+      'studion:static-site:StaticSite',
+      name,
+      {},
+      {
+        ...opts,
+        aliases: [...(opts.aliases || []), { type: 'studion:StaticSite' }],
+      },
+    );
 
     const {
       domain,
