@@ -4,6 +4,7 @@ import { commonTags } from '../../shared/common-tags';
 
 export namespace S3Assets {
   export type Args = {
+    bucketPrefix?: pulumi.Input<string>;
     indexDocument?: pulumi.Input<string>;
     errorDocument?: pulumi.Input<string>;
     tags?: pulumi.Input<{
@@ -27,11 +28,13 @@ export class S3Assets extends pulumi.ComponentResource {
     this.name = name;
 
     const {
+      bucketPrefix = `${this.name}-`,
       indexDocument = 'index.html',
       errorDocument = 'index.html',
       tags,
     } = args;
     const [bucket, websiteConfig] = this.createWebsiteBucket(
+      bucketPrefix,
       indexDocument,
       errorDocument,
       tags,
@@ -66,6 +69,7 @@ export class S3Assets extends pulumi.ComponentResource {
   }
 
   private createWebsiteBucket(
+    bucketPrefix: Required<S3Assets.Args>['bucketPrefix'],
     indexDocument: Required<S3Assets.Args>['indexDocument'],
     errorDocument: Required<S3Assets.Args>['errorDocument'],
     tags?: S3Assets.Args['tags'],
@@ -73,7 +77,7 @@ export class S3Assets extends pulumi.ComponentResource {
     const bucket = new aws.s3.Bucket(
       `${this.name}-bucket`,
       {
-        bucketPrefix: `${this.name}-`,
+        bucketPrefix,
         tags: { ...commonTags, ...tags },
       },
       { parent: this },
