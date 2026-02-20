@@ -18,7 +18,7 @@ export function testOtelIntegration(ctx: OtelTestContext) {
     assert.strictEqual(
       usersResponse.statusCode,
       200,
-      '/users endpoint should return 200',
+      'endpoint should return 200',
     );
 
     const logGroup = ctx.outputs!.cloudWatchLogGroup;
@@ -48,7 +48,7 @@ export function testOtelIntegration(ctx: OtelTestContext) {
     const errorResponse = await requestErrorEndpoint(ctx);
     assert.ok(
       errorResponse.statusCode >= 500,
-      '/error endpoint should return 5xx status',
+      'endpoint should return 5xx status',
     );
     const startTime = new Date(Math.max(0, startTimeMs - 30_000));
     const endTime = new Date();
@@ -68,7 +68,7 @@ export function testOtelIntegration(ctx: OtelTestContext) {
       );
       assert.ok(
         summaries.some(summary => summary.HasFault),
-        'Expected at least one X-Ray trace with error after calling /error endpoint',
+        'Expected at least one X-Ray trace with error',
       );
     }, ctx.config.exponentialBackOffConfig);
   });
@@ -78,7 +78,7 @@ export function testOtelIntegration(ctx: OtelTestContext) {
     assert.strictEqual(
       usersResponse.statusCode,
       200,
-      '/users endpoint should return 200',
+      'endpoint should return 200',
     );
 
     const workspace = ctx.outputs!.prometheusWorkspace;

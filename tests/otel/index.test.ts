@@ -44,7 +44,7 @@ describe('OpenTelemetry component deployment', () => {
     ctx.outputs = unwrapOutputs<ProgramOutput>(outputs);
   });
 
-  after(() => automation.destroy(programArgs));
+  // after(() => automation.destroy(programArgs));
 
   describe('Config builder', testOtelConfigBuilder);
   describe('Config validation', testOtelCollectorConfigBuilderValidation);
