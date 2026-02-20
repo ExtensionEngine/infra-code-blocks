@@ -33,6 +33,7 @@ export namespace StaticSite {
      */
     certificate?: pulumi.Input<aws.acm.Certificate>;
     hostedZoneId: pulumi.Input<string>;
+    bucketPrefix?: pulumi.Input<string>;
     indexDocument?: pulumi.Input<string>;
     errorDocument?: pulumi.Input<string>;
     /**
@@ -67,6 +68,7 @@ export class StaticSite extends pulumi.ComponentResource {
       domain,
       hostedZoneId,
       certificate,
+      bucketPrefix,
       indexDocument,
       errorDocument,
       cacheRules,
@@ -80,7 +82,7 @@ export class StaticSite extends pulumi.ComponentResource {
     this.name = name;
     this.s3Assets = new S3Assets(
       `${this.name}-s3-assets`,
-      { indexDocument, errorDocument, tags },
+      { bucketPrefix, indexDocument, errorDocument, tags },
       { parent: this },
     );
     this.cf = new CloudFront(
