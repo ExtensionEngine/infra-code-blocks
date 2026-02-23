@@ -93,11 +93,12 @@ async function requestEndpointWithExpectedStatus(
     const dnsName = webServer.lb.lb.dnsName as unknown as Unwrap<
       typeof webServer.lb.lb.dnsName
     >;
-    const response = await request(`http://${dnsName}${path}`);
+    const endpoint = `http://${dnsName}${path}`;
+    const response = await request(endpoint);
     assert.strictEqual(
       response.statusCode,
       expectedStatus,
-      `endpoint ${path} should return ${expectedStatus}`,
+      `Endpoint ${endpoint} should return ${expectedStatus}`,
     );
   }, ctx.config.exponentialBackOffConfig);
 }
