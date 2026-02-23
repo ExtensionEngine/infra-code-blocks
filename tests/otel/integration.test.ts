@@ -14,12 +14,7 @@ import { OtelTestContext, ProgramOutput } from './test-context';
 export function testOtelIntegration(ctx: OtelTestContext) {
   it('should export logs to CloudWatch Logs', async () => {
     const startTimeMs = Date.now();
-    const usersResponse = await requestUsersEndpoint(ctx);
-    assert.strictEqual(
-      usersResponse.statusCode,
-      200,
-      'endpoint should return 200',
-    );
+    await requestEndpointWithExpectedStatus(ctx, ctx.config.usersPath, 200);
 
     const logGroup = ctx.outputs!.cloudWatchLogGroup;
     const logStreamName = ctx.outputs!.cloudWatchLogStreamName;
@@ -44,16 +39,11 @@ export function testOtelIntegration(ctx: OtelTestContext) {
   });
 
   it('should export traces to AWS X-Ray', async () => {
-    const startTimeMs = Date.now();
-    const errorResponse = await requestErrorEndpoint(ctx);
-    assert.ok(
-      errorResponse.statusCode >= 500,
-      'endpoint should return 5xx status',
-    );
-    const startTime = new Date(Math.max(0, startTimeMs - 30_000));
-    const endTime = new Date();
+    await requestEndpointWithExpectedStatus(ctx, ctx.config.errorPath, 500);
 
     await backOff(async () => {
+      const endTime = new Date();
+      const startTime = new Date(endTime.getTime() - 10 * 60_000);
       const response = await ctx.clients.xray.send(
         new GetTraceSummariesCommand({
           StartTime: startTime,
@@ -74,20 +64,14 @@ export function testOtelIntegration(ctx: OtelTestContext) {
   });
 
   it('should export metrics to Prometheus (AMP)', async () => {
-    const usersResponse = await requestUsersEndpoint(ctx);
-    assert.strictEqual(
-      usersResponse.statusCode,
-      200,
-      'endpoint should return 200',
-    );
+    await requestEndpointWithExpectedStatus(ctx, ctx.config.usersPath, 200);
 
     const workspace = ctx.outputs!.prometheusWorkspace;
-    const seriesEndpoint = getPrometheusSeriesEndpoint(workspace);
 
     await backOff(async () => {
       const response = await queryPrometheusSeries(
         ctx,
-        seriesEndpoint,
+        workspace,
         `${ctx.config.prometheusNamespace}_.*`,
       );
       assert.strictEqual(response.status, 'success');
@@ -99,23 +83,33 @@ export function testOtelIntegration(ctx: OtelTestContext) {
   });
 }
 
+async function requestEndpointWithExpectedStatus(
+  ctx: OtelTestContext,
+  path: string,
+  expectedStatus: number,
+): Promise<void> {
+  await backOff(async () => {
+    const webServer = ctx.outputs!.webServer;
+    const dnsName = webServer.lb.lb.dnsName as unknown as Unwrap<
+      typeof webServer.lb.lb.dnsName
+    >;
+    const response = await request(`http://${dnsName}${path}`);
+    assert.strictEqual(
+      response.statusCode,
+      expectedStatus,
+      `endpoint ${path} should return ${expectedStatus}`,
+    );
+  }, ctx.config.exponentialBackOffConfig);
+}
+
 type PrometheusSeriesResponse = {
   status: 'success' | 'error';
   data: Array<Record<string, string>>;
 };
 
-function getPrometheusSeriesEndpoint(
-  workspace: ProgramOutput['prometheusWorkspace'],
-): string {
-  const prometheusEndpoint = workspace.prometheusEndpoint as unknown as Unwrap<
-    typeof workspace.prometheusEndpoint
-  >;
-  return `${prometheusEndpoint.replace(/\/$/, '')}/api/v1/series`;
-}
-
 async function queryPrometheusSeries(
   ctx: OtelTestContext,
-  endpoint: string,
+  workspace: ProgramOutput['prometheusWorkspace'],
   namespaceRegex: string,
 ): Promise<PrometheusSeriesResponse> {
   const signer = new SignatureV4({
@@ -125,6 +119,10 @@ async function queryPrometheusSeries(
     sha256: Sha256,
   });
 
+  const prometheusEndpoint = workspace.prometheusEndpoint as unknown as Unwrap<
+    typeof workspace.prometheusEndpoint
+  >;
+  const endpoint = `${prometheusEndpoint.replace(/\/$/, '')}/api/v1/series`;
   const seriesUrl = new URL(endpoint);
   seriesUrl.searchParams.append('match[]', `{__name__=~"${namespaceRegex}"}`);
   const end = new Date();
@@ -151,26 +149,4 @@ async function queryPrometheusSeries(
   });
 
   return (await body.json()) as PrometheusSeriesResponse;
-}
-
-async function requestUsersEndpoint(ctx: OtelTestContext): Promise<{
-  statusCode: number;
-}> {
-  const baseUrl = getBaseUrl(ctx);
-  return request(`${baseUrl}${ctx.config.usersPath}`);
-}
-
-async function requestErrorEndpoint(ctx: OtelTestContext): Promise<{
-  statusCode: number;
-}> {
-  const baseUrl = getBaseUrl(ctx);
-  return request(`${baseUrl}${ctx.config.errorPath}`);
-}
-
-function getBaseUrl(ctx: OtelTestContext): string {
-  const webServer = ctx.outputs!.webServer;
-  const dnsName = webServer.lb.lb.dnsName as unknown as Unwrap<
-    typeof webServer.lb.lb.dnsName
-  >;
-  return `http://${dnsName}`;
 }
