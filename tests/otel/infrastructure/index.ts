@@ -23,6 +23,17 @@ const prometheusWorkspace = new aws.amp.Workspace(
   { parent },
 );
 
+const cloudWatchLogGroupName = `/otel/test/${appName}-${stackName}`;
+const cloudWatchLogStreamName = `${appName}-stream`;
+const cloudWatchLogGroup = new aws.cloudwatch.LogGroup(
+  `${appName}-log-group`,
+  {
+    name: cloudWatchLogGroupName,
+    tags,
+  },
+  { parent },
+);
+
 const otelCollector = new studion.openTelemetry.OtelCollectorBuilder(
   appName,
   stackName,
@@ -31,8 +42,8 @@ const otelCollector = new studion.openTelemetry.OtelCollectorBuilder(
     prometheusNamespace,
     prometheusWorkspace,
     region: aws.config.requireRegion(),
-    logGroupName: `/otel/test/${appName}-${stackName}`,
-    logStreamName: `${appName}-stream`,
+    logGroup: cloudWatchLogGroup,
+    logStreamName: cloudWatchLogStreamName,
   })
   .build();
 
@@ -56,4 +67,10 @@ const webServer = new studion.WebServerBuilder(appName)
   .withOtelCollector(otelCollector)
   .build({ parent });
 
-export { webServer, appName, prometheusWorkspace };
+export {
+  cloudWatchLogGroup,
+  cloudWatchLogStreamName,
+  webServer,
+  appName,
+  prometheusWorkspace,
+};
