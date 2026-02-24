@@ -30,7 +30,7 @@ export namespace OtelCollector {
     region: string;
     log_group_name: pulumi.Input<string>;
     log_stream_name: pulumi.Input<string>;
-    log_retention?: number;
+    log_retention?: pulumi.Input<number | undefined>;
   };
 
   export type DebugExportedConfig = {
