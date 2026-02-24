@@ -14,7 +14,7 @@ export namespace OtelCollectorBuilder {
     prometheusWorkspace: aws.amp.Workspace;
     region: string;
     logGroup: aws.cloudwatch.LogGroup;
-    logStreamName: string;
+    logStreamName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'];
   };
 }
 
@@ -70,9 +70,9 @@ export class OtelCollectorBuilder {
   }
 
   withCloudWatchLogsExporter(
-    region: string,
+    region: OtelCollector.AwsCloudWatchLogsExporterConfig['region'],
     logGroup: aws.cloudwatch.LogGroup,
-    logStreamName: string,
+    logStreamName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'],
   ): this {
     this._configBuilder.withCloudWatchLogsExporter(
       region,
