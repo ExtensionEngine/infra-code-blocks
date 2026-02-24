@@ -24,7 +24,7 @@ export class LbCacheStrategy
     args: LbCacheStrategy.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:cloudfront:LbCacheStrategy', name, args, opts);
+    super('studion:cloudfront:LbCacheStrategy', name, {}, opts);
 
     this.name = name;
 

@@ -25,7 +25,7 @@ export class S3CacheStrategy
     args: S3CacheStrategy.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:cloudfront:S3CacheStrategy', name, args, opts);
+    super('studion:cloudfront:S3CacheStrategy', name, {}, opts);
 
     this.name = name;
 

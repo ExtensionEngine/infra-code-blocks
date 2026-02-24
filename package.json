@@ -1,6 +1,6 @@
 {
   "name": "@studion/infra-code-blocks",
-  "version": "2.0.0-alpha.1",
+  "version": "2.0.0-alpha.2",
   "description": "Studion common infra components",
   "keywords": [
     "infrastructure",
@@ -74,7 +74,7 @@
     "nanospinner": "^1.2.2",
     "pathe": "^2.0.3",
     "prettier": "^3.4.2",
-    "release-it": "^18.1.1",
+    "release-it": "^19.2.4",
     "tstyche": "^4.0.0-beta.9",
     "tsx": "^4.21.0",
     "typescript": "^5.7.3",
@@ -83,6 +83,7 @@
   "overrides": {
     "@pulumi/pulumi": {
       "glob": "10.5.0",
+      "minimatch": "10.2.2",
       "tar": "7.5.9"
     },
     "@aws-sdk/core": {
