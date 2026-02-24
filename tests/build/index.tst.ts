@@ -216,9 +216,8 @@ describe('Build output', () => {
       it('should have withCloudWatchLogsExporter method', () => {
         expect(builder.withCloudWatchLogsExporter).type.toBeCallableWith(
           'region',
-          'log-group',
+          new aws.cloudwatch.LogGroup('log-group'),
           'log-stream',
-          7,
         );
       });
 
@@ -231,7 +230,7 @@ describe('Build output', () => {
           prometheusNamespace: 'namespace',
           prometheusWorkspace: new aws.amp.Workspace('name'),
           region: 'region',
-          logGroupName: 'log-group',
+          logGroup: new aws.cloudwatch.LogGroup('log-group'),
           logStreamName: 'log-stream',
         });
       });
