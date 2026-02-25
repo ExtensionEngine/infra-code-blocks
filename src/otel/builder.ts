@@ -170,6 +170,7 @@ export class OtelCollectorBuilder {
       region,
       logGroupName: logGroup.name,
       logStreamName,
+      logRetention: logGroup.retentionInDays,
     });
     this.createAPSInlinePolicy(prometheusWorkspace);
     this.createAWSXRayPolicy();
