@@ -354,6 +354,7 @@ describe('OtelCollectorConfigBuilder', () => {
           region: awsRegion,
           log_group_name: logGroupName,
           log_stream_name: logStreamName,
+          log_retention: logRetention,
         },
       },
       extensions: {
