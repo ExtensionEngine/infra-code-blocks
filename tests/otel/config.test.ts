@@ -316,6 +316,7 @@ export function testOtelConfigBuilder() {
         region: awsRegion,
         logGroupName,
         logStreamName,
+        logRetention,
       })
       .build();
 
