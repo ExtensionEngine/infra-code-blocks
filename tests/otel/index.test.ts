@@ -7,12 +7,7 @@ import { requireEnv, unwrapOutputs } from '../util';
 import { testOtelConfigBuilder } from './config.test';
 import { testOtelCollectorConfigBuilderValidation } from './validation.test';
 import { testOtelIntegration } from './integration.test';
-import {
-  errorPath,
-  appName,
-  prometheusNamespace,
-  usersPath,
-} from './infrastructure/config';
+import * as infraConfig from './infrastructure/config';
 import { OtelTestContext, ProgramOutput } from './test-context';
 
 const programArgs: InlineProgramArgs = {
@@ -25,10 +20,10 @@ const region = requireEnv('AWS_REGION');
 const ctx: OtelTestContext = {
   config: {
     region,
-    usersPath,
-    errorPath,
-    appName,
-    prometheusNamespace,
+    usersPath: infraConfig.usersPath,
+    errorPath: infraConfig.errorPath,
+    appName: infraConfig.appName,
+    prometheusNamespace: infraConfig.prometheusNamespace,
   },
   clients: {
     cloudwatchLogs: new CloudWatchLogsClient({ region }),
