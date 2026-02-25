@@ -1,6 +1,6 @@
 export const appName = 'otel-test';
 
-export const appImage = 'studiondev/observability-sample-app-image';
+export const appImage = 'studiondev/observability-sample-app';
 export const appPort = 3000;
 
 export const usersPath = '/users';
