@@ -16,6 +16,7 @@ import { backOff } from 'exponential-backoff';
 import * as automation from '../automation';
 import { EcsTestContext } from './test-context';
 import { testEcsServiceWithLb } from './load-balancer.test';
+import { testEcsServiceWithSg } from './security-group.test';
 import { testEcsServiceWithStorage } from './persistent-storage.test';
 import { testEcsServiceWithServiceDiscovery } from './service-discovery.test';
 import { testEcsServiceWithAutoscaling } from './autoscaling.test';
@@ -278,4 +279,5 @@ describe('EcsService component deployment', () => {
     testEcsServiceWithServiceDiscovery(ctx));
   describe('With persistent storage', () => testEcsServiceWithStorage(ctx));
   describe('With load balancer', () => testEcsServiceWithLb(ctx));
+  describe('With security group', () => testEcsServiceWithSg(ctx));
 });

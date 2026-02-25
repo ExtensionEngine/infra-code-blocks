@@ -440,7 +440,9 @@ export class EcsService extends pulumi.ComponentResource {
     );
   }
 
-  public addSecurityGroup(securityGroup: aws.ec2.SecurityGroup): void {
+  private addSecurityGroup(
+    securityGroup: pulumi.Input<aws.ec2.SecurityGroup>,
+  ): void {
     this.securityGroups.push(pulumi.output(securityGroup));
   }
 
@@ -473,7 +475,13 @@ export class EcsService extends pulumi.ComponentResource {
   }
 
   private createEcsService(ecsServiceArgs: EcsService.Args) {
-    if (!this.securityGroups.length) this.createDefaultSecurityGroup();
+    if (ecsServiceArgs.securityGroup) {
+      this.addSecurityGroup(ecsServiceArgs.securityGroup);
+    }
+
+    if (!this.securityGroups.length) {
+      this.createDefaultSecurityGroup();
+    }
 
     const networkConfiguration = {
       assignPublicIp: ecsServiceArgs.assignPublicIp,
