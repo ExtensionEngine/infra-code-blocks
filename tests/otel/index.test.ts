@@ -9,7 +9,6 @@ import { testOtelCollectorConfigBuilderValidation } from './validation.test';
 import { testOtelIntegration } from './integration.test';
 import {
   errorPath,
-  exponentialBackOffConfig,
   appName,
   prometheusNamespace,
   usersPath,
@@ -30,7 +29,6 @@ const ctx: OtelTestContext = {
     errorPath,
     appName,
     prometheusNamespace,
-    exponentialBackOffConfig,
   },
   clients: {
     cloudwatchLogs: new CloudWatchLogsClient({ region }),

@@ -35,7 +35,7 @@ export function testOtelIntegration(ctx: OtelTestContext) {
         (response.events?.length ?? 0) > 0,
         'Expected telemetry logs in CloudWatch log group',
       );
-    }, ctx.config.exponentialBackOffConfig);
+    });
   });
 
   it('should export traces to AWS X-Ray', async () => {
@@ -60,7 +60,7 @@ export function testOtelIntegration(ctx: OtelTestContext) {
         summaries.some(summary => summary.HasFault),
         'Expected at least one X-Ray trace with error',
       );
-    }, ctx.config.exponentialBackOffConfig);
+    });
   });
 
   it('should export metrics to Prometheus (AMP)', async () => {
@@ -79,7 +79,7 @@ export function testOtelIntegration(ctx: OtelTestContext) {
         response.data.length > 0,
         `Expected at least one Prometheus series in namespace '${ctx.config.prometheusNamespace}'`,
       );
-    }, ctx.config.exponentialBackOffConfig);
+    });
   });
 }
 
@@ -100,7 +100,7 @@ async function requestEndpointWithExpectedStatus(
       expectedStatus,
       `Endpoint ${endpoint} should return ${expectedStatus}`,
     );
-  }, ctx.config.exponentialBackOffConfig);
+  });
 }
 
 type PrometheusSeriesResponse = {

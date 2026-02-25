@@ -10,13 +10,6 @@ interface OtelTestConfig {
   errorPath: string;
   appName: string;
   prometheusNamespace: string;
-  exponentialBackOffConfig: {
-    delayFirstAttempt: boolean;
-    numOfAttempts: number;
-    startingDelay: number;
-    timeMultiple: number;
-    jitter: 'full' | 'none';
-  };
 }
 
 interface AwsClients {
