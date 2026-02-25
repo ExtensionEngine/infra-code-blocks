@@ -10,6 +10,7 @@ export namespace OtelCollectorConfigBuilder {
     region: string;
     logGroupName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_group_name'];
     logStreamName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'];
+    logRetention: OtelCollector.AwsCloudWatchLogsExporterConfig['log_retention'];
   };
 }
 
@@ -80,13 +81,13 @@ export class OtelCollectorConfigBuilder {
     region: OtelCollector.AwsCloudWatchLogsExporterConfig['region'],
     logGroupName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_group_name'],
     logStreamName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'],
-    logRetention?: OtelCollector.AwsCloudWatchLogsExporterConfig['log_retention'],
+    logRetention: OtelCollector.AwsCloudWatchLogsExporterConfig['log_retention'],
   ): this {
     this._exporters.awscloudwatchlogs = {
       region,
       log_group_name: logGroupName,
       log_stream_name: logStreamName,
-      ...(logRetention && { log_retention: logRetention }),
+      log_retention: logRetention,
     };
 
     return this;
@@ -191,6 +192,7 @@ export class OtelCollectorConfigBuilder {
     region,
     logGroupName,
     logStreamName,
+    logRetention,
   }: OtelCollectorConfigBuilder.WithDefaultArgs): this {
     return this.withOTLPReceiver(['http'])
       .withMemoryLimiterProcessor()
@@ -199,7 +201,12 @@ export class OtelCollectorConfigBuilder {
       .withBatchProcessor('batch/logs', 1024, 5000, '2s')
       .withAPS(prometheusNamespace, prometheusEndpoint, region)
       .withAWSXRayExporter(region)
-      .withCloudWatchLogsExporter(region, logGroupName, logStreamName)
+      .withCloudWatchLogsExporter(
+        region,
+        logGroupName,
+        logStreamName,
+        logRetention,
+      )
       .withHealthCheckExtension()
       .withMetricsPipeline(
         ['otlp'],

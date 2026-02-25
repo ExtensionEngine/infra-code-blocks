@@ -13,7 +13,7 @@ export namespace OtelCollectorBuilder {
     prometheusNamespace: PrometheusRemoteWriteExporter.Config['namespace'];
     prometheusWorkspace: aws.amp.Workspace;
     region: string;
-    logGroupName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_group_name'];
+    logGroup: aws.cloudwatch.LogGroup;
     logStreamName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'];
   };
 }
@@ -71,17 +71,16 @@ export class OtelCollectorBuilder {
 
   withCloudWatchLogsExporter(
     region: OtelCollector.AwsCloudWatchLogsExporterConfig['region'],
-    logGroupName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_group_name'],
+    logGroup: aws.cloudwatch.LogGroup,
     logStreamName: OtelCollector.AwsCloudWatchLogsExporterConfig['log_stream_name'],
-    logRetention?: OtelCollector.AwsCloudWatchLogsExporterConfig['log_retention'],
   ): this {
     this._configBuilder.withCloudWatchLogsExporter(
       region,
-      logGroupName,
+      logGroup.name,
       logStreamName,
-      logRetention,
+      logGroup.retentionInDays,
     );
-    this.createCloudWatchLogsPolicy(logGroupName);
+    this.createCloudWatchLogsPolicy(logGroup);
 
     return this;
   }
@@ -162,19 +161,20 @@ export class OtelCollectorBuilder {
     prometheusNamespace,
     prometheusWorkspace,
     region,
-    logGroupName,
+    logGroup,
     logStreamName,
   }: OtelCollectorBuilder.WithDefaultArgs): this {
     this._configBuilder.withDefault({
       prometheusNamespace,
       prometheusEndpoint: pulumi.interpolate`${prometheusWorkspace.prometheusEndpoint}api/v1/remote_write`,
       region,
-      logGroupName,
+      logGroupName: logGroup.name,
       logStreamName,
+      logRetention: logGroup.retentionInDays,
     });
     this.createAPSInlinePolicy(prometheusWorkspace);
     this.createAWSXRayPolicy();
-    this.createCloudWatchLogsPolicy(logGroupName);
+    this.createCloudWatchLogsPolicy(logGroup);
 
     return this;
   }
@@ -233,10 +233,10 @@ export class OtelCollectorBuilder {
     this._taskRoleInlinePolicies.push(policy);
   }
 
-  private createCloudWatchLogsPolicy(logGroupName: pulumi.Input<string>) {
+  private createCloudWatchLogsPolicy(logGroup: aws.cloudwatch.LogGroup) {
     const policy: pulumi.Output<EcsService.RoleInlinePolicy> = pulumi
-      .all([this._serviceName, logGroupName])
-      .apply(([serviceName, logGroupName]) => {
+      .all([this._serviceName, logGroup.arn])
+      .apply(([serviceName, logGroupArn]) => {
         return {
           name: `${serviceName}-task-role-cloudwatch-logs`,
           policy: JSON.stringify({
@@ -244,17 +244,12 @@ export class OtelCollectorBuilder {
             Statement: [
               {
                 Effect: 'Allow',
-                Action: ['logs:CreateLogGroup', 'logs:PutRetentionPolicy'],
-                Resource: '*',
-              },
-              {
-                Effect: 'Allow',
                 Action: [
                   'logs:CreateLogStream',
                   'logs:DescribeLogStreams',
                   'logs:PutLogEvents',
                 ],
-                Resource: `arn:aws:logs:*:*:log-group:${logGroupName}:*`,
+                Resource: `${logGroupArn}:*`,
               },
             ],
           }),
