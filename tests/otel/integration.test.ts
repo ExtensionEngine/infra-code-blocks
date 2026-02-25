@@ -11,6 +11,8 @@ import { SignatureV4 } from '@smithy/signature-v4';
 import { backOff } from '../util';
 import { OtelTestContext, ProgramOutput } from './test-context';
 
+const backOffConfig = { numOfAttempts: 10 };
+
 export function testOtelIntegration(ctx: OtelTestContext) {
   it('should export logs to CloudWatch Logs', async () => {
     const startTimeMs = Date.now();
@@ -35,7 +37,7 @@ export function testOtelIntegration(ctx: OtelTestContext) {
         (response.events?.length ?? 0) > 0,
         'Expected telemetry logs in CloudWatch log group',
       );
-    });
+    }, backOffConfig);
   });
 
   it('should export traces to AWS X-Ray', async () => {
@@ -60,7 +62,7 @@ export function testOtelIntegration(ctx: OtelTestContext) {
         summaries.some(summary => summary.HasFault),
         'Expected at least one X-Ray trace with error',
       );
-    });
+    }, backOffConfig);
   });
 
   it('should export metrics to Prometheus (AMP)', async () => {
@@ -79,7 +81,7 @@ export function testOtelIntegration(ctx: OtelTestContext) {
         response.data.length > 0,
         `Expected at least one Prometheus series in namespace '${ctx.config.prometheusNamespace}'`,
       );
-    });
+    }, backOffConfig);
   });
 }
 
@@ -100,7 +102,7 @@ async function requestEndpointWithExpectedStatus(
       expectedStatus,
       `Endpoint ${endpoint} should return ${expectedStatus}`,
     );
-  });
+  }, backOffConfig);
 }
 
 type PrometheusSeriesResponse = {
