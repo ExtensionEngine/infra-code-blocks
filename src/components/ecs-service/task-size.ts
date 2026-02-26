@@ -2,8 +2,8 @@ import * as pulumi from '@pulumi/pulumi';
 
 export type TaskSize =
   | {
-      cpu: pulumi.Input<string>;
-      memory: pulumi.Input<string>;
+      cpu: pulumi.Input<number>;
+      memory: pulumi.Input<number>;
     }
   | keyof typeof PredefinedSize;
 
@@ -17,7 +17,10 @@ export function parseTaskSize(size: pulumi.UnwrappedObject<TaskSize>): {
     return { cpu: `${cpu}`, memory: `${memory}` };
   }
 
-  return size;
+  return {
+    cpu: `${size.cpu}`,
+    memory: `${size.memory}`,
+  };
 }
 
 const CPU_1_VCPU = 1024;
