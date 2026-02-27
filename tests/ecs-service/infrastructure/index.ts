@@ -43,6 +43,45 @@ const minimalEcsService = new studion.EcsService(
   { parent },
 );
 
+const ecsSecurityGroup = new aws.ec2.SecurityGroup(
+  `${appName}-ecs-sg`,
+  {
+    vpcId: vpc.vpc.vpcId,
+    ingress: [
+      {
+        fromPort: 0,
+        toPort: 0,
+        protocol: '-1',
+        securityGroups: [vpc.vpc.vpc.defaultSecurityGroupId],
+      },
+    ],
+    egress: [
+      {
+        fromPort: 0,
+        toPort: 0,
+        protocol: '-1',
+        cidrBlocks: ['0.0.0.0/0'],
+      },
+    ],
+  },
+  { parent },
+);
+
+const configurableEcsService = new studion.EcsService(
+  `${appName}-conf`,
+  {
+    cluster,
+    vpc: vpc.vpc,
+    containers: [sampleServiceContainer],
+    name: 'conf-service',
+    family: 'conf-service-dev',
+    logGroupNamePrefix: '/ecs/conf-srv',
+    securityGroup: ecsSecurityGroup,
+    tags,
+  },
+  { parent },
+);
+
 const lbSecurityGroup = new aws.ec2.SecurityGroup(
   `${appName}-lb-sg`,
   {
@@ -133,42 +172,6 @@ const ecsServiceWithLb = new studion.EcsService(
 );
 
 const lbUrl = pulumi.interpolate`http://${lb.dnsName}`;
-
-const ecsSecurityGroup = new aws.ec2.SecurityGroup(
-  `${appName}-ecs-sg`,
-  {
-    vpcId: vpc.vpc.vpcId,
-    ingress: [
-      {
-        fromPort: 0,
-        toPort: 0,
-        protocol: '-1',
-        securityGroups: [vpc.vpc.vpc.defaultSecurityGroupId],
-      },
-    ],
-    egress: [
-      {
-        fromPort: 0,
-        toPort: 0,
-        protocol: '-1',
-        cidrBlocks: ['0.0.0.0/0'],
-      },
-    ],
-  },
-  { parent },
-);
-
-const ecsServiceWithSg = new studion.EcsService(
-  `${appName}-sg`,
-  {
-    cluster,
-    vpc: vpc.vpc,
-    containers: [sampleServiceContainer],
-    securityGroup: ecsSecurityGroup,
-    tags,
-  },
-  { parent },
-);
 
 const ecsWithDiscovery = new studion.EcsService(
   `${appName}-sd`,
@@ -265,10 +268,10 @@ export {
   vpc,
   cluster,
   minimalEcsService,
+  ecsSecurityGroup,
+  configurableEcsService,
   ecsServiceWithLb,
   lbUrl,
-  ecsSecurityGroup,
-  ecsServiceWithSg,
   ecsWithDiscovery,
   ecsServiceWithAutoscaling,
   ecsServiceWithStorage,

@@ -55,10 +55,13 @@ export class WebServerBuilder {
   public configureEcs(config: WebServerBuilder.EcsConfig): this {
     this._ecsConfig = {
       cluster: config.cluster,
+      name: config.name,
       deploymentController: config.deploymentController,
       desiredCount: config.desiredCount,
       autoscaling: config.autoscaling,
+      family: config.family,
       size: config.size,
+      logGroupNamePrefix: config.logGroupNamePrefix,
       taskExecutionRoleInlinePolicies: config.taskExecutionRoleInlinePolicies,
       taskRoleInlinePolicies: config.taskRoleInlinePolicies,
       tags: config.tags,

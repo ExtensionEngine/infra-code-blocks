@@ -70,6 +70,36 @@ describe('Web server component deployment', () => {
     );
   });
 
+  it('should create ECS service with correct configuration', () => {
+    const webServer = ctx.outputs.webServer.value;
+    const ecsService = webServer.service;
+
+    assert.strictEqual(
+      ecsService.name,
+      `${webServer.name}-ecs`,
+      'ECS Service component should have correct name',
+    );
+    assert.strictEqual(
+      ecsService.service.name,
+      'webserver-service',
+      'ECS service should have correct name',
+    );
+    assert.strictEqual(
+      ecsService.service.desiredCount,
+      1,
+      'ECS Service should have correct desired count',
+    );
+    assert.strictEqual(
+      ecsService.taskDefinition.family,
+      'rev-ws-srv',
+      'ECS Service should have correct task definition family',
+    );
+    assert.ok(
+      ecsService.logGroup.namePrefix.startsWith(`/ecs/${ecsService.name}-`),
+      'ECS service should have correct log group name prefix',
+    );
+  });
+
   it('should create load balancer with correct configuration', async () => {
     const webServer = ctx.outputs.webServer.value;
     assert.ok(webServer.lb.lb, 'Load balancer should be defined');
@@ -190,7 +220,7 @@ describe('Web server component deployment', () => {
     const { services } = await ctx.clients.ecs.send(
       new DescribeServicesCommand({
         cluster: webServer.ecsConfig.cluster.name,
-        services: [webServer.service.name],
+        services: [webServer.service.service.name],
       }),
     );
     assert.ok(services && services.length > 0, 'Service should exist');
@@ -219,7 +249,7 @@ describe('Web server component deployment', () => {
     const { services } = await ctx.clients.ecs.send(
       new DescribeServicesCommand({
         cluster: webServer.ecsConfig.cluster.name,
-        services: [webServer.service.name],
+        services: [webServer.service.service.name],
       }),
     );
     assert.ok(services && services.length > 0, 'Service should exist');
@@ -255,7 +285,7 @@ describe('Web server component deployment', () => {
     const { services } = await ctx.clients.ecs.send(
       new DescribeServicesCommand({
         cluster: webServer.ecsConfig.cluster.name,
-        services: [webServer.service.name],
+        services: [webServer.service.service.name],
       }),
     );
     assert.ok(services && services.length > 0, 'Service should exist');

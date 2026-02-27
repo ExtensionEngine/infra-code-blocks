@@ -63,7 +63,7 @@ const ecs = {
 
 const webServer = new studion.WebServerBuilder(webServerName)
   .configureWebServer(webServerImageName, 8080)
-  .configureEcs(ecs)
+  .configureEcs({ ...ecs, name: 'webserver-service', family: 'rev-ws-srv' })
   .withInitContainer(init)
   .withSidecarContainer(sidecar)
   .withVpc(vpc.vpc)
