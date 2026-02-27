@@ -20,10 +20,13 @@ export namespace WebServer {
     | 'cluster'
     | 'vpc'
     | 'volumes'
+    | 'name'
     | 'deploymentController'
     | 'desiredCount'
     | 'autoscaling'
+    | 'family'
     | 'size'
+    | 'logGroupNamePrefix'
     | 'taskExecutionRoleInlinePolicies'
     | 'taskRoleInlinePolicies'
     | 'tags'
@@ -236,10 +239,13 @@ export class WebServer extends pulumi.ComponentResource {
     return {
       vpc: args.vpc,
       cluster: args.cluster,
+      name: args.name,
       deploymentController: args.deploymentController,
       desiredCount: args.desiredCount,
       autoscaling: args.autoscaling,
+      family: args.family,
       size: args.size,
+      logGroupNamePrefix: args.logGroupNamePrefix,
       taskExecutionRoleInlinePolicies: args.taskExecutionRoleInlinePolicies,
       taskRoleInlinePolicies: this.getTaskRoleInlinePolicies(args),
       tags: args.tags,
