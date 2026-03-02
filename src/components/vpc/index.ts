@@ -38,9 +38,12 @@ export class Vpc extends pulumi.ComponentResource {
         enableDnsHostnames: true,
         enableDnsSupport: true,
         subnetStrategy: enums.ec2.SubnetAllocationStrategy.Auto,
+        // Switching from `Legacy` to `Auto` strategy changed ordering of the specs
+        // `Auto` is using the provided ordering, while `Legacy` enforced `Private`, `Public`, `Isolated` ordering
+        // Applying ordering to match one from `Legacy` to avoid breaking changes
         subnetSpecs: [
-          { type: awsx.ec2.SubnetType.Public, cidrMask: 24 },
           { type: awsx.ec2.SubnetType.Private, cidrMask: 24 },
+          { type: awsx.ec2.SubnetType.Public, cidrMask: 24 },
           { type: awsx.ec2.SubnetType.Isolated, cidrMask: 24 },
         ],
         tags: { ...commonTags, ...argsWithDefaults.tags },
