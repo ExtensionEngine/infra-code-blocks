@@ -114,8 +114,8 @@ export class OriginFactory {
     );
 
     const webServer = new studion.WebServerBuilder(name)
-      .configureWebServer('nginxdemos/nginx-hello:plain-text', 8080)
-      .configureEcs({
+      .withContainer('nginxdemos/nginx-hello:plain-text', 8080)
+      .withEcsConfig({
         cluster,
         desiredCount: 1,
         size: 'small',

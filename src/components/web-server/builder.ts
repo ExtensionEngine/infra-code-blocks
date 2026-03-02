@@ -38,7 +38,7 @@ export class WebServerBuilder {
     this._name = name;
   }
 
-  public configureWebServer(
+  public withContainer(
     image: WebServer.Container['image'],
     port: WebServer.Container['port'],
     config: Omit<WebServer.Container, 'image' | 'port'> = {},
@@ -52,7 +52,7 @@ export class WebServerBuilder {
     return this;
   }
 
-  public configureEcs(config: WebServerBuilder.EcsConfig): this {
+  public withEcsConfig(config: WebServerBuilder.EcsConfig): this {
     this._ecsConfig = {
       cluster: config.cluster,
       name: config.name,
@@ -104,13 +104,13 @@ export class WebServerBuilder {
     return this;
   }
 
-  public withInitContainer(container: WebServer.InitContainer): this {
+  public addInitContainer(container: WebServer.InitContainer): this {
     this._initContainers.push(container);
 
     return this;
   }
 
-  public withSidecarContainer(container: WebServer.SidecarContainer): this {
+  public addSidecarContainer(container: WebServer.SidecarContainer): this {
     this._sidecarContainers.push(container);
 
     return this;
@@ -139,12 +139,12 @@ export class WebServerBuilder {
   public build(opts: pulumi.ComponentResourceOptions = {}): WebServer {
     if (!this._container) {
       throw new Error(
-        'Web server not configured. Make sure to call WebServerBuilder.configureWebServer().',
+        'Web server not configured. Make sure to call WebServerBuilder.withContainer().',
       );
     }
     if (!this._ecsConfig) {
       throw new Error(
-        'ECS not configured. Make sure to call WebServerBuilder.configureEcs().',
+        'ECS not configured. Make sure to call WebServerBuilder.withEcsConfig().',
       );
     }
     if (!this._vpc) {

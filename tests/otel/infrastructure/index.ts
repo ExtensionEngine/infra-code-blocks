@@ -55,14 +55,14 @@ const ecs = {
 };
 
 const webServer = new studion.WebServerBuilder(appName)
-  .configureWebServer(appImage, appPort, {
+  .withContainer(appImage, appPort, {
     environment: [
       { name: 'OTEL_SERVICE_NAME', value: appName },
       { name: 'OTEL_EXPORTER_OTLP_ENDPOINT', value: 'http://127.0.0.1:4318' },
       { name: 'OTEL_EXPORTER_OTLP_PROTOCOL', value: 'http/json' },
     ],
   })
-  .configureEcs(ecs)
+  .withEcsConfig(ecs)
   .withVpc(vpc.vpc)
   .withOtelCollector(otelCollector)
   .build({ parent });
