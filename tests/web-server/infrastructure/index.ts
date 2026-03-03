@@ -62,10 +62,10 @@ const ecs = {
 };
 
 const webServer = new studion.WebServerBuilder(webServerName)
-  .configureWebServer(webServerImageName, 8080)
-  .configureEcs({ ...ecs, name: 'webserver-service', family: 'rev-ws-srv' })
-  .withInitContainer(init)
-  .withSidecarContainer(sidecar)
+  .withContainer(webServerImageName, 8080)
+  .withEcsConfig({ ...ecs, name: 'webserver-service', family: 'rev-ws-srv' })
+  .addInitContainer(init)
+  .addSidecarContainer(sidecar)
   .withVpc(vpc.vpc)
   .withOtelCollector(otelCollector)
   .withCustomHealthCheckPath(healthCheckPath)
@@ -78,8 +78,8 @@ const hostedZone = aws.route53.getZoneOutput({
 });
 
 const webServerWithDomain = new studion.WebServerBuilder(`web-server-domain`)
-  .configureWebServer(webServerImageName, 8080)
-  .configureEcs(ecs)
+  .withContainer(webServerImageName, 8080)
+  .withEcsConfig(ecs)
   .withVpc(vpc.vpc)
   .withCustomHealthCheckPath(healthCheckPath)
   .withCustomDomain(webServerWithDomainConfig.primary, hostedZone.zoneId)
@@ -97,8 +97,8 @@ const sanWebServerCert = new studion.AcmCertificate(
 const webServerWithSanCertificate = new studion.WebServerBuilder(
   `web-server-san`,
 )
-  .configureWebServer(webServerImageName, 8080)
-  .configureEcs(ecs)
+  .withContainer(webServerImageName, 8080)
+  .withEcsConfig(ecs)
   .withVpc(vpc.vpc)
   .withCustomHealthCheckPath(healthCheckPath)
   .withCertificate(sanWebServerCert.certificate, hostedZone.zoneId)
@@ -117,8 +117,8 @@ const certWebServer = new studion.AcmCertificate(
   { parent },
 );
 const webServerWithCertificate = new studion.WebServerBuilder(`web-server-cert`)
-  .configureWebServer(webServerImageName, 8080)
-  .configureEcs(ecs)
+  .withContainer(webServerImageName, 8080)
+  .withEcsConfig(ecs)
   .withVpc(vpc.vpc)
   .withCustomHealthCheckPath(healthCheckPath)
   .withCertificate(

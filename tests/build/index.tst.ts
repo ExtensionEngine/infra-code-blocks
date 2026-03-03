@@ -71,14 +71,14 @@ describe('Build output', () => {
         expect(builder.build).type.toBeCallableWith();
       });
 
-      it('should have configureEcs method', () => {
-        expect(builder.configureEcs).type.toBeCallableWith({
+      it('should have withEcsConfig method', () => {
+        expect(builder.withEcsConfig).type.toBeCallableWith({
           cluster: new aws.ecs.Cluster('clusterName'),
         });
       });
 
-      it('should have configureWebServer method', () => {
-        expect(builder.configureWebServer).type.toBeCallableWith(
+      it('should have withContainer method', () => {
+        expect(builder.withContainer).type.toBeCallableWith(
           'sample/image',
           8080,
         );
@@ -97,8 +97,8 @@ describe('Build output', () => {
         );
       });
 
-      it('should have withInitContainer method', () => {
-        expect(builder.withInitContainer).type.toBeCallableWith({
+      it('should have addInitContainer method', () => {
+        expect(builder.addInitContainer).type.toBeCallableWith({
           name: 'containerName',
           image: 'sample/image',
         });
@@ -118,8 +118,8 @@ describe('Build output', () => {
         );
       });
 
-      it('should have withSidecarContainer method', () => {
-        expect(builder.withSidecarContainer).type.toBeCallableWith({
+      it('should have addSidecarContainer method', () => {
+        expect(builder.addSidecarContainer).type.toBeCallableWith({
           name: 'containerName',
           image: 'sample/image',
           healthCheck: {},
