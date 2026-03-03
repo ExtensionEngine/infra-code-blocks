@@ -83,11 +83,14 @@
   "overrides": {
     "@pulumi/pulumi": {
       "glob": "10.5.0",
-      "minimatch": "10.2.2",
+      "minimatch": "10.2.4",
       "tar": "7.5.9"
     },
     "@aws-sdk/core": {
       "fast-xml-parser": "5.3.6"
+    },
+    "get-uri": {
+      "basic-ftp": "5.2.0"
     }
   },
   "publishConfig": {
