@@ -4,9 +4,38 @@ import * as aws from '@pulumi/aws';
 import { EcsTestContext } from './test-context';
 import { Unwrap } from '@pulumi/pulumi';
 
-export function testEcsServiceWithSg(ctx: EcsTestContext) {
+export function testConfigurableEcsService(ctx: EcsTestContext) {
+  it('should use service name when provided', () => {
+    const ecsService = ctx.outputs.configurableEcsService.value;
+
+    assert.strictEqual(
+      ecsService.service.name,
+      'conf-service',
+      'ECS service should use the provided name',
+    );
+  });
+
+  it('should use task definition family when provided', () => {
+    const ecsService = ctx.outputs.configurableEcsService.value;
+
+    assert.strictEqual(
+      ecsService.taskDefinition.family,
+      'conf-service-dev',
+      'ECS service should use the provided task definition family',
+    );
+  });
+
+  it('should use log group name prefix when provided', () => {
+    const ecsService = ctx.outputs.configurableEcsService.value;
+
+    assert.ok(
+      ecsService.logGroup.namePrefix.startsWith('/ecs/conf-srv'),
+      'ECS Service should use the provided log group name prefix',
+    );
+  });
+
   it('should export security group when provided', () => {
-    const ecsService = ctx.outputs.ecsServiceWithSg.value;
+    const ecsService = ctx.outputs.configurableEcsService.value;
     const securityGroup = ctx.outputs.ecsSecurityGroup.value;
 
     assert.ok(
@@ -18,7 +47,7 @@ export function testEcsServiceWithSg(ctx: EcsTestContext) {
   });
 
   it('should use security group to configure network settings when provided', () => {
-    const ecsService = ctx.outputs.ecsServiceWithSg.value;
+    const ecsService = ctx.outputs.configurableEcsService.value;
     const securityGroup = ctx.outputs.ecsSecurityGroup.value;
     const networkConfig = ecsService.service.networkConfiguration;
 
@@ -29,7 +58,7 @@ export function testEcsServiceWithSg(ctx: EcsTestContext) {
   });
 
   it('should not create security group with default rules', () => {
-    const ecsService = ctx.outputs.ecsServiceWithSg.value;
+    const ecsService = ctx.outputs.configurableEcsService.value;
     const vpc = ctx.outputs.vpc.value;
 
     const isDefault = (sg: aws.ec2.SecurityGroup) => {

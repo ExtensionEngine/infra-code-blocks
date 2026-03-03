@@ -15,8 +15,8 @@ import { EFSClient } from '@aws-sdk/client-efs';
 import { backOff } from 'exponential-backoff';
 import * as automation from '../automation';
 import { EcsTestContext } from './test-context';
+import { testConfigurableEcsService } from './configuration.test';
 import { testEcsServiceWithLb } from './load-balancer.test';
-import { testEcsServiceWithSg } from './security-group.test';
 import { testEcsServiceWithStorage } from './persistent-storage.test';
 import { testEcsServiceWithServiceDiscovery } from './service-discovery.test';
 import { testEcsServiceWithAutoscaling } from './autoscaling.test';
@@ -67,6 +67,11 @@ describe('EcsService component deployment', () => {
       'Service should have the correct name',
     );
     assert.strictEqual(
+      ecsService.service.name,
+      ecsService.name,
+      'Service name must match component name',
+    );
+    assert.strictEqual(
       ecsService.service.launchType,
       'FARGATE',
       'Service should use FARGATE launch type',
@@ -111,6 +116,13 @@ describe('EcsService component deployment', () => {
     const ecsService = ctx.outputs.minimalEcsService.value;
     const clusterName = ctx.outputs.cluster.value.name;
     const taskDefArn = ecsService.taskDefinition.arn;
+    const family = ecsService.taskDefinition.family;
+
+    assert.strictEqual(
+      family,
+      `${ctx.config.minEcsName}-task-definition-dev`,
+      'Task definition should have correct family',
+    );
 
     const listCommand = new ListTasksCommand({
       cluster: clusterName,
@@ -274,10 +286,10 @@ describe('EcsService component deployment', () => {
     );
   });
 
+  describe('With configuration options', () => testConfigurableEcsService(ctx));
   describe('With autoscaling', () => testEcsServiceWithAutoscaling(ctx));
   describe('With service discovery', () =>
     testEcsServiceWithServiceDiscovery(ctx));
   describe('With persistent storage', () => testEcsServiceWithStorage(ctx));
   describe('With load balancer', () => testEcsServiceWithLb(ctx));
-  describe('With security group', () => testEcsServiceWithSg(ctx));
 });

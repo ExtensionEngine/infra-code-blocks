@@ -79,6 +79,11 @@ export namespace EcsService {
     loadBalancers?: pulumi.Input<LoadBalancerConfig[]>;
     volumes?: pulumi.Input<pulumi.Input<EcsService.PersistentStorageVolume>[]>;
     /**
+     * Name to set for the ECS Service.
+     * @default ${this.name}
+     */
+    name?: pulumi.Input<string>;
+    /**
      * Type of deployment controller to use.
      * @default "ECS"
      */
@@ -88,6 +93,11 @@ export namespace EcsService {
      * @default 1
      */
     desiredCount?: pulumi.Input<number>;
+    /**
+     * Family for the task definition. Used for grouping of multiple versions.
+     * @default ${this.name}-task-definition-${stackName}
+     */
+    family?: pulumi.Input<string>;
     /**
      * CPU and memory size used for running the container.
      * Available predefined options are:
@@ -100,6 +110,11 @@ export namespace EcsService {
      * @default "small"
      */
     size?: pulumi.Input<TaskSize>;
+    /**
+     * Name prefix of the AWS CloudWatch log group.
+     * @default /ecs/${this.name}-
+     */
+    logGroupNamePrefix?: pulumi.Input<string>;
     /**
      * Custom service security group
      * In case no security group is provided, default security group will be automatically created.
@@ -213,7 +228,7 @@ export class EcsService extends pulumi.ComponentResource {
     this.name = name;
     this.securityGroups = [];
     this.vpc = pulumi.output(argsWithDefaults.vpc);
-    this.logGroup = this.createLogGroup();
+    this.logGroup = this.createLogGroup(argsWithDefaults.logGroupNamePrefix);
     this.taskExecutionRole = this.createTaskExecutionRole(
       taskExecutionRoleInlinePolicies,
     );
@@ -230,6 +245,7 @@ export class EcsService extends pulumi.ComponentResource {
       pulumi.output(argsWithDefaults.volumes),
       this.taskExecutionRole,
       this.taskRole,
+      argsWithDefaults.family,
       argsWithDefaults.size,
       { ...commonTags, ...argsWithDefaults.tags },
     );
@@ -262,12 +278,12 @@ export class EcsService extends pulumi.ComponentResource {
     };
   }
 
-  private createLogGroup() {
+  private createLogGroup(namePrefix?: pulumi.Input<string>) {
     const logGroup = new aws.cloudwatch.LogGroup(
       `${this.name}-log-group`,
       {
         retentionInDays: 14,
-        namePrefix: `/ecs/${this.name}-`,
+        namePrefix: namePrefix ?? `/ecs/${this.name}-`,
         tags: commonTags,
       },
       { parent: this },
@@ -280,6 +296,7 @@ export class EcsService extends pulumi.ComponentResource {
     volumes: pulumi.Output<EcsService.PersistentStorageVolume[]>,
     taskExecutionRole: aws.iam.Role,
     taskRole: aws.iam.Role,
+    family: pulumi.Input<string> | undefined,
     size: pulumi.Input<TaskSize>,
     tags: pulumi.Input<EcsService.Tags>,
   ): pulumi.Output<aws.ecs.TaskDefinition> {
@@ -296,7 +313,7 @@ export class EcsService extends pulumi.ComponentResource {
         return new aws.ecs.TaskDefinition(
           `${this.name}-task-definition`,
           {
-            family: `${this.name}-task-definition-${stack}`,
+            family: family ?? `${this.name}-task-definition-${stack}`,
             networkMode: 'awsvpc',
             executionRoleArn: taskExecutionRole.arn,
             taskRoleArn: taskRole.arn,
@@ -496,7 +513,7 @@ export class EcsService extends pulumi.ComponentResource {
     return new aws.ecs.Service(
       `${this.name}-service`,
       {
-        name: this.name,
+        name: ecsServiceArgs.name ?? this.name,
         cluster: pulumi.output(ecsServiceArgs.cluster).id,
         launchType: 'FARGATE',
         deploymentController: { type: ecsServiceArgs.deploymentController },
