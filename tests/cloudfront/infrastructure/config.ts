@@ -18,6 +18,10 @@ export const cfMinimalOriginProtocolPolicy = 'http-only';
 
 export const cfMinimalDefaultRootObject = 'index.html';
 
+export const cfMinimalAltName = `${appName}-minimal-alt`;
+
+export const cfMinimalAltOriginId = 'cf-minimal-alt-oid';
+
 export const cfWithVariousBehaviorsLbPathPattern = '/api/*';
 
 export const cfWithVariousBehaviorsS3PathPattern = '/www/*';

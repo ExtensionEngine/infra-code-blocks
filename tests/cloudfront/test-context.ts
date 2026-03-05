@@ -31,6 +31,7 @@ interface AwsClients {
 export interface ProgramOutput {
   cfMinimalOriginDomainName: string;
   cfMinimal: studion.CloudFront;
+  cfMinimalAlt: studion.CloudFront;
   cfWithDomain: studion.CloudFront;
   certificate: studion.AcmCertificate;
   cfWithCertificate: studion.CloudFront;
@@ -47,6 +48,7 @@ export interface ProgramOutput {
 }
 
 export interface CloudFrontTestContext
-  extends ConfigContext<Config>,
+  extends
+    ConfigContext<Config>,
     AwsContext<AwsClients>,
     PulumiProgramContext<ProgramOutput> {}
