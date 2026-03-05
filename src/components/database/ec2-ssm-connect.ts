@@ -10,6 +10,7 @@ const awsRegion = config.require('region');
 export namespace Ec2SSMConnect {
   export type Args = {
     vpc: pulumi.Input<awsx.ec2.Vpc>;
+    ami?: pulumi.Input<string>;
     instanceType?: pulumi.Input<string>;
     tags?: pulumi.Input<{
       [key: string]: pulumi.Input<string>;
@@ -30,7 +31,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
   ec2MessagesVpcEndpoint: aws.ec2.VpcEndpoint;
   ssmMessagesVpcEndpoint: aws.ec2.VpcEndpoint;
   ec2: aws.ec2.Instance;
-  ami: pulumi.Output<aws.ec2.GetAmiResult>;
+  amiResult?: pulumi.Output<aws.ec2.GetAmiResult>;
 
   constructor(
     name: string,
@@ -50,25 +51,26 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
       },
     );
 
-    const { vpc, instanceType, tags } = mergeWithDefaults(defaults, args);
+    const { vpc, ami, instanceType, tags } = mergeWithDefaults(defaults, args);
 
     this.name = name;
 
     const vpcOutput = pulumi.output(vpc);
     const subnetId = vpcOutput.privateSubnetIds.apply(ids => ids[0]);
-
-    this.ami = aws.ec2.getAmiOutput({
-      filters: [
-        { name: 'architecture', values: ['arm64'] },
-        { name: 'root-device-type', values: ['ebs'] },
-        { name: 'virtualization-type', values: ['hvm'] },
-        { name: 'ena-support', values: ['true'] },
-      ],
-      owners: ['amazon'],
-      nameRegex:
-        'al2023-ami-2023\.[0-9]+\.[0-9]+\.[0-9]+-kernel-[0-9]+\.[0-9]+-arm64',
-      mostRecent: true,
-    });
+    const amiId =
+      ami ??
+      (this.amiResult = aws.ec2.getAmiOutput({
+        filters: [
+          { name: 'architecture', values: ['arm64'] },
+          { name: 'root-device-type', values: ['ebs'] },
+          { name: 'virtualization-type', values: ['hvm'] },
+          { name: 'ena-support', values: ['true'] },
+        ],
+        owners: ['amazon'],
+        nameRegex:
+          'al2023-ami-2023\.[0-9]+\.[0-9]+\.[0-9]+-kernel-[0-9]+\.[0-9]+-arm64',
+        mostRecent: true,
+      })).id;
 
     this.ec2SecurityGroup = new aws.ec2.SecurityGroup(
       `${this.name}-ec2-security-group`,
@@ -137,7 +139,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     this.ec2 = new aws.ec2.Instance(
       `${this.name}-ec2`,
       {
-        ami: this.ami.id,
+        ami: amiId,
         associatePublicIpAddress: false,
         instanceType,
         iamInstanceProfile: this.ssmProfile.name,
