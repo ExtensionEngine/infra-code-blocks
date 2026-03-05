@@ -148,7 +148,7 @@ export function testSSMConnectDb(ctx: DatabaseTestContext) {
     const ssmConnectDb = ctx.outputs.ssmConnectDb.value;
     const instanceId = ssmConnectDb.ec2SSMConnect.ec2.id;
     const instanceProfileArn = ssmConnectDb.ec2SSMConnect.ssmProfile.arn;
-    const amiId = ssmConnectDb.ec2SSMConnect.ami.id;
+    const amiId = ssmConnectDb.ec2SSMConnect.amiResult.id;
     const vpc = ctx.outputs.vpc.value;
 
     const command = new DescribeInstancesCommand({
