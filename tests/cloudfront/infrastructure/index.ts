@@ -82,7 +82,7 @@ const customOriginRequestPolicy = new aws.cloudfront.OriginRequestPolicy(
   {
     name: `${config.appName}-custom-request-policy`,
     cookiesConfig: {
-      cookieBehavior: 'all',
+      cookieBehavior: 'none',
     },
     headersConfig: {
       headerBehavior: 'none',
@@ -127,6 +127,20 @@ const cfMinimal = new studion.CloudFront(
       Application: tags.Application,
       Name: config.cfMinimalName,
     },
+  },
+  { parent },
+);
+const cfMinimalAlt = new studion.CloudFront(
+  config.cfMinimalAltName,
+  {
+    behaviors: [
+      {
+        type: studion.CloudFront.BehaviorType.CUSTOM,
+        pathPattern: '*',
+        originId: config.cfMinimalAltOriginId,
+        domainName: config.loadBalancerDomain,
+      },
+    ],
   },
   { parent },
 );
@@ -196,6 +210,7 @@ const cfWithVariousBehaviors = new studion.CloudFront(
 export {
   cfMinimalOriginDomainName,
   cfMinimal,
+  cfMinimalAlt,
   cfWithDomain,
   certificate,
   cfWithCertificate,
