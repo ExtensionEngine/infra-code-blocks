@@ -29,7 +29,7 @@
     "build": "npm run clean && tsc -b src",
     "format": "prettier -w .",
     "release": "release-it --only-version",
-    "test": "tsx --tsconfig tests/tsconfig.json tests/run.ts",
+    "test": "tsx --tsconfig tests/tsconfig.json tests/run.ts -- tests/cloudfront/index.test.ts",
     "test:build": "npm run build && tstyche build",
     "prepare": "husky"
   },

@@ -31,7 +31,6 @@ interface AwsClients {
 export interface ProgramOutput {
   cfMinimalOriginDomainName: string;
   cfMinimal: studion.CloudFront;
-  cfMinimalAlt: studion.CloudFront;
   cfWithDomain: studion.CloudFront;
   certificate: studion.AcmCertificate;
   cfWithCertificate: studion.CloudFront;

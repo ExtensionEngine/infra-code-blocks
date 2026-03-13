@@ -167,17 +167,9 @@ export class CloudFront extends pulumi.ComponentResource {
           aws.cloudfront
             .getCachePolicyOutput({ name: 'Managed-CachingDisabled' })
             .apply(p => p.id!),
-        originRequestPolicyId:
-          behavior.originRequestPolicyId ??
-          isS3Domain(behavior.domainName).apply(isS3 =>
-            aws.cloudfront
-              .getOriginRequestPolicyOutput({
-                name: isS3
-                  ? 'Managed-CORS-S3Origin'
-                  : 'Managed-AllViewerExceptHostHeader',
-              })
-              .apply(p => p.id!),
-          ),
+        ...(behavior.originRequestPolicyId && {
+          originRequestPolicyId: behavior.originRequestPolicyId,
+        }),
         responseHeadersPolicyId:
           behavior.responseHeadersPolicyId ??
           aws.cloudfront
@@ -390,9 +382,6 @@ export namespace CloudFront {
   };
 }
 
-const S3_DOMAIN_REGEX =
-  /\.s3(?:[.\-][a-z0-9]+(?:-[a-z0-9]+)*)*\.amazonaws\.com$/;
-
 type CreateDistributionArgs = {
   origins: pulumi.Output<aws.types.input.cloudfront.DistributionOrigin[]>;
   defaultCache: aws.types.input.cloudfront.DistributionDefaultCacheBehavior;
@@ -424,10 +413,6 @@ function isCustomBehaviorType(
   value: CloudFront.Behavior,
 ): value is CloudFront.CustomBehavior {
   return value.type === CloudFront.BehaviorType.CUSTOM;
-}
-
-function isS3Domain(domainName: pulumi.Input<string>): pulumi.Output<boolean> {
-  return pulumi.output(domainName).apply(dn => S3_DOMAIN_REGEX.test(dn));
 }
 
 function getOriginWithDefaults({

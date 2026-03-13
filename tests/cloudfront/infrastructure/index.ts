@@ -130,20 +130,6 @@ const cfMinimal = new studion.CloudFront(
   },
   { parent },
 );
-const cfMinimalAlt = new studion.CloudFront(
-  config.cfMinimalAltName,
-  {
-    behaviors: [
-      {
-        type: studion.CloudFront.BehaviorType.CUSTOM,
-        pathPattern: '*',
-        originId: config.cfMinimalAltOriginId,
-        domainName: config.loadBalancerDomain,
-      },
-    ],
-  },
-  { parent },
-);
 const cfWithDomain = new studion.CloudFront(
   `${config.appName}-domain`,
   {
@@ -210,7 +196,6 @@ const cfWithVariousBehaviors = new studion.CloudFront(
 export {
   cfMinimalOriginDomainName,
   cfMinimal,
-  cfMinimalAlt,
   cfWithDomain,
   certificate,
   cfWithCertificate,

@@ -247,7 +247,7 @@ describe('CloudFront component deployment', () => {
     );
   });
 
-  it('should create default cache behavior with default managed policies IDs for S3 origin', () => {
+  it('should create default cache behavior with default polices', () => {
     const cf = ctx.outputs!.cfMinimal;
     const { defaultCacheBehavior } = cf.distribution;
 
@@ -258,29 +258,8 @@ describe('CloudFront component deployment', () => {
     );
     assert.strictEqual(
       defaultCacheBehavior.originRequestPolicyId,
-      '88a5eaf4-2fd4-4709-b370-b4c650ea3fcf',
-      'Default cache behavior should have correct origin request policy ID',
-    );
-    assert.strictEqual(
-      defaultCacheBehavior.responseHeadersPolicyId,
-      '67f7725c-6f97-4210-82d7-5512b31e9d03',
-      'Default cache behavior should have correct response headers policy ID',
-    );
-  });
-
-  it('should create default cache behavior with default managed policies IDs for other origins', () => {
-    const cf = ctx.outputs!.cfMinimalAlt;
-    const { defaultCacheBehavior } = cf.distribution;
-
-    assert.strictEqual(
-      defaultCacheBehavior.cachePolicyId,
-      '4135ea2d-6df8-44a3-9df3-4b5a84be39ad',
-      'Default cache behavior should have correct cache policy ID',
-    );
-    assert.strictEqual(
-      defaultCacheBehavior.originRequestPolicyId,
-      'b689b0a8-53d0-40ab-baf2-68738e2966ac',
-      'Default cache behavior should have correct origin request policy ID',
+      undefined,
+      'Default cache behavior should not have origin request policy ID',
     );
     assert.strictEqual(
       defaultCacheBehavior.responseHeadersPolicyId,
