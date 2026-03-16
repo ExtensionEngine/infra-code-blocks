@@ -271,7 +271,7 @@ export class CloudFront extends pulumi.ComponentResource {
       aliases?.map(
         (alias, index) =>
           new aws.route53.Record(
-            `${this.name}-cloudfront-alias-record-${index}`,
+            `${this.name}-dns-a-record-${index}`,
             {
               type: 'A',
               name: alias,
