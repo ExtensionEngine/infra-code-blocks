@@ -2,6 +2,7 @@ import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
 
+// Fixed AWS account ID owned by Grafana Cloud, used to assume roles in customer accounts.
 const GRAFANA_CLOUD_AWS_ACCOUNT_ID = '008923505280';
 
 export namespace Grafana {
