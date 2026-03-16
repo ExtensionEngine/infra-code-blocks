@@ -220,8 +220,24 @@ describe('CloudFront component deployment', () => {
     );
   });
 
-  it('should create default cache behavior with default allowed and cached methods', () => {
+  it('should create default cache behavior with default allowed and cached methods for S3 origin', () => {
     const cf = ctx.outputs!.cfMinimal;
+    const { defaultCacheBehavior } = cf.distribution;
+
+    assert.deepStrictEqual(
+      defaultCacheBehavior.allowedMethods,
+      ['GET', 'HEAD'],
+      'Default cache behavior should have correct allowed methods',
+    );
+    assert.deepStrictEqual(
+      defaultCacheBehavior.cachedMethods,
+      ['GET', 'HEAD'],
+      'Default cache behavior should have correct cached methods',
+    );
+  });
+
+  it('should create default cache behavior with default allowed and cached methods for other origins', () => {
+    const cf = ctx.outputs!.cfMinimalAlt;
     const { defaultCacheBehavior } = cf.distribution;
 
     assert.deepStrictEqual(
@@ -256,10 +272,9 @@ describe('CloudFront component deployment', () => {
       '4135ea2d-6df8-44a3-9df3-4b5a84be39ad',
       'Default cache behavior should have correct cache policy ID',
     );
-    assert.strictEqual(
-      defaultCacheBehavior.originRequestPolicyId,
-      '88a5eaf4-2fd4-4709-b370-b4c650ea3fcf',
-      'Default cache behavior should have correct origin request policy ID',
+    assert.ok(
+      !defaultCacheBehavior.originRequestPolicyId,
+      'Default cache behavior should not have origin request policy ID',
     );
     assert.strictEqual(
       defaultCacheBehavior.responseHeadersPolicyId,
