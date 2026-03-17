@@ -2,13 +2,14 @@ import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
 
-// Fixed AWS account ID owned by Grafana Cloud, used to assume roles in customer accounts.
-const GRAFANA_CLOUD_AWS_ACCOUNT_ID = '008923505280';
+const awsConfig = new pulumi.Config('aws');
+const grafanaConfig = new pulumi.Config('grafana');
 
 export namespace Grafana {
   export type PrometheusConfig = {
     prometheusEndpoint: pulumi.Input<string>;
-    region: pulumi.Input<string>;
+    region?: string;
+    prometheusPluginVersion?: string;
   };
 
   export type Args = {
@@ -20,6 +21,7 @@ export namespace Grafana {
 }
 
 export class Grafana extends pulumi.ComponentResource {
+  grafanaIamRole: aws.iam.Role;
   prometheusDataSource?: grafana.oss.DataSource;
 
   constructor(
@@ -29,30 +31,34 @@ export class Grafana extends pulumi.ComponentResource {
   ) {
     super('studion:grafana:Grafana', name, {}, opts);
 
+    this.grafanaIamRole = this.createGrafanaIamRole(name, args);
+
     if (args.prometheus) {
-      const ampRole = this.createAmpRole(name, args.tags);
-      this.createPrometheusDataSource(name, args.prometheus, ampRole);
+      this.createAmpRolePolicy(name, this.grafanaIamRole);
+      this.createPrometheusDataSource(
+        name,
+        args.prometheus,
+        this.grafanaIamRole,
+      );
     }
 
     this.registerOutputs();
   }
 
-  private getStackSlug(): string {
-    const grafanaUrl = process.env.GRAFANA_URL;
-
-    if (!grafanaUrl) {
-      throw new Error('GRAFANA_URL environment variable is not set.');
+  private createGrafanaIamRole(name: string, args: Grafana.Args) {
+    const grafanaAwsAccountId =
+      grafanaConfig.get('awsAccountId') ?? process.env.GRAFANA_AWS_ACCOUNT_ID;
+    if (!grafanaAwsAccountId) {
+      throw new Error(
+        'Grafana AWS Account ID is not configured. Set it via Pulumi config (grafana:awsAccountId) or GRAFANA_AWS_ACCOUNT_ID env var.',
+      );
     }
 
-    return new URL(grafanaUrl).hostname.split('.')[0];
-  }
-
-  private createAmpRole(name: string, tags: Grafana.Args['tags']) {
     const stackSlug = this.getStackSlug();
     const grafanaStack = grafana.cloud.getStack({ slug: stackSlug });
 
-    const ampRole = new aws.iam.Role(
-      `${name}-amp-role`,
+    const grafanaIamRole = new aws.iam.Role(
+      `${name}-grafana-iam-role`,
       {
         assumeRolePolicy: pulumi.jsonStringify({
           Version: '2012-10-17',
@@ -60,7 +66,7 @@ export class Grafana extends pulumi.ComponentResource {
             {
               Effect: 'Allow',
               Principal: {
-                AWS: `arn:aws:iam::${GRAFANA_CLOUD_AWS_ACCOUNT_ID}:root`,
+                AWS: `arn:aws:iam::${grafanaAwsAccountId}:root`,
               },
               Action: 'sts:AssumeRole',
               Condition: {
@@ -71,15 +77,31 @@ export class Grafana extends pulumi.ComponentResource {
             },
           ],
         }),
-        tags,
+        tags: args.tags,
       },
       { parent: this },
     );
 
+    return grafanaIamRole;
+  }
+
+  private getStackSlug(): string {
+    const grafanaUrl = grafanaConfig.get('url') ?? process.env.GRAFANA_URL;
+
+    if (!grafanaUrl) {
+      throw new Error(
+        'Grafana URL is not configured. Set it via Pulumi config (grafana:url) or GRAFANA_URL env var.',
+      );
+    }
+
+    return new URL(grafanaUrl).hostname.split('.')[0];
+  }
+
+  private createAmpRolePolicy(name: string, grafanaIamRole: aws.iam.Role) {
     new aws.iam.RolePolicy(
       `${name}-amp-policy`,
       {
-        role: ampRole.id,
+        role: grafanaIamRole.id,
         policy: JSON.stringify({
           Version: '2012-10-17',
           Statement: [
@@ -98,23 +120,22 @@ export class Grafana extends pulumi.ComponentResource {
       },
       { parent: this },
     );
-
-    return ampRole;
   }
 
   private createPrometheusDataSource(
     name: string,
     config: Grafana.PrometheusConfig,
-    ampRole: aws.iam.Role,
+    grafanaIamRole: aws.iam.Role,
   ) {
     const stackSlug = this.getStackSlug();
+    const region = config.region ?? awsConfig.require('region');
 
     const plugin = new grafana.cloud.PluginInstallation(
       `${name}-prometheus-plugin`,
       {
         stackSlug,
         slug: 'grafana-amazonprometheus-datasource',
-        version: 'latest',
+        version: config.prometheusPluginVersion ?? 'latest',
       },
       { parent: this },
     );
@@ -127,8 +148,8 @@ export class Grafana extends pulumi.ComponentResource {
         jsonDataEncoded: pulumi.jsonStringify({
           sigV4Auth: true,
           sigV4AuthType: 'grafana_assume_role',
-          sigV4Region: config.region,
-          sigV4AssumeRoleArn: ampRole.arn,
+          sigV4Region: region,
+          sigV4AssumeRoleArn: grafanaIamRole.arn,
         }),
       },
       { dependsOn: [plugin], parent: this },
