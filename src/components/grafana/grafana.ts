@@ -1,6 +1,7 @@
 import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
+import { commonTags } from '../../shared/common-tags';
 
 const awsConfig = new pulumi.Config('aws');
 const grafanaConfig = new pulumi.Config('grafana');
@@ -14,9 +15,6 @@ export namespace Grafana {
 
   export type Args = {
     prometheus?: PrometheusConfig;
-    tags?: pulumi.Input<{
-      [key: string]: pulumi.Input<string>;
-    }>;
   };
 }
 
@@ -77,7 +75,7 @@ export class Grafana extends pulumi.ComponentResource {
             },
           ],
         }),
-        tags: args.tags,
+        tags: commonTags,
       },
       { parent: this },
     );
