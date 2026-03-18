@@ -19,7 +19,7 @@ export class GrafanaBuilder {
     return new Grafana(
       this.name,
       {
-        prometheus: this.prometheusConfig,
+        prometheusConfig: this.prometheusConfig,
       },
       opts,
     );
