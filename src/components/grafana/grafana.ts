@@ -19,6 +19,7 @@ export namespace Grafana {
 }
 
 export class Grafana extends pulumi.ComponentResource {
+  name: string;
   grafanaIamRole: aws.iam.Role;
   prometheusDataSource?: grafana.oss.DataSource;
 
@@ -29,12 +30,12 @@ export class Grafana extends pulumi.ComponentResource {
   ) {
     super('studion:grafana:Grafana', name, {}, opts);
 
-    this.grafanaIamRole = this.createGrafanaIamRole(name, args);
+    this.name = name;
+    this.grafanaIamRole = this.createGrafanaIamRole();
 
     if (args.prometheusConfig) {
-      this.createAmpRolePolicy(name, this.grafanaIamRole);
+      this.createAmpRolePolicy(this.grafanaIamRole);
       this.createPrometheusDataSource(
-        name,
         args.prometheusConfig,
         this.grafanaIamRole,
       );
@@ -43,7 +44,7 @@ export class Grafana extends pulumi.ComponentResource {
     this.registerOutputs();
   }
 
-  private createGrafanaIamRole(name: string, args: Grafana.Args) {
+  private createGrafanaIamRole() {
     const grafanaAwsAccountId =
       grafanaConfig.get('awsAccountId') ?? process.env.GRAFANA_AWS_ACCOUNT_ID;
     if (!grafanaAwsAccountId) {
@@ -56,7 +57,7 @@ export class Grafana extends pulumi.ComponentResource {
     const grafanaStack = grafana.cloud.getStack({ slug: stackSlug });
 
     const grafanaIamRole = new aws.iam.Role(
-      `${name}-grafana-iam-role`,
+      `${this.name}-grafana-iam-role`,
       {
         assumeRolePolicy: pulumi.jsonStringify({
           Version: '2012-10-17',
@@ -95,9 +96,9 @@ export class Grafana extends pulumi.ComponentResource {
     return new URL(grafanaUrl).hostname.split('.')[0];
   }
 
-  private createAmpRolePolicy(name: string, grafanaIamRole: aws.iam.Role) {
+  private createAmpRolePolicy(grafanaIamRole: aws.iam.Role) {
     new aws.iam.RolePolicy(
-      `${name}-amp-policy`,
+      `${this.name}-amp-policy`,
       {
         role: grafanaIamRole.id,
         policy: JSON.stringify({
@@ -121,7 +122,6 @@ export class Grafana extends pulumi.ComponentResource {
   }
 
   private createPrometheusDataSource(
-    name: string,
     config: Grafana.PrometheusConfig,
     grafanaIamRole: aws.iam.Role,
   ) {
@@ -129,7 +129,7 @@ export class Grafana extends pulumi.ComponentResource {
     const region = config.region ?? awsConfig.require('region');
 
     const plugin = new grafana.cloud.PluginInstallation(
-      `${name}-prometheus-plugin`,
+      `${this.name}-prometheus-plugin`,
       {
         stackSlug,
         slug: 'grafana-amazonprometheus-datasource',
@@ -138,7 +138,7 @@ export class Grafana extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    const dataSourceName = `${name}-prometheus-datasource`;
+    const dataSourceName = `${this.name}-prometheus-datasource`;
     this.prometheusDataSource = new grafana.oss.DataSource(
       dataSourceName,
       {
