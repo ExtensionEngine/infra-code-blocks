@@ -2,6 +2,7 @@ import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
 import { commonTags } from '../../shared/common-tags';
+import { GrafanaDashboard } from './dashboards/types';
 
 const awsConfig = new pulumi.Config('aws');
 const grafanaConfig = new pulumi.Config('grafana');
@@ -15,12 +16,14 @@ export namespace Grafana {
 
   export type Args = {
     prometheus?: PrometheusConfig;
+    dashboards?: GrafanaDashboard.DashboardConfig[];
   };
 }
 
 export class Grafana extends pulumi.ComponentResource {
   grafanaIamRole: aws.iam.Role;
   prometheusDataSource?: grafana.oss.DataSource;
+  dashboards: grafana.oss.Dashboard[] = [];
 
   constructor(
     name: string,
@@ -38,6 +41,15 @@ export class Grafana extends pulumi.ComponentResource {
         args.prometheus,
         this.grafanaIamRole,
       );
+    }
+
+    if (args.dashboards?.length) {
+      const dataSources = {
+        prometheus: this.prometheusDataSource?.name,
+      };
+      this.dashboards = args.dashboards.map(dashboard => {
+        return dashboard.createResource(dataSources);
+      });
     }
 
     this.registerOutputs();
