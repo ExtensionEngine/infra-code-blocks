@@ -10,7 +10,7 @@ export namespace Grafana {
   export type PrometheusConfig = {
     prometheusEndpoint: pulumi.Input<string>;
     region?: string;
-    prometheusPluginVersion?: string;
+    pluginVersion?: string;
   };
 
   export type Args = {
@@ -133,14 +133,16 @@ export class Grafana extends pulumi.ComponentResource {
       {
         stackSlug,
         slug: 'grafana-amazonprometheus-datasource',
-        version: config.prometheusPluginVersion ?? 'latest',
+        version: config.pluginVersion ?? 'latest',
       },
       { parent: this },
     );
 
+    const dataSourceName = `${name}-prometheus-datasource`;
     this.prometheusDataSource = new grafana.oss.DataSource(
-      `${name}-prometheus-datasource`,
+      dataSourceName,
       {
+        name: dataSourceName,
         type: 'grafana-amazonprometheus-datasource',
         url: config.prometheusEndpoint,
         jsonDataEncoded: pulumi.jsonStringify({
