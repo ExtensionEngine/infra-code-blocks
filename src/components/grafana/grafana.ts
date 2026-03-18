@@ -9,13 +9,13 @@ const grafanaConfig = new pulumi.Config('grafana');
 
 export namespace Grafana {
   export type PrometheusConfig = {
-    prometheusEndpoint: pulumi.Input<string>;
+    endpoint: pulumi.Input<string>;
     region?: string;
     pluginVersion?: string;
   };
 
   export type Args = {
-    prometheus?: PrometheusConfig;
+    prometheusConfig?: PrometheusConfig;
     dashboards?: GrafanaDashboard.DashboardConfig[];
   };
 }
@@ -34,11 +34,11 @@ export class Grafana extends pulumi.ComponentResource {
 
     this.grafanaIamRole = this.createGrafanaIamRole(name, args);
 
-    if (args.prometheus) {
+    if (args.prometheusConfig) {
       this.createAmpRolePolicy(name, this.grafanaIamRole);
       this.createPrometheusDataSource(
         name,
-        args.prometheus,
+        args.prometheusConfig,
         this.grafanaIamRole,
       );
     }
@@ -156,7 +156,7 @@ export class Grafana extends pulumi.ComponentResource {
       {
         name: dataSourceName,
         type: 'grafana-amazonprometheus-datasource',
-        url: config.prometheusEndpoint,
+        url: config.endpoint,
         jsonDataEncoded: pulumi.jsonStringify({
           sigV4Auth: true,
           sigV4AuthType: 'grafana_assume_role',
