@@ -4,6 +4,7 @@ import * as grafana from '@pulumiverse/grafana';
 import { GrafanaConnection } from './connection';
 
 const awsConfig = new pulumi.Config('aws');
+const pluginName = 'grafana-amazonprometheus-datasource';
 
 export namespace AMPConnection {
   export type Args = {
@@ -14,7 +15,10 @@ export namespace AMPConnection {
 }
 
 export class AMPConnection extends GrafanaConnection {
-  readonly dataSource: grafana.oss.DataSource;
+  name: string;
+  dataSource: grafana.oss.DataSource;
+  plugin: grafana.cloud.PluginInstallation;
+  rolePolicy: aws.iam.RolePolicy;
 
   constructor(
     name: string,
@@ -23,15 +27,21 @@ export class AMPConnection extends GrafanaConnection {
   ) {
     super('studion:grafana:AMPConnection', name, opts);
 
-    this.createAmpRolePolicy(name);
+    this.name = name;
 
-    const plugin = this.createPlugin(name, args.pluginVersion);
-    this.dataSource = this.createDataSource(name, args, plugin);
+    this.rolePolicy = this.createAmpRolePolicy(name);
+    this.plugin = this.createPlugin(name, args.pluginVersion);
+    this.dataSource = this.createDataSource(
+      name,
+      args.region,
+      args.endpoint,
+      this.plugin,
+    );
 
     this.registerOutputs();
   }
 
-  private createAmpRolePolicy(name: string) {
+  private createAmpRolePolicy(name: string): aws.iam.RolePolicy {
     const policy = aws.iam.getPolicyDocumentOutput({
       statements: [
         {
@@ -47,7 +57,7 @@ export class AMPConnection extends GrafanaConnection {
       ],
     });
 
-    new aws.iam.RolePolicy(
+    return new aws.iam.RolePolicy(
       `${name}-amp-policy`,
       {
         role: this.iamRole.id,
@@ -59,13 +69,13 @@ export class AMPConnection extends GrafanaConnection {
 
   private createPlugin(
     name: string,
-    pluginVersion?: string,
+    pluginVersion?: AMPConnection.Args['pluginVersion'],
   ): grafana.cloud.PluginInstallation {
     return new grafana.cloud.PluginInstallation(
-      `${name}-prometheus-plugin`,
+      `${name}-amp-plugin`,
       {
         stackSlug: this.getStackSlug(),
-        slug: 'grafana-amazonprometheus-datasource',
+        slug: pluginName,
         version: pluginVersion ?? 'latest',
       },
       { parent: this },
@@ -74,22 +84,23 @@ export class AMPConnection extends GrafanaConnection {
 
   private createDataSource(
     name: string,
-    args: AMPConnection.Args,
+    region: AMPConnection.Args['region'],
+    endpoint: AMPConnection.Args['endpoint'],
     plugin: grafana.cloud.PluginInstallation,
   ): grafana.oss.DataSource {
-    const region = args.region ?? awsConfig.require('region');
-    const dataSourceName = `${name}-prometheus-datasource`;
+    const ampRegion = region ?? awsConfig.require('region');
+    const dataSourceName = `${name}-amp-datasource`;
 
     return new grafana.oss.DataSource(
       dataSourceName,
       {
         name: dataSourceName,
-        type: 'grafana-amazonprometheus-datasource',
-        url: args.endpoint,
+        type: pluginName,
+        url: endpoint,
         jsonDataEncoded: pulumi.jsonStringify({
           sigV4Auth: true,
           sigV4AuthType: 'grafana_assume_role',
-          sigV4Region: region,
+          sigV4Region: ampRegion,
           sigV4AssumeRoleArn: this.iamRole.arn,
         }),
       },
