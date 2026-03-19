@@ -26,7 +26,6 @@ export class AMPConnection extends GrafanaConnection {
     this.createAmpRolePolicy(name);
 
     const plugin = this.createPlugin(name, args.pluginVersion);
-
     this.dataSource = this.createDataSource(name, args, plugin);
 
     this.registerOutputs();

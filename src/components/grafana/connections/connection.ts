@@ -7,7 +7,6 @@ const grafanaConfig = new pulumi.Config('grafana');
 
 export abstract class GrafanaConnection extends pulumi.ComponentResource {
   abstract readonly dataSource: grafana.oss.DataSource;
-
   readonly iamRole: aws.iam.Role;
 
   constructor(

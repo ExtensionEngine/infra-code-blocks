@@ -3,11 +3,11 @@ import { GrafanaConnection } from './connections';
 import { Grafana } from './grafana';
 
 export class GrafanaBuilder {
-  private _name: string;
+  private name: string;
   private connections: GrafanaConnection[] = [];
 
   constructor(name: string) {
-    this._name = name;
+    this.name = name;
   }
 
   public addConnection(connection: GrafanaConnection): this {
@@ -24,7 +24,7 @@ export class GrafanaBuilder {
     }
 
     return new Grafana(
-      this._name,
+      this.name,
       {
         connections: this.connections,
       },
