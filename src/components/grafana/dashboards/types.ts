@@ -1,32 +1,27 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
 
-// TODO: Should we prefix all namespaces with `Studion`
-export namespace Grafana {
-  // TODO: Create SLO abstraction that enables configuring:
-  // - panels (long-window SLI, long-window error budget)
-  // - alerts (long-window burn, short-window burn)
-  export type Threshold = {
-    value: number | null;
-    color: string;
+// TODO: Create SLO abstraction that enables configuring:
+// - panels (long-window SLI, long-window error budget)
+// - alerts (long-window burn, short-window burn)
+export namespace GrafanaDashboard {
+  export type DataSources = {
+    prometheus?: pulumi.Output<string>;
   };
-  export type Metric = {
-    label: string;
-    query: string;
-    thresholds: Threshold[];
-  };
+
+  export interface DashboardConfig {
+    createResource(dataSources: DataSources): grafana.oss.Dashboard;
+  }
 
   export type Args = {
     title: pulumi.Input<string>;
-    provider: pulumi.Input<grafana.Provider>;
-    tags: pulumi.Input<pulumi.Input<string>[]>;
   };
 
   export type Panel = {
     title: string;
-    gridPos: Panel.Position;
+    gridPos: PanelPosition;
     type: string;
-    datasource: string;
+    datasource: pulumi.Input<string>;
     targets: {
       expr: string;
       legendFormat: string;
@@ -62,12 +57,21 @@ export namespace Grafana {
     };
   };
 
-  export namespace Panel {
-    export type Position = {
-      x: number;
-      y: number;
-      w: number;
-      h: number;
-    };
-  }
+  export type PanelPosition = {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+
+  export type Threshold = {
+    value: number | null;
+    color: string;
+  };
+
+  export type Metric = {
+    label: string;
+    query: string;
+    thresholds: Threshold[];
+  };
 }
