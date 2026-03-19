@@ -83,6 +83,7 @@ export function testGrafanaSloDashboard(ctx: GrafanaTestContext) {
         'Latency Burn Rate',
         '99th Percentile Latency',
         'Request percentage below 250ms',
+        'Custom Panel',
       ];
       assert.deepStrictEqual(
         panelTitles,

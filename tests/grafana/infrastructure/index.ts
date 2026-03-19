@@ -79,6 +79,14 @@ const grafanaSloDashboard =
     .withAvailability(0.99, '1d', prometheusNamespace)
     .withSuccessRate(0.95, '1d', '1h', apiFilter, prometheusNamespace)
     .withLatency(0.95, 250, '1d', '1h', apiFilter, prometheusNamespace)
+    .addPanel(dataSource => ({
+      title: 'Custom Panel',
+      type: 'timeseries',
+      gridPos: { x: 12, y: 24, w: 12, h: 8 },
+      datasource: dataSource.prometheus!,
+      targets: [{ expr: 'up', legendFormat: 'Up' }],
+      fieldConfig: { defaults: {} },
+    }))
     .build();
 
 const grafanaSloComponent = new studion.grafana.GrafanaBuilder(`${appName}-slo`)
