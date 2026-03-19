@@ -1,25 +1,32 @@
 import * as pulumi from '@pulumi/pulumi';
+import { GrafanaConnection } from './connections';
 import { Grafana } from './grafana';
 
 export class GrafanaBuilder {
-  private name: string;
-  private prometheusConfig?: Grafana.PrometheusConfig;
+  private _name: string;
+  private connections: GrafanaConnection[] = [];
 
   constructor(name: string) {
-    this.name = name;
+    this._name = name;
   }
 
-  public withPrometheus(config: Grafana.PrometheusConfig): this {
-    this.prometheusConfig = config;
+  public addConnection(connection: GrafanaConnection): this {
+    this.connections.push(connection);
 
     return this;
   }
 
   public build(opts: pulumi.ComponentResourceOptions = {}): Grafana {
+    if (!this.connections.length) {
+      throw new Error(
+        'At least one connection is required. Call addConnection() before build().',
+      );
+    }
+
     return new Grafana(
-      this.name,
+      this._name,
       {
-        prometheusConfig: this.prometheusConfig,
+        connections: this.connections,
       },
       opts,
     );
