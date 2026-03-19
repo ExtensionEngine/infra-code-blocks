@@ -1,18 +1,19 @@
 import * as pulumi from '@pulumi/pulumi';
+import { GrafanaConnection } from './connections';
 import { Grafana } from './grafana';
 import { GrafanaDashboard } from './dashboards/types';
 
 export class GrafanaBuilder {
   private name: string;
-  private prometheusConfig?: Grafana.PrometheusConfig;
+  private connections: GrafanaConnection[] = [];
   private dashboardConfigs: GrafanaDashboard.DashboardConfig[] = [];
 
   constructor(name: string) {
     this.name = name;
   }
 
-  public withPrometheus(config: Grafana.PrometheusConfig): this {
-    this.prometheusConfig = config;
+  public addConnection(connection: GrafanaConnection): this {
+    this.connections.push(connection);
 
     return this;
   }
@@ -24,10 +25,16 @@ export class GrafanaBuilder {
   }
 
   public build(opts: pulumi.ComponentResourceOptions = {}): Grafana {
+    if (!this.connections.length) {
+      throw new Error(
+        'At least one connection is required. Call addConnection() before build().',
+      );
+    }
+
     return new Grafana(
       this.name,
       {
-        prometheusConfig: this.prometheusConfig,
+        connections: this.connections,
         dashboards: this.dashboardConfigs,
       },
       opts,
