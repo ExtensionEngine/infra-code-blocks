@@ -8,7 +8,7 @@ export namespace Grafana {
 }
 
 export class Grafana extends pulumi.ComponentResource {
-  connections: GrafanaConnection[];
+  readonly connections: GrafanaConnection[];
 
   constructor(
     name: string,

@@ -15,10 +15,10 @@ export namespace AMPConnection {
 }
 
 export class AMPConnection extends GrafanaConnection {
-  name: string;
-  dataSource: grafana.oss.DataSource;
-  plugin: grafana.cloud.PluginInstallation;
-  rolePolicy: aws.iam.RolePolicy;
+  readonly name: string;
+  readonly dataSource: grafana.oss.DataSource;
+  readonly plugin: grafana.cloud.PluginInstallation;
+  readonly rolePolicy: aws.iam.RolePolicy;
 
   constructor(
     name: string,
