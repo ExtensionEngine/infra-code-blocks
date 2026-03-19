@@ -8,6 +8,7 @@ export namespace Grafana {
 }
 
 export class Grafana extends pulumi.ComponentResource {
+  readonly name: string;
   readonly connections: GrafanaConnection[];
 
   constructor(
@@ -17,6 +18,7 @@ export class Grafana extends pulumi.ComponentResource {
   ) {
     super('studion:grafana:Grafana', name, {}, opts);
 
+    this.name = name;
     this.connections = args.connections;
 
     this.registerOutputs();
