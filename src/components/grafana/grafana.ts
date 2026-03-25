@@ -3,13 +3,13 @@ import { GrafanaConnection } from './connections';
 
 export namespace Grafana {
   export type Args = {
-    connections: GrafanaConnection[];
+    connectionBuilders: GrafanaConnection.ConnectionBuilder[];
   };
 }
 
 export class Grafana extends pulumi.ComponentResource {
-  readonly name: string;
-  readonly connections: GrafanaConnection[];
+  public readonly name: string;
+  public readonly connections: GrafanaConnection[];
 
   constructor(
     name: string,
@@ -19,7 +19,10 @@ export class Grafana extends pulumi.ComponentResource {
     super('studion:grafana:Grafana', name, {}, opts);
 
     this.name = name;
-    this.connections = args.connections;
+
+    this.connections = args.connectionBuilders.map(buildConnection =>
+      buildConnection({ parent: this }),
+    );
 
     this.registerOutputs();
   }
