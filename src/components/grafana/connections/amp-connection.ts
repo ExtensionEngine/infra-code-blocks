@@ -1,6 +1,7 @@
 import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
+import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
 import { GrafanaConnection } from './connection';
 
 const awsConfig = new pulumi.Config('aws');
@@ -13,6 +14,11 @@ export namespace AMPConnection {
     pluginVersion?: string;
   };
 }
+
+const defaults = {
+  pluginVersion: 'latest',
+  region: awsConfig.require('region'),
+};
 
 export class AMPConnection extends GrafanaConnection {
   public readonly name: string;
@@ -27,16 +33,21 @@ export class AMPConnection extends GrafanaConnection {
   ) {
     super('studion:grafana:AMPConnection', name, args, opts);
 
+    const argsWithDefaults = mergeWithDefaults(defaults, args);
+
     this.name = name;
 
-    this.rolePolicy = this.createAmpRolePolicy();
-    this.plugin = this.createPlugin(args.pluginVersion);
-    this.dataSource = this.createDataSource(args.region, args.endpoint);
+    this.rolePolicy = this.createRolePolicy();
+    this.plugin = this.createPlugin(argsWithDefaults.pluginVersion);
+    this.dataSource = this.createDataSource(
+      argsWithDefaults.region,
+      argsWithDefaults.endpoint,
+    );
 
     this.registerOutputs();
   }
 
-  private createAmpRolePolicy(): aws.iam.RolePolicy {
+  private createRolePolicy(): aws.iam.RolePolicy {
     const policy = aws.iam.getPolicyDocumentOutput({
       statements: [
         {
@@ -63,24 +74,23 @@ export class AMPConnection extends GrafanaConnection {
   }
 
   private createPlugin(
-    pluginVersion?: AMPConnection.Args['pluginVersion'],
+    pluginVersion: string,
   ): grafana.cloud.PluginInstallation {
     return new grafana.cloud.PluginInstallation(
       `${this.name}-amp-plugin`,
       {
         stackSlug: this.getStackSlug(),
         slug: pluginName,
-        version: pluginVersion ?? 'latest',
+        version: pluginVersion,
       },
       { parent: this },
     );
   }
 
   private createDataSource(
-    region: AMPConnection.Args['region'],
+    region: string,
     endpoint: AMPConnection.Args['endpoint'],
   ): grafana.oss.DataSource {
-    const ampRegion = region ?? awsConfig.require('region');
     const dataSourceName = `${this.name}-amp-datasource`;
 
     return new grafana.oss.DataSource(
@@ -92,7 +102,7 @@ export class AMPConnection extends GrafanaConnection {
         jsonDataEncoded: pulumi.jsonStringify({
           sigV4Auth: true,
           sigV4AuthType: 'grafana_assume_role',
-          sigV4Region: ampRegion,
+          sigV4Region: region,
           sigV4AssumeRoleArn: this.role.arn,
         }),
       },

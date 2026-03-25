@@ -20,8 +20,8 @@ export class Grafana extends pulumi.ComponentResource {
 
     this.name = name;
 
-    this.connections = args.connectionBuilders.map(buildConnection =>
-      buildConnection({ parent: this }),
+    this.connections = args.connectionBuilders.map(build =>
+      build({ parent: this }),
     );
 
     this.registerOutputs();

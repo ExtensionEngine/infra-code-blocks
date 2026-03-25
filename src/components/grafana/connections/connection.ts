@@ -7,7 +7,7 @@ const grafanaConfig = new pulumi.Config('grafana');
 
 export namespace GrafanaConnection {
   export type Args = {
-    grafanaAwsAccountId: string;
+    awsAccountId: string;
   };
 
   export type ConnectionBuilder = (
@@ -30,7 +30,7 @@ export abstract class GrafanaConnection extends pulumi.ComponentResource {
 
     this.name = name;
 
-    this.role = this.createIamRole(args.grafanaAwsAccountId);
+    this.role = this.createIamRole(args.awsAccountId);
 
     this.registerOutputs();
   }
@@ -47,7 +47,7 @@ export abstract class GrafanaConnection extends pulumi.ComponentResource {
     return new URL(grafanaUrl).hostname.split('.')[0];
   }
 
-  private createIamRole(grafanaAwsAccountId: string): aws.iam.Role {
+  private createIamRole(awsAccountId: string): aws.iam.Role {
     const stackSlug = this.getStackSlug();
     const grafanaStack = grafana.cloud.getStack({ slug: stackSlug });
 
@@ -58,7 +58,7 @@ export abstract class GrafanaConnection extends pulumi.ComponentResource {
           principals: [
             {
               type: 'AWS',
-              identifiers: [`arn:aws:iam::${grafanaAwsAccountId}:root`],
+              identifiers: [`arn:aws:iam::${awsAccountId}:root`],
             },
           ],
           actions: ['sts:AssumeRole'],
