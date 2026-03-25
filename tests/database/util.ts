@@ -5,7 +5,7 @@ import {
   DescribeDBInstancesCommand,
   DescribeDBSnapshotsCommand,
 } from '@aws-sdk/client-rds';
-import { backOff } from '../util';
+import { NonRetryableError, backOff } from '../util';
 import { createSpinner } from 'nanospinner';
 import { DatabaseTestContext } from './test-context';
 import * as studion from '@studion/infra-code-blocks';
@@ -64,43 +64,45 @@ export async function cleanupReplicas(ctx: DatabaseTestContext) {
 async function deleteReplica(ctx: DatabaseTestContext, db: studion.Database) {
   const replicaDBInstanceId = db.replica!.instance
     .identifier as unknown as string;
-  const deleteCommand = new DeleteDBInstanceCommand({
-    DBInstanceIdentifier: replicaDBInstanceId,
-    SkipFinalSnapshot: true,
-  });
-  await ctx.clients.rds.send(deleteCommand);
+
+  try {
+    const deleteCommand = new DeleteDBInstanceCommand({
+      DBInstanceIdentifier: replicaDBInstanceId,
+      SkipFinalSnapshot: true,
+    });
+
+    await ctx.clients.rds.send(deleteCommand);
+  } catch (err) {
+    if (err instanceof DBInstanceNotFoundFault) {
+      return;
+    }
+
+    throw err;
+  }
 
   // Wait for replica to be deleted
-  await backOff(
-    async () => {
-      try {
-        const describeCommand = new DescribeDBInstancesCommand({
-          DBInstanceIdentifier: replicaDBInstanceId,
-        });
-        const { DBInstances } = await ctx.clients.rds.send(describeCommand);
+  await backOff(async () => {
+    try {
+      const describeCommand = new DescribeDBInstancesCommand({
+        DBInstanceIdentifier: replicaDBInstanceId,
+      });
+      const { DBInstances } = await ctx.clients.rds.send(describeCommand);
 
-        if (!DBInstances || !DBInstances.length) {
-          return;
-        }
-
-        const [DBInstance] = DBInstances;
-        if (DBInstance.DBInstanceStatus === 'deleting') {
-          throw new Error('DB instance still deleting');
-        }
-      } catch (err: unknown) {
-        if (err instanceof DBInstanceNotFoundFault) {
-          return;
-        }
-
-        throw new Error('Something went wrong');
+      if (DBInstances![0].DBInstanceStatus === 'deleting') {
+        throw new Error('DB instance still deleting');
       }
-    },
-    { numOfAttempts: 10 },
-  );
+    } catch (err) {
+      if (err instanceof DBInstanceNotFoundFault) {
+        return;
+      }
+
+      throw err;
+    }
+  });
 
   // Wait for primary instance to exit modifying state
-  await backOff(
-    async () => {
+  await backOff(async () => {
+    try {
       const primaryDBInstanceId = db.instance
         .dbInstanceIdentifier as unknown as string;
       const describeCommand = new DescribeDBInstancesCommand({
@@ -108,15 +110,13 @@ async function deleteReplica(ctx: DatabaseTestContext, db: studion.Database) {
       });
       const { DBInstances } = await ctx.clients.rds.send(describeCommand);
 
-      if (!DBInstances || !DBInstances.length) {
-        throw new Error('DB instance not found');
-      }
-
-      const [DBInstance] = DBInstances;
-      if (DBInstance.DBInstanceStatus === 'modifying') {
+      if (DBInstances![0].DBInstanceStatus === 'modifying') {
         throw new Error('DB instance still modifying');
       }
-    },
-    { numOfAttempts: 10 },
-  );
+    } catch (err) {
+      if (err instanceof DBInstanceNotFoundFault) {
+        throw new NonRetryableError('Db instance not found', { cause: err });
+      }
+    }
+  });
 }

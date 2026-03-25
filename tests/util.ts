@@ -3,13 +3,24 @@ import { OutputMap } from '@pulumi/pulumi/automation';
 import * as studion from '@studion/infra-code-blocks';
 import { backOff as backOffFn, BackoffOptions } from 'exponential-backoff';
 
+// This config results in the max wait time of ~10 minutes
 const backOffDefaults: BackoffOptions = {
   delayFirstAttempt: true,
-  numOfAttempts: 5,
-  startingDelay: 1500,
+  numOfAttempts: 16,
+  startingDelay: 500,
+  maxDelay: 60000,
   timeMultiple: 2,
-  jitter: 'full',
+  jitter: 'none', // Drop jitter to eliminate flaky tests
+  retry: err => !(err instanceof NonRetryableError),
 };
+
+export class NonRetryableError extends Error {
+  constructor(message: string, options?: { cause: Error }) {
+    super(message, options);
+
+    this.name = 'NonRetryableError';
+  }
+}
 
 export function requireEnv(name: string): string {
   const value = process.env[name];

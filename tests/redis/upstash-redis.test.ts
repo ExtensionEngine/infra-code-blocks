@@ -3,7 +3,7 @@ import { RedisTestContext } from './test-context';
 import * as assert from 'node:assert';
 import { GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import Redis from 'ioredis';
-import { backOff } from 'exponential-backoff';
+import { backOff } from '../util';
 
 export function testUpstashRedis(ctx: RedisTestContext) {
   it('should create Upstash Redis database with correct configuration', async () => {
@@ -63,6 +63,6 @@ export function testUpstashRedis(ctx: RedisTestContext) {
       } finally {
         await client.disconnect();
       }
-    }, ctx.config.exponentialBackOffConfig);
+    });
   });
 }

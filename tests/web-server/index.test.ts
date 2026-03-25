@@ -16,14 +16,13 @@ import {
 } from '@aws-sdk/client-elastic-load-balancing-v2';
 import { ACMClient } from '@aws-sdk/client-acm';
 import { Route53Client } from '@aws-sdk/client-route-53';
-import { backOff } from 'exponential-backoff';
 import { request } from 'undici';
 import status from 'http-status';
 import * as automation from '../automation';
 import { WebServerTestContext } from './test-context';
 import * as config from './infrastructure/config';
 import { testWebServerWithDomain } from './domain.test';
-import { requireEnv } from '../util';
+import { NonRetryableError, backOff, requireEnv } from '../util';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -45,13 +44,6 @@ const ctx: WebServerTestContext = {
     route53: new Route53Client({ region }),
   },
 };
-
-class NonRetryableError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'NonRetryableError';
-  }
-}
 
 describe('Web server component deployment', () => {
   before(async () => {
@@ -349,30 +341,20 @@ describe('Web server component deployment', () => {
 
     const webServerUrl = `http://${webServerLbDns}`;
 
-    return backOff(
-      async () => {
-        const response = await request(
-          `${webServerUrl}${ctx.config.healthCheckPath}`,
-        );
-        if (response.statusCode === status.NOT_FOUND) {
-          throw new NonRetryableError('Healthcheck endpoint not found');
-        }
+    return backOff(async () => {
+      const response = await request(
+        `${webServerUrl}${ctx.config.healthCheckPath}`,
+      );
+      if (response.statusCode === status.NOT_FOUND) {
+        throw new NonRetryableError('Healthcheck endpoint not found');
+      }
 
-        assert.strictEqual(
-          response.statusCode,
-          status.OK,
-          `Expected status code 200 but got ${response.statusCode}`,
-        );
-      },
-      {
-        retry: error => !(error instanceof NonRetryableError),
-        delayFirstAttempt: true,
-        numOfAttempts: 10,
-        startingDelay: 1000,
-        timeMultiple: 2,
-        jitter: 'full',
-      },
-    );
+      assert.strictEqual(
+        response.statusCode,
+        status.OK,
+        `Expected status code 200 but got ${response.statusCode}`,
+      );
+    });
   });
 
   describe('With domain', () => testWebServerWithDomain(ctx));
