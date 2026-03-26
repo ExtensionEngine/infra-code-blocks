@@ -5,18 +5,34 @@ import { commonTags } from '../../../shared/common-tags';
 
 const grafanaConfig = new pulumi.Config('grafana');
 
+export namespace GrafanaConnection {
+  export type Args = {
+    awsAccountId: string;
+  };
+
+  export type ConnectionBuilder = (
+    opts: pulumi.ComponentResourceOptions,
+  ) => GrafanaConnection;
+}
+
 export abstract class GrafanaConnection extends pulumi.ComponentResource {
-  abstract readonly dataSource: grafana.oss.DataSource;
-  readonly iamRole: aws.iam.Role;
+  public readonly name: string;
+  public readonly role: aws.iam.Role;
+  public abstract readonly dataSource: grafana.oss.DataSource;
 
   constructor(
     type: string,
     name: string,
+    args: GrafanaConnection.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super(type, name, {}, opts);
 
-    this.iamRole = this.createIamRole(name);
+    this.name = name;
+
+    this.role = this.createIamRole(args.awsAccountId);
+
+    this.registerOutputs();
   }
 
   protected getStackSlug(): string {
@@ -31,16 +47,7 @@ export abstract class GrafanaConnection extends pulumi.ComponentResource {
     return new URL(grafanaUrl).hostname.split('.')[0];
   }
 
-  private createIamRole(name: string): aws.iam.Role {
-    const grafanaAwsAccountId =
-      grafanaConfig.get('awsAccountId') ?? process.env.GRAFANA_AWS_ACCOUNT_ID;
-
-    if (!grafanaAwsAccountId) {
-      throw new Error(
-        'Grafana AWS Account ID is not configured. Set it via Pulumi config (grafana:awsAccountId) or GRAFANA_AWS_ACCOUNT_ID env var.',
-      );
-    }
-
+  private createIamRole(awsAccountId: string): aws.iam.Role {
     const stackSlug = this.getStackSlug();
     const grafanaStack = grafana.cloud.getStack({ slug: stackSlug });
 
@@ -51,7 +58,7 @@ export abstract class GrafanaConnection extends pulumi.ComponentResource {
           principals: [
             {
               type: 'AWS',
-              identifiers: [`arn:aws:iam::${grafanaAwsAccountId}:root`],
+              identifiers: [`arn:aws:iam::${awsAccountId}:root`],
             },
           ],
           actions: ['sts:AssumeRole'],
@@ -67,7 +74,7 @@ export abstract class GrafanaConnection extends pulumi.ComponentResource {
     });
 
     return new aws.iam.Role(
-      `${name}-grafana-iam-role`,
+      `${this.name}-grafana-iam-role`,
       {
         assumeRolePolicy: assumeRolePolicy.json,
         tags: commonTags,

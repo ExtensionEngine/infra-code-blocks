@@ -5,14 +5,14 @@ import { GrafanaConnection } from './connections';
 
 export namespace Grafana {
   export type Args = {
-    connections: GrafanaConnection[];
+    connectionBuilders: GrafanaConnection.ConnectionBuilder[];
     dashboards?: GrafanaDashboard.DashboardConfig[];
   };
 }
 
 export class Grafana extends pulumi.ComponentResource {
-  name: string;
-  readonly connections: GrafanaConnection[];
+  public readonly name: string;
+  public readonly connections: GrafanaConnection[];
   dashboards: grafana.oss.Dashboard[] = [];
 
   constructor(
@@ -23,7 +23,10 @@ export class Grafana extends pulumi.ComponentResource {
     super('studion:grafana:Grafana', name, {}, opts);
 
     this.name = name;
-    this.connections = args.connections;
+
+    this.connections = args.connectionBuilders.map(build =>
+      build({ parent: this }),
+    );
 
     // if (args.dashboards?.length) {
     //   const dataSources = {

@@ -1,19 +1,26 @@
 import * as pulumi from '@pulumi/pulumi';
-import { GrafanaConnection } from './connections';
+import { AMPConnection, GrafanaConnection } from './connections';
 import { Grafana } from './grafana';
 import { GrafanaDashboard } from './dashboards/types';
 
 export class GrafanaBuilder {
-  private name: string;
-  private connections: GrafanaConnection[] = [];
-  private dashboardConfigs: GrafanaDashboard.DashboardConfig[] = [];
+  private readonly name: string;
+  private readonly connectionBuilders: GrafanaConnection.ConnectionBuilder[] =
+    [];
+  private readonly dashboardConfigs: GrafanaDashboard.DashboardConfig[] = [];
 
   constructor(name: string) {
     this.name = name;
   }
 
-  public addConnection(connection: GrafanaConnection): this {
-    this.connections.push(connection);
+  public addAmp(name: string, args: AMPConnection.Args): this {
+    this.connectionBuilders.push(opts => new AMPConnection(name, args, opts));
+
+    return this;
+  }
+
+  public addConnection(builder: GrafanaConnection.ConnectionBuilder): this {
+    this.connectionBuilders.push(builder);
 
     return this;
   }
@@ -25,16 +32,16 @@ export class GrafanaBuilder {
   }
 
   public build(opts: pulumi.ComponentResourceOptions = {}): Grafana {
-    if (!this.connections.length) {
+    if (!this.connectionBuilders.length) {
       throw new Error(
-        'At least one connection is required. Call addConnection() before build().',
+        'At least one connection is required. Call addConnection()  to add custom connection or use one of existing connection builders.',
       );
     }
 
     return new Grafana(
       this.name,
       {
-        connections: this.connections,
+        connectionBuilders: this.connectionBuilders,
         dashboards: this.dashboardConfigs,
       },
       opts,
