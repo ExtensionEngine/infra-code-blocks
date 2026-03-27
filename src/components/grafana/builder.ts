@@ -1,5 +1,9 @@
 import * as pulumi from '@pulumi/pulumi';
-import { AMPConnection, GrafanaConnection } from './connections';
+import {
+  AMPConnection,
+  CloudWatchLogsConnection,
+  GrafanaConnection,
+} from './connections';
 import { Grafana } from './grafana';
 
 export class GrafanaBuilder {
@@ -13,6 +17,17 @@ export class GrafanaBuilder {
 
   public addAmp(name: string, args: AMPConnection.Args): this {
     this.connectionBuilders.push(opts => new AMPConnection(name, args, opts));
+
+    return this;
+  }
+
+  public addCLoudWatchLogs(
+    name: string,
+    args: CloudWatchLogsConnection.Args,
+  ): this {
+    this.connectionBuilders.push(
+      opts => new CloudWatchLogsConnection(name, args, opts),
+    );
 
     return this;
   }
