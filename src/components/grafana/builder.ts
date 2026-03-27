@@ -1,11 +1,13 @@
 import * as pulumi from '@pulumi/pulumi';
 import { AMPConnection, GrafanaConnection } from './connections';
 import { Grafana } from './grafana';
+import { GrafanaDashboard } from './dashboards/types';
 
 export class GrafanaBuilder {
   private readonly name: string;
   private readonly connectionBuilders: GrafanaConnection.ConnectionBuilder[] =
     [];
+  private readonly dashboardBuilders: GrafanaDashboard.DashboardBuilder[] = [];
 
   constructor(name: string) {
     this.name = name;
@@ -23,6 +25,12 @@ export class GrafanaBuilder {
     return this;
   }
 
+  public addDashboard(builder: GrafanaDashboard.DashboardBuilder): this {
+    this.dashboardBuilders.push(builder);
+
+    return this;
+  }
+
   public build(opts: pulumi.ComponentResourceOptions = {}): Grafana {
     if (!this.connectionBuilders.length) {
       throw new Error(
@@ -34,6 +42,7 @@ export class GrafanaBuilder {
       this.name,
       {
         connectionBuilders: this.connectionBuilders,
+        dashboardBuilders: this.dashboardBuilders,
       },
       opts,
     );

@@ -1,2 +1,2 @@
-export { default as WebServerSloDashboardBuilder } from './web-server-slo';
-export * as panel from './panels';
+export { DashboardBuilder } from './dashboard-builder';
+export { createWebServerSloDashboard } from './web-server-slo';
