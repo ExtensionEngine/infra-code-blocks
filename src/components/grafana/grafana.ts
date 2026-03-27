@@ -6,14 +6,14 @@ import { GrafanaConnection } from './connections';
 export namespace Grafana {
   export type Args = {
     connectionBuilders: GrafanaConnection.ConnectionBuilder[];
-    dashboards?: GrafanaDashboard.DashboardConfig[];
+    dashboardBuilders?: GrafanaDashboard.DashboardBuilder[];
   };
 }
 
 export class Grafana extends pulumi.ComponentResource {
   public readonly name: string;
   public readonly connections: GrafanaConnection[];
-  dashboards: grafana.oss.Dashboard[] = [];
+  public readonly dashboards: grafana.oss.Dashboard[];
 
   constructor(
     name: string,
@@ -28,14 +28,21 @@ export class Grafana extends pulumi.ComponentResource {
       build({ parent: this }),
     );
 
-    // if (args.dashboards?.length) {
-    //   const dataSources = {
-    //     prometheus: this.prometheusDataSource?.name,
-    //   };
-    //   this.dashboards = args.dashboards.map(dashboard => {
-    //     return dashboard.createResource(dataSources);
-    //   });
-    // }
+    const folder = new grafana.oss.Folder(
+      `${name}-folder`,
+      { title: name },
+      { parent: this },
+    );
+
+    const dashboardConfigs = (args.dashboardBuilders ?? []).map(factory =>
+      factory(this.connections),
+    );
+
+    this.dashboards = dashboardConfigs.map((config, i) =>
+      config.createResource(`${name}-dashboard-${i}`, folder, {
+        parent: folder,
+      }),
+    );
 
     this.registerOutputs();
   }

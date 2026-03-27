@@ -7,7 +7,7 @@ export class GrafanaBuilder {
   private readonly name: string;
   private readonly connectionBuilders: GrafanaConnection.ConnectionBuilder[] =
     [];
-  private readonly dashboardConfigs: GrafanaDashboard.DashboardConfig[] = [];
+  private readonly dashboardBuilders: GrafanaDashboard.DashboardBuilder[] = [];
 
   constructor(name: string) {
     this.name = name;
@@ -25,8 +25,8 @@ export class GrafanaBuilder {
     return this;
   }
 
-  public addDashboard(config: GrafanaDashboard.DashboardConfig): this {
-    this.dashboardConfigs.push(config);
+  public addDashboard(builder: GrafanaDashboard.DashboardBuilder): this {
+    this.dashboardBuilders.push(builder);
 
     return this;
   }
@@ -42,7 +42,7 @@ export class GrafanaBuilder {
       this.name,
       {
         connectionBuilders: this.connectionBuilders,
-        dashboards: this.dashboardConfigs,
+        dashboardBuilders: this.dashboardBuilders,
       },
       opts,
     );
