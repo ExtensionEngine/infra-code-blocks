@@ -1,6 +1,5 @@
 import { it } from 'node:test';
 import * as assert from 'node:assert';
-import { backOff } from 'exponential-backoff';
 import { RedisTestContext } from './test-context';
 import {
   DescribeCacheClustersCommand,
@@ -16,6 +15,7 @@ import {
   DescribeLogStreamsCommand,
   GetLogEventsCommand,
 } from '@aws-sdk/client-cloudwatch-logs';
+import { backOff } from '../util';
 
 export function testElastiCacheRedis(ctx: RedisTestContext) {
   it('should create a default Redis cluster with the correct configuration', async () => {
@@ -98,7 +98,7 @@ export function testElastiCacheRedis(ctx: RedisTestContext) {
       );
       assert.strictEqual(cluster.Engine, 'redis', 'Should use Redis engine');
       assert.strictEqual(cluster.NumCacheNodes, 1, 'Should have 1 cache node');
-    }, ctx.config.exponentialBackOffConfig);
+    });
   });
 
   it('should create a subnet group in the correct VPC', async () => {
@@ -161,90 +161,83 @@ export function testElastiCacheRedis(ctx: RedisTestContext) {
     const testClient = ctx.outputs.testClient.value;
     assert.ok(testClient, 'Test client should be deployed');
 
-    const success = await backOff(
-      async () => {
-        const listTasksCommand = new ListTasksCommand({
-          cluster: ctx.outputs.cluster.value.name,
-          serviceName: testClient.service.name,
-        });
-        const { taskArns } = await ctx.clients.ecs.send(listTasksCommand);
-        if (!taskArns || taskArns.length === 0) {
-          throw new Error('No running tasks found for test client');
-        }
+    const success = await backOff(async () => {
+      const listTasksCommand = new ListTasksCommand({
+        cluster: ctx.outputs.cluster.value.name,
+        serviceName: testClient.service.name,
+      });
+      const { taskArns } = await ctx.clients.ecs.send(listTasksCommand);
+      if (!taskArns || taskArns.length === 0) {
+        throw new Error('No running tasks found for test client');
+      }
 
-        const describeTasksCommand = new DescribeTasksCommand({
-          cluster: ctx.outputs.cluster.value.name,
-          tasks: taskArns,
-        });
-        const { tasks } = await ctx.clients.ecs.send(describeTasksCommand);
+      const describeTasksCommand = new DescribeTasksCommand({
+        cluster: ctx.outputs.cluster.value.name,
+        tasks: taskArns,
+      });
+      const { tasks } = await ctx.clients.ecs.send(describeTasksCommand);
 
-        if (!tasks || tasks.length === 0) {
-          throw new Error('No task details found');
-        }
+      if (!tasks || tasks.length === 0) {
+        throw new Error('No task details found');
+      }
 
-        const logGroupNamePrefix = `/ecs/${ctx.config.elastiCacheTestClientName}-`;
+      const logGroupNamePrefix = `/ecs/${ctx.config.elastiCacheTestClientName}-`;
 
-        const describeLogGroupsCommand = new DescribeLogGroupsCommand({
-          logGroupNamePrefix: logGroupNamePrefix,
-        });
+      const describeLogGroupsCommand = new DescribeLogGroupsCommand({
+        logGroupNamePrefix: logGroupNamePrefix,
+      });
 
-        const logGroupsResponse = await ctx.clients.cloudwatchLogs.send(
-          describeLogGroupsCommand,
+      const logGroupsResponse = await ctx.clients.cloudwatchLogs.send(
+        describeLogGroupsCommand,
+      );
+      const logGroups = logGroupsResponse.logGroups;
+
+      if (!logGroups || logGroups.length === 0) {
+        throw new Error(
+          'No log groups found with prefix: ' + logGroupNamePrefix,
         );
-        const logGroups = logGroupsResponse.logGroups;
+      }
 
-        if (!logGroups || logGroups.length === 0) {
-          throw new Error(
-            'No log groups found with prefix: ' + logGroupNamePrefix,
-          );
-        }
+      const logGroupName = logGroups[0].logGroupName;
+      const logStreamsCommand = new DescribeLogStreamsCommand({
+        logGroupName,
+        orderBy: 'LastEventTime',
+        descending: true,
+      });
 
-        const logGroupName = logGroups[0].logGroupName;
-        const logStreamsCommand = new DescribeLogStreamsCommand({
-          logGroupName,
-          orderBy: 'LastEventTime',
-          descending: true,
-        });
+      const logStreamsResponse =
+        await ctx.clients.cloudwatchLogs.send(logStreamsCommand);
+      const logStreams = logStreamsResponse.logStreams;
 
-        const logStreamsResponse =
-          await ctx.clients.cloudwatchLogs.send(logStreamsCommand);
-        const logStreams = logStreamsResponse.logStreams;
+      if (!logStreams || logStreams.length === 0) {
+        throw new Error('No log streams found yet');
+      }
 
-        if (!logStreams || logStreams.length === 0) {
-          throw new Error('No log streams found yet');
-        }
+      const getLogEventsCommand = new GetLogEventsCommand({
+        logGroupName,
+        logStreamName: logStreams[0].logStreamName,
+        startFromHead: true,
+      });
 
-        const getLogEventsCommand = new GetLogEventsCommand({
-          logGroupName,
-          logStreamName: logStreams[0].logStreamName,
-          startFromHead: true,
-        });
+      const { events } =
+        await ctx.clients.cloudwatchLogs.send(getLogEventsCommand);
 
-        const { events } =
-          await ctx.clients.cloudwatchLogs.send(getLogEventsCommand);
+      if (!events || events.length === 0) {
+        throw new Error('No log events found yet');
+      }
 
-        if (!events || events.length === 0) {
-          throw new Error('No log events found yet');
-        }
+      const logContent = events.map(event => event.message).join('\n');
 
-        const logContent = events.map(event => event.message).join('\n');
+      if (logContent.includes('SUCCESS: Redis ping was successful')) {
+        return true;
+      }
 
-        if (logContent.includes('SUCCESS: Redis ping was successful')) {
-          return true;
-        }
+      if (logContent.includes('ERROR:')) {
+        throw new Error('Found error in test logs: ' + logContent);
+      }
 
-        if (logContent.includes('ERROR:')) {
-          throw new Error('Found error in test logs: ' + logContent);
-        }
-
-        return false;
-      },
-      {
-        ...ctx.config.exponentialBackOffConfig,
-        numOfAttempts: 10,
-        startingDelay: 5000,
-      },
-    );
+      return false;
+    });
 
     assert.strictEqual(
       success,

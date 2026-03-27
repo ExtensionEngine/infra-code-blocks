@@ -1,11 +1,11 @@
 import { it } from 'node:test';
 import * as assert from 'node:assert';
-import { backOff } from 'exponential-backoff';
 import { EcsTestContext } from './test-context';
 import {
   DescribeTargetGroupsCommand,
   DescribeTargetHealthCommand,
 } from '@aws-sdk/client-elastic-load-balancing-v2';
+import { backOff } from '../util';
 
 export function testEcsServiceWithLb(ctx: EcsTestContext) {
   it('should properly configure load balancer when provided', async () => {
@@ -49,29 +49,23 @@ export function testEcsServiceWithLb(ctx: EcsTestContext) {
       TargetGroupArn: targetGroupArn,
     });
 
-    return backOff(
-      async () => {
-        const { TargetHealthDescriptions } =
-          await ctx.clients.elb.send(describeHealth);
-        assert.ok(
-          TargetHealthDescriptions && TargetHealthDescriptions.length > 0,
-          'Target group should have registered targets',
-        );
+    return backOff(async () => {
+      const { TargetHealthDescriptions } =
+        await ctx.clients.elb.send(describeHealth);
+      assert.ok(
+        TargetHealthDescriptions && TargetHealthDescriptions.length > 0,
+        'Target group should have registered targets',
+      );
 
-        // At least one target should be healthy
-        const healthyTargets = TargetHealthDescriptions.filter(
-          (target: any) => target.TargetHealth?.State === 'healthy',
-        );
-        assert.ok(
-          healthyTargets.length > 0,
-          'At least one target should be healthy',
-        );
-      },
-      {
-        ...ctx.config.exponentialBackOffConfig,
-        numOfAttempts: 10,
-      },
-    );
+      // At least one target should be healthy
+      const healthyTargets = TargetHealthDescriptions.filter(
+        (target: any) => target.TargetHealth?.State === 'healthy',
+      );
+      assert.ok(
+        healthyTargets.length > 0,
+        'At least one target should be healthy',
+      );
+    });
   });
 
   it('should be able to access the service via load balancer URL', async () => {
@@ -90,6 +84,6 @@ export function testEcsServiceWithLb(ctx: EcsTestContext) {
         text.includes('Simple PHP App'),
         'Response should contain expected content',
       );
-    }, ctx.config.exponentialBackOffConfig);
+    });
   });
 }

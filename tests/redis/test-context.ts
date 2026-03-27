@@ -10,13 +10,6 @@ interface RedisTestConfig {
   elastiCacheRedisName: string;
   elastiCacheTestClientName: string;
   upstashRedisName: string;
-  exponentialBackOffConfig: {
-    delayFirstAttempt: boolean;
-    numOfAttempts: number;
-    startingDelay: number;
-    timeMultiple: number;
-    jitter: 'full' | 'none';
-  };
 }
 
 interface ConfigContext {
@@ -38,6 +31,4 @@ interface AwsContext {
 }
 
 export interface RedisTestContext
-  extends ConfigContext,
-    PulumiProgramContext,
-    AwsContext {}
+  extends ConfigContext, PulumiProgramContext, AwsContext {}

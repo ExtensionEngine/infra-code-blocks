@@ -3,7 +3,6 @@ import * as automation from '../automation';
 import { InlineProgramArgs } from '@pulumi/pulumi/automation';
 import { ACMClient } from '@aws-sdk/client-acm';
 import { Route53Client } from '@aws-sdk/client-route-53';
-import { backOff } from 'exponential-backoff';
 import {
   DescribeCertificateCommand,
   CertificateType,
@@ -11,7 +10,7 @@ import {
 import { ListResourceRecordSetsCommand } from '@aws-sdk/client-route-53';
 import { AcmCertificateTestContext } from './test-context';
 import { describe, it, before, after } from 'node:test';
-import { requireEnv } from '../util';
+import { backOff, requireEnv } from '../util';
 import * as infraConfig from './infrastructure/config';
 
 const programArgs: InlineProgramArgs = {
@@ -30,13 +29,6 @@ const ctx: AcmCertificateTestContext = {
     certificateDomain: infraConfig.certificateDomain,
     sanCertificateDomain: infraConfig.sanCertificateDomain,
     certificateSANs: infraConfig.certificateSANs,
-    exponentialBackOffConfig: {
-      delayFirstAttempt: true,
-      numOfAttempts: 5,
-      startingDelay: 2000,
-      timeMultiple: 1.5,
-      jitter: 'full',
-    },
   },
   clients: {
     acm: new ACMClient({ region }),
@@ -76,7 +68,7 @@ describe('ACM Certificate component deployment', () => {
         CertificateType.AMAZON_ISSUED,
         'Should be Amazon issued certificate',
       );
-    }, ctx.config.exponentialBackOffConfig);
+    });
   });
 
   it('should have validation record with correct resource record value', async () => {
@@ -157,6 +149,6 @@ describe('ACM Certificate component deployment', () => {
 
       const cert = certResult.Certificate;
       assert.ok(cert, 'Certificate should exist');
-    }, ctx.config.exponentialBackOffConfig);
+    });
   });
 });

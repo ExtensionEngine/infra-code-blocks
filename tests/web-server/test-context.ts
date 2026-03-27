@@ -21,13 +21,6 @@ interface WebServerTestConfig {
     primary: string;
     sans: string[];
   };
-  exponentialBackOffConfig: {
-    delayFirstAttempt: boolean;
-    numOfAttempts: number;
-    startingDelay: number;
-    timeMultiple: number;
-    jitter: 'full' | 'none';
-  };
 }
 
 interface ConfigContext {
@@ -49,6 +42,4 @@ interface AwsContext {
 }
 
 export interface WebServerTestContext
-  extends ConfigContext,
-    PulumiProgramContext,
-    AwsContext {}
+  extends ConfigContext, PulumiProgramContext, AwsContext {}
