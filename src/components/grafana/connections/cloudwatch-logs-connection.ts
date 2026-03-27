@@ -8,7 +8,6 @@ const awsConfig = new pulumi.Config('aws');
 
 export namespace CloudWatchLogsConnection {
   export type Args = GrafanaConnection.Args & {
-    logGroupName: string;
     region?: string;
   };
 }
@@ -34,10 +33,7 @@ export class CloudWatchLogsConnection extends GrafanaConnection {
     this.name = name;
 
     this.rolePolicy = this.createRolePolicy();
-    this.dataSource = this.createDataSource(
-      argsWithDefaults.logGroupName,
-      argsWithDefaults.region,
-    );
+    this.dataSource = this.createDataSource(argsWithDefaults.region);
 
     this.registerOutputs();
   }
@@ -70,10 +66,7 @@ export class CloudWatchLogsConnection extends GrafanaConnection {
     );
   }
 
-  private createDataSource(
-    logGroupName: CloudWatchLogsConnection.Args['logGroupName'],
-    region: string,
-  ): grafana.oss.DataSource {
+  private createDataSource(region: string): grafana.oss.DataSource {
     const dataSourceName = `${this.name}-cloudwatch-logs-datasource`;
 
     return new grafana.oss.DataSource(
@@ -85,7 +78,6 @@ export class CloudWatchLogsConnection extends GrafanaConnection {
           authType: 'grafana_assume_role',
           assumeRoleArn: this.role.arn,
           defaultRegion: region,
-          defaultLogGroups: [logGroupName],
         }),
       },
       { parent: this },
