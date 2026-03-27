@@ -3,7 +3,7 @@ import {
   AMPConnection,
   CloudWatchLogsConnection,
   GrafanaConnection,
-  XRayTracesConnection,
+  XRayConnection,
 } from './connections';
 import { Grafana } from './grafana';
 
@@ -33,10 +33,8 @@ export class GrafanaBuilder {
     return this;
   }
 
-  public addXRayTraces(name: string, args: XRayTracesConnection.Args): this {
-    this.connectionBuilders.push(
-      opts => new XRayTracesConnection(name, args, opts),
-    );
+  public addXRay(name: string, args: XRayConnection.Args): this {
+    this.connectionBuilders.push(opts => new XRayConnection(name, args, opts));
 
     return this;
   }

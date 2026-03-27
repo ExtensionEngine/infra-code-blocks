@@ -7,7 +7,7 @@ import { GrafanaConnection } from './connection';
 const awsConfig = new pulumi.Config('aws');
 const pluginName = 'grafana-x-ray-datasource';
 
-export namespace XRayTracesConnection {
+export namespace XRayConnection {
   export type Args = GrafanaConnection.Args & {
     region?: string;
     pluginVersion?: string;
@@ -19,7 +19,7 @@ const defaults = {
   region: awsConfig.require('region'),
 };
 
-export class XRayTracesConnection extends GrafanaConnection {
+export class XRayConnection extends GrafanaConnection {
   public readonly name: string;
   public readonly dataSource: grafana.oss.DataSource;
   public readonly plugin: grafana.cloud.PluginInstallation;
@@ -27,10 +27,10 @@ export class XRayTracesConnection extends GrafanaConnection {
 
   constructor(
     name: string,
-    args: XRayTracesConnection.Args,
+    args: XRayConnection.Args,
     opts: pulumi.ComponentResourceOptions = {},
   ) {
-    super('studion:grafana:XRayTracesConnection', name, args, opts);
+    super('studion:grafana:XRayConnection', name, args, opts);
 
     const argsWithDefaults = mergeWithDefaults(defaults, args);
 
@@ -65,7 +65,7 @@ export class XRayTracesConnection extends GrafanaConnection {
     });
 
     return new aws.iam.RolePolicy(
-      `${this.name}-xray-traces-policy`,
+      `${this.name}-x-ray-policy`,
       {
         role: this.role.id,
         policy: policy.json,
@@ -78,7 +78,7 @@ export class XRayTracesConnection extends GrafanaConnection {
     pluginVersion: string,
   ): grafana.cloud.PluginInstallation {
     return new grafana.cloud.PluginInstallation(
-      `${this.name}-xray-traces-plugin`,
+      `${this.name}-x-ray-plugin`,
       {
         stackSlug: this.getStackSlug(),
         slug: pluginName,
@@ -89,7 +89,7 @@ export class XRayTracesConnection extends GrafanaConnection {
   }
 
   private createDataSource(region: string): grafana.oss.DataSource {
-    const dataSourceName = `${this.name}-xray-traces-datasource`;
+    const dataSourceName = `${this.name}-x-ray-datasource`;
 
     return new grafana.oss.DataSource(
       dataSourceName,
