@@ -42,4 +42,6 @@ interface AwsContext {
 }
 
 export interface WebServerTestContext
-  extends ConfigContext, PulumiProgramContext, AwsContext {}
+  extends ConfigContext,
+    PulumiProgramContext,
+    AwsContext {}

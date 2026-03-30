@@ -31,4 +31,6 @@ interface AwsContext {
 }
 
 export interface RedisTestContext
-  extends ConfigContext, PulumiProgramContext, AwsContext {}
+  extends ConfigContext,
+    PulumiProgramContext,
+    AwsContext {}

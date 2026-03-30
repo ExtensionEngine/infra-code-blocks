@@ -25,4 +25,6 @@ interface AwsContext {
 }
 
 export interface AcmCertificateTestContext
-  extends ConfigContext, PulumiProgramContext, AwsContext {}
+  extends ConfigContext,
+    PulumiProgramContext,
+    AwsContext {}
