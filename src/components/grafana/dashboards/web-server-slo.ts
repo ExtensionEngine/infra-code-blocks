@@ -27,7 +27,7 @@ const defaults = {
 export function createWebServerSloDashboard(config: {
   name: string;
   title: string;
-  prometheusNamespace: string;
+  ampNamespace: string;
   filter: string;
   target?: number;
   window?: promQ.TimeRange;

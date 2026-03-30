@@ -14,7 +14,7 @@ export function createLatencyPanel(config: {
   window: promQ.TimeRange;
   targetLatency: number;
   filter: string;
-  prometheusNamespace: string;
+  ampNamespace: string;
 }): PanelBuilder {
   return connections => {
     const ds = requireConnection(connections, AMPConnection).dataSource.name;
@@ -25,7 +25,7 @@ export function createLatencyPanel(config: {
       {
         label: 'Request % below 250ms',
         query: promQ.getLatencyPercentageQuery(
-          config.prometheusNamespace,
+          config.ampNamespace,
           config.window,
           config.targetLatency,
           config.filter,
@@ -40,7 +40,7 @@ export function createLatencyPercentilePanel(config: {
   target: number;
   shortWindow: promQ.TimeRange;
   filter: string;
-  prometheusNamespace: string;
+  ampNamespace: string;
 }): PanelBuilder {
   return connections => {
     const ds = requireConnection(connections, AMPConnection).dataSource.name;
@@ -51,7 +51,7 @@ export function createLatencyPercentilePanel(config: {
       {
         label: '99th Percentile Latency',
         query: promQ.getPercentileLatencyQuery(
-          config.prometheusNamespace,
+          config.ampNamespace,
           config.shortWindow,
           config.target,
           config.filter,
@@ -67,7 +67,7 @@ export function createLatencyPercentagePanel(config: {
   targetLatency: number;
   shortWindow: promQ.TimeRange;
   filter: string;
-  prometheusNamespace: string;
+  ampNamespace: string;
 }): PanelBuilder {
   return connections => {
     const ds = requireConnection(connections, AMPConnection).dataSource.name;
@@ -78,7 +78,7 @@ export function createLatencyPercentagePanel(config: {
       {
         label: 'Request percentage below 250ms',
         query: promQ.getLatencyPercentageQuery(
-          config.prometheusNamespace,
+          config.ampNamespace,
           config.shortWindow,
           config.targetLatency,
           config.filter,
@@ -92,7 +92,7 @@ export function createLatencyPercentagePanel(config: {
 export function createLatencyBurnRatePanel(config: {
   target: number;
   targetLatency: number;
-  prometheusNamespace: string;
+  ampNamespace: string;
 }): PanelBuilder {
   return connections => {
     const ds = requireConnection(connections, AMPConnection).dataSource.name;
@@ -104,7 +104,7 @@ export function createLatencyBurnRatePanel(config: {
         label: 'Burn Rate',
         query: promQ.getBurnRateQuery(
           promQ.getLatencyRateQuery(
-            config.prometheusNamespace,
+            config.ampNamespace,
             '1h',
             config.targetLatency,
           ),

@@ -10,7 +10,7 @@ import {
 export function createAvailabilityPanel(config: {
   target: number;
   window: promQ.TimeRange;
-  prometheusNamespace: string;
+  ampNamespace: string;
 }): PanelBuilder {
   return connections => {
     const ds = requireConnection(connections, AMPConnection).dataSource.name;
@@ -21,7 +21,7 @@ export function createAvailabilityPanel(config: {
       {
         label: 'Availability',
         query: promQ.getAvailabilityPercentageQuery(
-          config.prometheusNamespace,
+          config.ampNamespace,
           config.window,
         ),
         thresholds: [],
@@ -33,7 +33,7 @@ export function createAvailabilityPanel(config: {
 export function createAvailabilityBurnRatePanel(config: {
   target: number;
   window: promQ.TimeRange;
-  prometheusNamespace: string;
+  ampNamespace: string;
 }): PanelBuilder {
   return connections => {
     const ds = requireConnection(connections, AMPConnection).dataSource.name;
@@ -44,7 +44,7 @@ export function createAvailabilityBurnRatePanel(config: {
       {
         label: 'Burn Rate',
         query: promQ.getBurnRateQuery(
-          promQ.getAvailabilityQuery(config.prometheusNamespace, '1h'),
+          promQ.getAvailabilityQuery(config.ampNamespace, '1h'),
           config.target,
         ),
         thresholds: [],

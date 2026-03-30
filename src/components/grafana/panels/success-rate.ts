@@ -12,7 +12,7 @@ export function createSuccessRatePanel(config: {
   target: number;
   window: promQ.TimeRange;
   filter: string;
-  prometheusNamespace: string;
+  ampNamespace: string;
 }): PanelBuilder {
   return connections => {
     const ds = requireConnection(connections, AMPConnection).dataSource.name;
@@ -23,7 +23,7 @@ export function createSuccessRatePanel(config: {
       {
         label: 'Success Rate',
         query: promQ.getSuccessPercentageQuery(
-          config.prometheusNamespace,
+          config.ampNamespace,
           config.window,
           config.filter,
         ),
@@ -36,7 +36,7 @@ export function createSuccessRatePanel(config: {
 export function createSuccessRateTimeSeriesPanel(config: {
   shortWindow: promQ.TimeRange;
   filter: string;
-  prometheusNamespace: string;
+  ampNamespace: string;
 }): PanelBuilder {
   return connections => {
     const ds = requireConnection(connections, AMPConnection).dataSource.name;
@@ -47,7 +47,7 @@ export function createSuccessRateTimeSeriesPanel(config: {
       {
         label: 'Success Rate',
         query: promQ.getSuccessPercentageQuery(
-          config.prometheusNamespace,
+          config.ampNamespace,
           config.shortWindow,
           config.filter,
         ),
@@ -60,7 +60,7 @@ export function createSuccessRateTimeSeriesPanel(config: {
 export function createSuccessRateBurnRatePanel(config: {
   target: number;
   filter: string;
-  prometheusNamespace: string;
+  ampNamespace: string;
 }): PanelBuilder {
   return connections => {
     const ds = requireConnection(connections, AMPConnection).dataSource.name;
@@ -71,11 +71,7 @@ export function createSuccessRateBurnRatePanel(config: {
       {
         label: 'Burn Rate',
         query: promQ.getBurnRateQuery(
-          promQ.getSuccessRateQuery(
-            config.prometheusNamespace,
-            '1h',
-            config.filter,
-          ),
+          promQ.getSuccessRateQuery(config.ampNamespace, '1h', config.filter),
           config.target,
         ),
         thresholds: [],
