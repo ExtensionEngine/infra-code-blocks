@@ -27,13 +27,6 @@ const ctx: RedisTestContext = {
     elastiCacheRedisName: 'redis-test-elasticache',
     elastiCacheTestClientName: 'redis-test-ec-client',
     upstashRedisName: 'redis-test-upstash',
-    exponentialBackOffConfig: {
-      delayFirstAttempt: true,
-      numOfAttempts: 5,
-      startingDelay: 2000,
-      timeMultiple: 2,
-      jitter: 'full',
-    },
   },
   clients: {
     elasticache: new ElastiCacheClient({ region }),

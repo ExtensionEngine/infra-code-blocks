@@ -1,11 +1,11 @@
 import { it } from 'node:test';
 import * as assert from 'node:assert';
-import { backOff } from 'exponential-backoff';
 import { EcsTestContext } from './test-context';
 import {
   GetNamespaceCommand,
   ListInstancesCommand,
 } from '@aws-sdk/client-servicediscovery';
+import { backOff } from '../util';
 
 export function testEcsServiceWithServiceDiscovery(ctx: EcsTestContext) {
   it('should create a private DNS namespace for service discovery', async () => {
@@ -44,6 +44,6 @@ export function testEcsServiceWithServiceDiscovery(ctx: EcsTestContext) {
         Instances && Instances.length > 0,
         'Service should have registered instances',
       );
-    }, ctx.config.exponentialBackOffConfig);
+    });
   });
 }

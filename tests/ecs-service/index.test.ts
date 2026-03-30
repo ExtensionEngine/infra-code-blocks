@@ -12,7 +12,6 @@ import { ElasticLoadBalancingV2Client } from '@aws-sdk/client-elastic-load-balan
 import { ServiceDiscoveryClient } from '@aws-sdk/client-servicediscovery';
 import { ApplicationAutoScalingClient } from '@aws-sdk/client-application-auto-scaling';
 import { EFSClient } from '@aws-sdk/client-efs';
-import { backOff } from 'exponential-backoff';
 import * as automation from '../automation';
 import { EcsTestContext } from './test-context';
 import { testConfigurableEcsService } from './configuration.test';
@@ -20,7 +19,7 @@ import { testEcsServiceWithLb } from './load-balancer.test';
 import { testEcsServiceWithStorage } from './persistent-storage.test';
 import { testEcsServiceWithServiceDiscovery } from './service-discovery.test';
 import { testEcsServiceWithAutoscaling } from './autoscaling.test';
-import { requireEnv } from '../util';
+import { backOff, requireEnv } from '../util';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -33,13 +32,6 @@ const ctx: EcsTestContext = {
   outputs: {},
   config: {
     minEcsName: 'ecs-test-min',
-    exponentialBackOffConfig: {
-      delayFirstAttempt: true,
-      numOfAttempts: 5,
-      startingDelay: 1000,
-      timeMultiple: 2,
-      jitter: 'full',
-    },
   },
   clients: {
     ecs: new ECSClient({ region }),
@@ -109,7 +101,7 @@ describe('EcsService component deployment', () => {
         service.runningCount,
         `Service should have ${service.desiredCount} running tasks`,
       );
-    }, ctx.config.exponentialBackOffConfig);
+    });
   });
 
   it('should have running tasks with the correct task definition', async () => {

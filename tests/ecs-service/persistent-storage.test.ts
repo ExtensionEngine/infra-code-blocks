@@ -13,7 +13,7 @@ import {
   GetLogEventsCommand,
 } from '@aws-sdk/client-cloudwatch-logs';
 import { DescribeTasksCommand, ListTasksCommand } from '@aws-sdk/client-ecs';
-import { backOff } from 'exponential-backoff';
+import { backOff } from '../util';
 import { EcsTestContext } from './test-context';
 
 export function testEcsServiceWithStorage(ctx: EcsTestContext) {
@@ -275,7 +275,7 @@ export function testEcsServiceWithStorage(ctx: EcsTestContext) {
       assert.ok(taskArns && taskArns.length > 0, 'Task should be running');
 
       return taskArns;
-    }, ctx.config.exponentialBackOffConfig);
+    });
 
     const describeTasksCommand = new DescribeTasksCommand({
       cluster: clusterName,
@@ -295,37 +295,29 @@ export function testEcsServiceWithStorage(ctx: EcsTestContext) {
       logStreamNamePrefix: `ecs/test-container/${taskId}`,
     });
 
-    return backOff(
-      async () => {
-        const { logStreams = [] } = await logsClient.send(
-          describeStreamsCommand,
-        );
-        assert.ok(logStreams.length > 0, 'Log stream should exist');
+    return backOff(async () => {
+      const { logStreams = [] } = await logsClient.send(describeStreamsCommand);
+      assert.ok(logStreams.length > 0, 'Log stream should exist');
 
-        const getLogsCommand = new GetLogEventsCommand({
-          logGroupName: ecsServiceWithStorage.logGroup.name,
-          logStreamName: logStreams[0].logStreamName,
-          startFromHead: true,
-        });
+      const getLogsCommand = new GetLogEventsCommand({
+        logGroupName: ecsServiceWithStorage.logGroup.name,
+        logStreamName: logStreams[0].logStreamName,
+        startFromHead: true,
+      });
 
-        const { events } = await logsClient.send(getLogsCommand);
-        assert.ok(events && events.length > 0, 'Log events should exist');
+      const { events } = await logsClient.send(getLogsCommand);
+      assert.ok(events && events.length > 0, 'Log events should exist');
 
-        const logContent = events.map(e => e.message).join('\n');
-        assert.ok(
-          logContent.includes('Successfully wrote to and read from EFS volume'),
-          'Logs should indicate successful EFS operation',
-        );
-        assert.ok(
-          !logContent.includes('Failed to write to or read from EFS volume'),
-          'Logs should not contain failure messages',
-        );
-      },
-      {
-        ...ctx.config.exponentialBackOffConfig,
-        numOfAttempts: 8,
-      },
-    );
+      const logContent = events.map(e => e.message).join('\n');
+      assert.ok(
+        logContent.includes('Successfully wrote to and read from EFS volume'),
+        'Logs should indicate successful EFS operation',
+      );
+      assert.ok(
+        !logContent.includes('Failed to write to or read from EFS volume'),
+        'Logs should not contain failure messages',
+      );
+    });
   });
 
   it('should create ECS service when empty volumes array argument is passed', async () => {

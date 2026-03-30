@@ -1,5 +1,10 @@
 import * as pulumi from '@pulumi/pulumi';
-import { AMPConnection, GrafanaConnection } from './connections';
+import {
+  AMPConnection,
+  CloudWatchLogsConnection,
+  GrafanaConnection,
+  XRayConnection,
+} from './connections';
 import { Grafana } from './grafana';
 import { GrafanaDashboard } from './dashboards/types';
 
@@ -15,6 +20,23 @@ export class GrafanaBuilder {
 
   public addAmp(name: string, args: AMPConnection.Args): this {
     this.connectionBuilders.push(opts => new AMPConnection(name, args, opts));
+
+    return this;
+  }
+
+  public addCLoudWatchLogs(
+    name: string,
+    args: CloudWatchLogsConnection.Args,
+  ): this {
+    this.connectionBuilders.push(
+      opts => new CloudWatchLogsConnection(name, args, opts),
+    );
+
+    return this;
+  }
+
+  public addXRay(name: string, args: XRayConnection.Args): this {
+    this.connectionBuilders.push(opts => new XRayConnection(name, args, opts));
 
     return this;
   }
