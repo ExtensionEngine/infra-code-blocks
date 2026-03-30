@@ -67,7 +67,7 @@ const customCachePolicy = new aws.cloudfront.CachePolicy(
         headerBehavior: 'none',
       },
       queryStringsConfig: {
-        queryStringBehavior: 'all',
+        queryStringBehavior: 'none',
       },
       enableAcceptEncodingGzip: true,
     },
@@ -88,7 +88,7 @@ const customOriginRequestPolicy = new aws.cloudfront.OriginRequestPolicy(
       headerBehavior: 'none',
     },
     queryStringsConfig: {
-      queryStringBehavior: 'all',
+      queryStringBehavior: 'none',
     },
   },
   { parent },

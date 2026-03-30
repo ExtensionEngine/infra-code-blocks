@@ -1,34 +1,75 @@
 import * as pulumi from '@pulumi/pulumi';
+import {
+  AMPConnection,
+  CloudWatchLogsConnection,
+  GrafanaConnection,
+  XRayConnection,
+} from './connections';
 import { Grafana } from './grafana';
-import { GrafanaDashboard } from './dashboards/types';
+import type { GrafanaDashboardBuilder } from './dashboards/builder';
 
 export class GrafanaBuilder {
-  private name: string;
-  private prometheusConfig?: Grafana.PrometheusConfig;
-  private dashboardConfigs: GrafanaDashboard.DashboardConfig[] = [];
+  private readonly name: string;
+  private readonly connectionBuilders: GrafanaConnection.Builder[] = [];
+  private readonly dashboardBuilders: GrafanaDashboardBuilder.Dashboard[] = [];
 
   constructor(name: string) {
     this.name = name;
   }
 
-  public withPrometheus(config: Grafana.PrometheusConfig): this {
-    this.prometheusConfig = config;
+  public addAmp(name: string, args: AMPConnection.Args): this {
+    this.connectionBuilders.push(opts => new AMPConnection(name, args, opts));
 
     return this;
   }
 
-  public addDashboard(config: GrafanaDashboard.DashboardConfig): this {
-    this.dashboardConfigs.push(config);
+  public addCLoudWatchLogs(
+    name: string,
+    args: CloudWatchLogsConnection.Args,
+  ): this {
+    this.connectionBuilders.push(
+      opts => new CloudWatchLogsConnection(name, args, opts),
+    );
+
+    return this;
+  }
+
+  public addXRay(name: string, args: XRayConnection.Args): this {
+    this.connectionBuilders.push(opts => new XRayConnection(name, args, opts));
+
+    return this;
+  }
+
+  public addConnection(builder: GrafanaConnection.Builder): this {
+    this.connectionBuilders.push(builder);
+
+    return this;
+  }
+
+  public addDashboard(dashboard: GrafanaDashboardBuilder.Dashboard): this {
+    this.dashboardBuilders.push(dashboard);
 
     return this;
   }
 
   public build(opts: pulumi.ComponentResourceOptions = {}): Grafana {
+    if (!this.connectionBuilders.length) {
+      throw new Error(
+        'At least one connection is required. Call addConnection()  to add custom connection or use one of existing connection builders.',
+      );
+    }
+
+    if (!this.dashboardBuilders.length) {
+      throw new Error(
+        'At least one dashboard is required. Call addDashboard() to add a dashboard.',
+      );
+    }
+
     return new Grafana(
       this.name,
       {
-        prometheusConfig: this.prometheusConfig,
-        dashboards: this.dashboardConfigs,
+        connectionBuilders: this.connectionBuilders,
+        dashboardBuilders: this.dashboardBuilders,
       },
       opts,
     );

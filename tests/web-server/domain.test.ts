@@ -3,9 +3,9 @@ import * as assert from 'node:assert';
 import { WebServerTestContext } from './test-context';
 import { DescribeListenersCommand } from '@aws-sdk/client-elastic-load-balancing-v2';
 import { ListResourceRecordSetsCommand } from '@aws-sdk/client-route-53';
-import { backOff } from 'exponential-backoff';
 import { request } from 'undici';
 import status from 'http-status';
+import { backOff } from '../util';
 
 export function testWebServerWithDomain(ctx: WebServerTestContext) {
   it('should configure HTTPS listener with certificate for web server with custom domain', async () => {
@@ -181,5 +181,5 @@ async function assertHealthCheckAccessible(
       status.OK,
       `Should receive 200 from ${domain}`,
     );
-  }, ctx.config.exponentialBackOffConfig);
+  });
 }

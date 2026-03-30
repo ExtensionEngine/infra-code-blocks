@@ -1,5 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
-import { GrafanaDashboard } from './types';
+import { GrafanaConnection } from '../connections';
+import { Panel, Metric } from './types';
 
 const percentageFieldConfig = {
   unit: 'percent',
@@ -9,10 +10,10 @@ const percentageFieldConfig = {
 
 export function createStatPercentagePanel(
   title: string,
-  position: GrafanaDashboard.PanelPosition,
+  position: Panel.Position,
   dataSource: pulumi.Input<string>,
-  metric: GrafanaDashboard.Metric,
-): GrafanaDashboard.Panel {
+  metric: Metric,
+): Panel {
   return {
     title,
     gridPos: position,
@@ -42,10 +43,10 @@ export function createStatPercentagePanel(
 
 export function createTimeSeriesPercentagePanel(
   title: string,
-  position: GrafanaDashboard.PanelPosition,
+  position: Panel.Position,
   dataSource: pulumi.Input<string>,
-  metric: GrafanaDashboard.Metric,
-): GrafanaDashboard.Panel {
+  metric: Metric,
+): Panel {
   return createTimeSeriesPanel(
     title,
     position,
@@ -59,13 +60,13 @@ export function createTimeSeriesPercentagePanel(
 
 export function createTimeSeriesPanel(
   title: string,
-  position: GrafanaDashboard.PanelPosition,
+  position: Panel.Position,
   dataSource: pulumi.Input<string>,
-  metric: GrafanaDashboard.Metric,
+  metric: Metric,
   unit?: string,
   min?: number,
   max?: number,
-): GrafanaDashboard.Panel {
+): Panel {
   return {
     title,
     type: 'timeseries',
@@ -97,10 +98,10 @@ export function createTimeSeriesPanel(
 
 export function createBurnRatePanel(
   title: string,
-  position: GrafanaDashboard.PanelPosition,
+  position: Panel.Position,
   dataSource: pulumi.Input<string>,
-  metric: GrafanaDashboard.Metric,
-): GrafanaDashboard.Panel {
+  metric: Metric,
+): Panel {
   return {
     type: 'stat',
     title,
@@ -136,4 +137,14 @@ export function createBurnRatePanel(
       },
     },
   };
+}
+
+export function requireConnection<T extends GrafanaConnection>(
+  connections: GrafanaConnection[],
+  ConnectionType: new (...args: any[]) => T,
+): T {
+  const conn = connections.find(c => c instanceof ConnectionType);
+  if (!conn)
+    throw new Error(`Required connection ${ConnectionType.name} not found`);
+  return conn as T;
 }

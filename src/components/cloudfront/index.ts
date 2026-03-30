@@ -49,10 +49,12 @@ export class CloudFront extends pulumi.ComponentResource {
       origins: this.createDistributionOrigins(behaviors),
       defaultCache: this.getCacheBehavior(defaultBehavior),
       orderedCaches: orderedBehaviors.length
-        ? orderedBehaviors.map((it, idx) => ({
-            pathPattern: it.pathPattern,
-            ...this.getCacheBehavior(it, idx),
-          }))
+        ? orderedBehaviors.map((it, idx) =>
+            this.getCacheBehavior(it, idx).apply(behavior => ({
+              pathPattern: it.pathPattern,
+              ...behavior,
+            })),
+          )
         : undefined,
       domain,
       certificate:
@@ -116,7 +118,7 @@ export class CloudFront extends pulumi.ComponentResource {
   private getCacheBehavior(
     behavior: CloudFront.Behavior,
     order?: number,
-  ): aws.types.input.cloudfront.DistributionDefaultCacheBehavior {
+  ): pulumi.Output<aws.types.input.cloudfront.DistributionDefaultCacheBehavior> {
     const isDefault = isDefaultBehavior(behavior);
     const getStrategyName = (backend: string) => {
       const suffix = isDefault ? 'default' : `ordered-${order}`;
@@ -135,7 +137,7 @@ export class CloudFront extends pulumi.ComponentResource {
         { parent: this },
       );
 
-      return strategy.config;
+      return pulumi.output(strategy.config);
     } else if (isLbBehaviorType(behavior)) {
       const strategy = new LbCacheStrategy(
         getStrategyName('lb'),
@@ -146,19 +148,15 @@ export class CloudFront extends pulumi.ComponentResource {
         { parent: this },
       );
 
-      return strategy.config;
+      return pulumi.output(strategy.config);
     } else if (isCustomBehaviorType(behavior)) {
-      return {
+      return isS3Domain(behavior.domainName).apply(isS3 => ({
         targetOriginId: behavior.originId,
-        allowedMethods: behavior.allowedMethods ?? [
-          'GET',
-          'HEAD',
-          'OPTIONS',
-          'PUT',
-          'POST',
-          'PATCH',
-          'DELETE',
-        ],
+        allowedMethods:
+          behavior.allowedMethods ??
+          (isS3
+            ? ['GET', 'HEAD']
+            : ['GET', 'HEAD', 'OPTIONS', 'PUT', 'POST', 'PATCH', 'DELETE']),
         cachedMethods: behavior.cachedMethods ?? ['GET', 'HEAD'],
         ...(behavior.compress != null && { compress: behavior.compress }),
         viewerProtocolPolicy: 'redirect-to-https',
@@ -169,15 +167,13 @@ export class CloudFront extends pulumi.ComponentResource {
             .apply(p => p.id!),
         originRequestPolicyId:
           behavior.originRequestPolicyId ??
-          isS3Domain(behavior.domainName).apply(isS3 =>
-            aws.cloudfront
-              .getOriginRequestPolicyOutput({
-                name: isS3
-                  ? 'Managed-CORS-S3Origin'
-                  : 'Managed-AllViewerExceptHostHeader',
-              })
-              .apply(p => p.id!),
-          ),
+          (isS3
+            ? undefined
+            : aws.cloudfront
+                .getOriginRequestPolicyOutput({
+                  name: 'Managed-AllViewerExceptHostHeader',
+                })
+                .apply(p => p.id!)),
         responseHeadersPolicyId:
           behavior.responseHeadersPolicyId ??
           aws.cloudfront
@@ -185,7 +181,7 @@ export class CloudFront extends pulumi.ComponentResource {
               name: 'Managed-SecurityHeadersPolicy',
             })
             .apply(p => p.id),
-      };
+      }));
     } else {
       throw new Error(
         'Unknown CloudFront behavior encountered during mapping to distribution cache behaviors.',
@@ -275,7 +271,7 @@ export class CloudFront extends pulumi.ComponentResource {
       aliases?.map(
         (alias, index) =>
           new aws.route53.Record(
-            `${this.name}-cloudfront-alias-record-${index}`,
+            `${this.name}-dns-a-record-${index}`,
             {
               type: 'A',
               name: alias,
@@ -395,8 +391,8 @@ const S3_DOMAIN_REGEX =
 
 type CreateDistributionArgs = {
   origins: pulumi.Output<aws.types.input.cloudfront.DistributionOrigin[]>;
-  defaultCache: aws.types.input.cloudfront.DistributionDefaultCacheBehavior;
-  orderedCaches?: aws.types.input.cloudfront.DistributionOrderedCacheBehavior[];
+  defaultCache: pulumi.Output<aws.types.input.cloudfront.DistributionDefaultCacheBehavior>;
+  orderedCaches?: pulumi.Output<aws.types.input.cloudfront.DistributionOrderedCacheBehavior>[];
   domain?: pulumi.Input<string>;
   certificate?: pulumi.Output<aws.acm.Certificate>;
   certificateValidation?: pulumi.Output<aws.acm.CertificateValidation>;

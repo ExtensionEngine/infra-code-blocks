@@ -372,7 +372,7 @@ export class WebServer extends pulumi.ComponentResource {
         (domain ? [domain] : [...new Set([certDomain, ...certSans])]).map(
           (alias, index) =>
             new aws.route53.Record(
-              `${this.name}-route53-record${index === 0 ? '' : `-${index}`}`,
+              `${this.name}-dns-a-record-${index}`,
               {
                 type: 'A',
                 name: alias,
