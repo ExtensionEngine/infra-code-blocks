@@ -19,16 +19,15 @@ import {
 
 const defaults = {
   target: 0.99,
-  window: '30d' as promQ.TimeRange,
-  shortWindow: '5m' as promQ.TimeRange,
+  window: '30d',
+  shortWindow: '5m',
   targetLatency: 250,
 };
 
-// TODO: rename to prometheusNamespace
 export function createWebServerSloDashboard(config: {
   name: string;
   title: string;
-  namespace: string;
+  prometheusNamespace: string;
   filter: string;
   target?: number;
   window?: promQ.TimeRange;
@@ -37,16 +36,14 @@ export function createWebServerSloDashboard(config: {
 }): GrafanaDashboardBuilder.Dashboard {
   const argsWithDefaults = mergeWithDefaults(defaults, config);
   return new GrafanaDashboardBuilder(config.name, argsWithDefaults.title)
-    .addPanel(conns => createAvailabilityPanel(conns, argsWithDefaults))
-    .addPanel(conns => createAvailabilityBurnRatePanel(conns, argsWithDefaults))
-    .addPanel(conns => createSuccessRatePanel(conns, argsWithDefaults))
-    .addPanel(conns =>
-      createSuccessRateTimeSeriesPanel(conns, argsWithDefaults),
-    )
-    .addPanel(conns => createSuccessRateBurnRatePanel(conns, argsWithDefaults))
-    .addPanel(conns => createLatencyPanel(conns, argsWithDefaults))
-    .addPanel(conns => createLatencyPercentilePanel(conns, argsWithDefaults))
-    .addPanel(conns => createLatencyPercentagePanel(conns, argsWithDefaults))
-    .addPanel(conns => createLatencyBurnRatePanel(conns, argsWithDefaults))
+    .addPanel(createAvailabilityPanel(argsWithDefaults))
+    .addPanel(createAvailabilityBurnRatePanel(argsWithDefaults))
+    .addPanel(createSuccessRatePanel(argsWithDefaults))
+    .addPanel(createSuccessRateTimeSeriesPanel(argsWithDefaults))
+    .addPanel(createSuccessRateBurnRatePanel(argsWithDefaults))
+    .addPanel(createLatencyPanel(argsWithDefaults))
+    .addPanel(createLatencyPercentilePanel(argsWithDefaults))
+    .addPanel(createLatencyPercentagePanel(argsWithDefaults))
+    .addPanel(createLatencyBurnRatePanel(argsWithDefaults))
     .build();
 }
