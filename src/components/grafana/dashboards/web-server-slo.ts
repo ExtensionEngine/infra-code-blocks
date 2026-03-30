@@ -1,4 +1,3 @@
-import * as pulumi from '@pulumi/pulumi';
 import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
 import { GrafanaDashboard } from './types';
 import { DashboardBuilder } from './builder';
@@ -26,8 +25,10 @@ const defaults = {
   targetLatency: 250,
 };
 
+// TODO: rename to prometheusNamespace
 export function createWebServerSloDashboard(config: {
-  title: pulumi.Input<string>;
+  name: string;
+  title: string;
   namespace: string;
   filter: string;
   target?: number;
@@ -36,7 +37,7 @@ export function createWebServerSloDashboard(config: {
   targetLatency?: number;
 }): GrafanaDashboard.DashboardConfig {
   const argsWithDefaults = mergeWithDefaults(defaults, config);
-  return new DashboardBuilder({ title: argsWithDefaults.title })
+  return new DashboardBuilder(config.name, argsWithDefaults.title)
     .addPanel(conns => createAvailabilityPanel(conns, argsWithDefaults))
     .addPanel(conns => createAvailabilityBurnRatePanel(conns, argsWithDefaults))
     .addPanel(conns => createSuccessRatePanel(conns, argsWithDefaults))

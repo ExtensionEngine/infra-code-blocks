@@ -34,15 +34,8 @@ export class Grafana extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    this.dashboards = args.dashboardBuilders.map((build, i) => {
-      return build.createResource(
-        `${name}-dashboard-${i}`,
-        this.connections,
-        folder,
-        {
-          parent: folder,
-        },
-      );
+    this.dashboards = args.dashboardBuilders.map(build => {
+      return build.createResource(this.connections, folder, { parent: folder });
     });
 
     this.registerOutputs();

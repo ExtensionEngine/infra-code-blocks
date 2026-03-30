@@ -4,11 +4,13 @@ import { GrafanaDashboard } from './types';
 import { PanelBuilder } from '../panels/types';
 
 export class DashboardBuilder {
-  private title: pulumi.Input<string>;
+  private readonly name: string;
+  private readonly title: string;
   private readonly panelBuilders: PanelBuilder[] = [];
 
-  constructor(args: { title: pulumi.Input<string> }) {
-    this.title = args.title;
+  constructor(name: string, title: string) {
+    this.name = name;
+    this.title = title;
   }
 
   addPanel(builder: PanelBuilder): this {
@@ -24,10 +26,10 @@ export class DashboardBuilder {
       );
     }
 
-    const { title, panelBuilders } = this;
+    const { name, title, panelBuilders } = this;
 
     return {
-      createResource(name, connections, folder, opts) {
+      createResource(connections, folder, opts) {
         const panels = panelBuilders.map(build => build(connections));
         return new grafana.oss.Dashboard(
           name,

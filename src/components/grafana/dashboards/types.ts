@@ -4,12 +4,11 @@ import { GrafanaConnection } from '../connections';
 
 export namespace GrafanaDashboard {
   export type Args = {
-    title: pulumi.Input<string>;
+    title: string;
   };
 
   export interface DashboardConfig {
     createResource(
-      name: string,
       connections: GrafanaConnection[],
       folder?: grafana.oss.Folder,
       opts?: pulumi.ComponentResourceOptions,
