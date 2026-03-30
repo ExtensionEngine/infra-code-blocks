@@ -1,6 +1,5 @@
 import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
-import { GrafanaDashboard } from './types';
-import { DashboardBuilder } from './builder';
+import { GrafanaDashboardBuilder } from './builder';
 import { queries as promQ } from '../../prometheus';
 import {
   createAvailabilityPanel,
@@ -35,9 +34,9 @@ export function createWebServerSloDashboard(config: {
   window?: promQ.TimeRange;
   shortWindow?: promQ.TimeRange;
   targetLatency?: number;
-}): GrafanaDashboard.DashboardConfig {
+}): GrafanaDashboardBuilder.Dashboard {
   const argsWithDefaults = mergeWithDefaults(defaults, config);
-  return new DashboardBuilder(config.name, argsWithDefaults.title)
+  return new GrafanaDashboardBuilder(config.name, argsWithDefaults.title)
     .addPanel(conns => createAvailabilityPanel(conns, argsWithDefaults))
     .addPanel(conns => createAvailabilityBurnRatePanel(conns, argsWithDefaults))
     .addPanel(conns => createSuccessRatePanel(conns, argsWithDefaults))

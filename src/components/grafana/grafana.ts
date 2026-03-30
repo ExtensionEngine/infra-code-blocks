@@ -1,12 +1,12 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
-import { GrafanaDashboard } from './dashboards/types';
+import type { GrafanaDashboardBuilder } from './dashboards/builder';
 import { GrafanaConnection } from './connections';
 
 export namespace Grafana {
   export type Args = {
-    connectionBuilders: GrafanaConnection.ConnectionBuilder[];
-    dashboardBuilders: GrafanaDashboard.DashboardConfig[];
+    connectionBuilders: GrafanaConnection.Builder[];
+    dashboardBuilders: GrafanaDashboardBuilder.Dashboard[];
   };
 }
 
@@ -29,13 +29,13 @@ export class Grafana extends pulumi.ComponentResource {
     });
 
     const folder = new grafana.oss.Folder(
-      `${name}-folder`,
+      name,
       { title: name },
       { parent: this },
     );
 
     this.dashboards = args.dashboardBuilders.map(build => {
-      return build.createResource(this.connections, folder, { parent: folder });
+      return build(this.connections, folder, { parent: folder });
     });
 
     this.registerOutputs();

@@ -6,13 +6,12 @@ import {
   XRayConnection,
 } from './connections';
 import { Grafana } from './grafana';
-import { GrafanaDashboard } from './dashboards/types';
+import type { GrafanaDashboardBuilder } from './dashboards/builder';
 
 export class GrafanaBuilder {
   private readonly name: string;
-  private readonly connectionBuilders: GrafanaConnection.ConnectionBuilder[] =
-    [];
-  private readonly dashboards: GrafanaDashboard.DashboardConfig[] = [];
+  private readonly connectionBuilders: GrafanaConnection.Builder[] = [];
+  private readonly dashboardBuilders: GrafanaDashboardBuilder.Dashboard[] = [];
 
   constructor(name: string) {
     this.name = name;
@@ -41,14 +40,14 @@ export class GrafanaBuilder {
     return this;
   }
 
-  public addConnection(builder: GrafanaConnection.ConnectionBuilder): this {
+  public addConnection(builder: GrafanaConnection.Builder): this {
     this.connectionBuilders.push(builder);
 
     return this;
   }
 
-  public addDashboard(dashboard: GrafanaDashboard.DashboardConfig): this {
-    this.dashboards.push(dashboard);
+  public addDashboard(dashboard: GrafanaDashboardBuilder.Dashboard): this {
+    this.dashboardBuilders.push(dashboard);
 
     return this;
   }
@@ -60,7 +59,7 @@ export class GrafanaBuilder {
       );
     }
 
-    if (!this.dashboards.length) {
+    if (!this.dashboardBuilders.length) {
       throw new Error(
         'At least one dashboard is required. Call addDashboard() to add a dashboard.',
       );
@@ -70,7 +69,7 @@ export class GrafanaBuilder {
       this.name,
       {
         connectionBuilders: this.connectionBuilders,
-        dashboardBuilders: this.dashboards,
+        dashboardBuilders: this.dashboardBuilders,
       },
       opts,
     );
