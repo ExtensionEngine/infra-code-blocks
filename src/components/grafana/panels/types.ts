@@ -3,7 +3,7 @@ import { GrafanaConnection } from '../connections';
 
 export type Panel = {
   title: string;
-  gridPos: PanelPosition;
+  gridPos: Panel.Position;
   type: string;
   datasource: pulumi.Input<string>;
   targets: {
@@ -41,12 +41,14 @@ export type Panel = {
   };
 };
 
-export type PanelPosition = {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-};
+export namespace Panel {
+  export type Position = {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+}
 
 export type Threshold = {
   value: number | null;

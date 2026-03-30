@@ -1,6 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import { GrafanaConnection } from '../connections';
-import { Panel, PanelPosition, Metric } from './types';
+import { Panel, Metric } from './types';
 
 const percentageFieldConfig = {
   unit: 'percent',
@@ -10,7 +10,7 @@ const percentageFieldConfig = {
 
 export function createStatPercentagePanel(
   title: string,
-  position: PanelPosition,
+  position: Panel.Position,
   dataSource: pulumi.Input<string>,
   metric: Metric,
 ): Panel {
@@ -43,7 +43,7 @@ export function createStatPercentagePanel(
 
 export function createTimeSeriesPercentagePanel(
   title: string,
-  position: PanelPosition,
+  position: Panel.Position,
   dataSource: pulumi.Input<string>,
   metric: Metric,
 ): Panel {
@@ -60,7 +60,7 @@ export function createTimeSeriesPercentagePanel(
 
 export function createTimeSeriesPanel(
   title: string,
-  position: PanelPosition,
+  position: Panel.Position,
   dataSource: pulumi.Input<string>,
   metric: Metric,
   unit?: string,
@@ -98,7 +98,7 @@ export function createTimeSeriesPanel(
 
 export function createBurnRatePanel(
   title: string,
-  position: PanelPosition,
+  position: Panel.Position,
   dataSource: pulumi.Input<string>,
   metric: Metric,
 ): Panel {
