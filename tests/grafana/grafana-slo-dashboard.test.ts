@@ -1,5 +1,6 @@
 import { it } from 'node:test';
 import * as assert from 'node:assert';
+import * as studion from '@studion/infra-code-blocks';
 import {
   GetRoleCommand,
   GetRolePolicyCommand,
@@ -16,7 +17,9 @@ const backOffConfig = { numOfAttempts: 15 };
 export function testGrafanaSloDashboard(ctx: GrafanaTestContext) {
   it('should have created the Prometheus data source', async () => {
     const grafana = ctx.outputs!.grafanaSloComponent;
-    const prometheusDataSource = grafana.prometheusDataSource!;
+    const prometheusDataSource = (
+      grafana.connections[0] as studion.grafana.AMPConnection
+    ).dataSource;
     const prometheusDataSourceName =
       prometheusDataSource.name as unknown as Unwrap<
         typeof prometheusDataSource.name
@@ -83,7 +86,6 @@ export function testGrafanaSloDashboard(ctx: GrafanaTestContext) {
         'Latency Burn Rate',
         '99th Percentile Latency',
         'Request percentage below 250ms',
-        'Custom Panel',
       ];
       assert.deepStrictEqual(
         panelTitles,
@@ -96,8 +98,10 @@ export function testGrafanaSloDashboard(ctx: GrafanaTestContext) {
   it('should display metrics data in the dashboard', async () => {
     await requestEndpointWithExpectedStatus(ctx, ctx.config.usersPath, 200);
 
-    const prometheusDataSource =
-      ctx.outputs!.grafanaSloComponent.prometheusDataSource!;
+    const prometheusDataSource = (
+      ctx.outputs!.grafanaSloComponent
+        .connections[0] as studion.grafana.AMPConnection
+    ).dataSource;
     const prometheusDataSourceName =
       prometheusDataSource.name as unknown as Unwrap<
         typeof prometheusDataSource.name
@@ -145,7 +149,7 @@ export function testGrafanaSloDashboard(ctx: GrafanaTestContext) {
   });
 
   it('should have created the IAM role with AMP inline policy', async () => {
-    const iamRole = ctx.outputs!.grafanaSloComponent.grafanaIamRole;
+    const iamRole = ctx.outputs!.grafanaSloComponent.connections[0].role;
     const grafanaAmpRoleArn = iamRole.arn as unknown as Unwrap<
       typeof iamRole.arn
     >;

@@ -72,25 +72,20 @@ const webServer = new studion.WebServerBuilder(appName)
   .build({ parent });
 
 const grafanaSloDashboard =
-  new studion.grafana.dashboard.WebServerSloDashboardBuilder(
-    `${appName}-slo-dashboard`,
-    { title: 'ICB Grafana Test SLO' },
-  )
-    .withAvailability(0.99, '1d', prometheusNamespace)
-    .withSuccessRate(0.95, '1d', '1h', apiFilter, prometheusNamespace)
-    .withLatency(0.95, 250, '1d', '1h', apiFilter, prometheusNamespace)
-    .addPanel(dataSource => ({
-      title: 'Custom Panel',
-      type: 'timeseries',
-      gridPos: { x: 12, y: 24, w: 12, h: 8 },
-      datasource: dataSource.prometheus!,
-      targets: [{ expr: 'up', legendFormat: 'Up' }],
-      fieldConfig: { defaults: {} },
-    }))
-    .build();
+  studion.grafana.dashboard.createWebServerSloDashboard({
+    name: `${appName}-slo-dashboard`,
+    title: 'ICB Grafana Test SLO',
+    ampNamespace: prometheusNamespace,
+    filter: apiFilter,
+    target: 0.99,
+    window: '1d',
+    shortWindow: '1h',
+    targetLatency: 250,
+  });
 
 const grafanaSloComponent = new studion.grafana.GrafanaBuilder(`${appName}-slo`)
-  .withPrometheus({
+  .addAmp(`${appName}-slo-amp`, {
+    awsAccountId: '008923505280',
     endpoint: prometheusWorkspace.prometheusEndpoint,
     region: aws.config.requireRegion(),
   })
