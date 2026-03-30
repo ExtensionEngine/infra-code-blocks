@@ -55,7 +55,7 @@ export class GrafanaBuilder {
   public build(opts: pulumi.ComponentResourceOptions = {}): Grafana {
     if (!this.connectionBuilders.length) {
       throw new Error(
-        'At least one connection is required. Call addConnection()  to add custom connection or use one of existing connection builders.',
+        'At least one connection is required. Call addConnection() to add custom connection or use one of existing connection builders.',
       );
     }
 
