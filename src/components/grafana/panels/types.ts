@@ -50,15 +50,15 @@ export namespace Panel {
   };
 }
 
-export type Threshold = {
-  value: number | null;
-  color: string;
-};
-
 export type Metric = {
   label: string;
   query: string;
   thresholds: Threshold[];
+};
+
+export type Threshold = {
+  value: number | null;
+  color: string;
 };
 
 export type PanelBuilder = (connections: GrafanaConnection[]) => Panel;

@@ -141,10 +141,10 @@ export function createBurnRatePanel(
 
 export function requireConnection<T extends GrafanaConnection>(
   connections: GrafanaConnection[],
-  ConnectionType: new (...args: any[]) => T,
+  connectionType: new (...args: any[]) => T,
 ): T {
-  const conn = connections.find(c => c instanceof ConnectionType);
-  if (!conn)
-    throw new Error(`Required connection ${ConnectionType.name} not found`);
-  return conn as T;
+  const connection = connections.find(c => c instanceof connectionType);
+  if (!connection)
+    throw new Error(`Required connection ${connectionType.name} not found`);
+  return connection as T;
 }
