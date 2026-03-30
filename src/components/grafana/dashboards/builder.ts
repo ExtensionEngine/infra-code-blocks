@@ -1,12 +1,11 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
-import { GrafanaConnection } from '../connections';
 import { GrafanaDashboard } from './types';
-import { Panel, PanelBuilder } from '../panels/types';
+import { PanelBuilder } from '../panels/types';
 
 export class DashboardBuilder {
   private title: pulumi.Input<string>;
-  private panelBuilders: PanelBuilder[] = [];
+  private readonly panelBuilders: PanelBuilder[] = [];
 
   constructor(args: { title: pulumi.Input<string> }) {
     this.title = args.title;
@@ -14,15 +13,22 @@ export class DashboardBuilder {
 
   addPanel(builder: PanelBuilder): this {
     this.panelBuilders.push(builder);
+
     return this;
   }
 
-  build(connections: GrafanaConnection[]): GrafanaDashboard.DashboardConfig {
+  build(): GrafanaDashboard.DashboardConfig {
+    if (!this.panelBuilders.length) {
+      throw new Error(
+        'At least one panel is required. Call addPanel() to add a panel.',
+      );
+    }
+
     const { title, panelBuilders } = this;
-    const panels = panelBuilders.map(build => build(connections));
 
     return {
-      createResource(name, folder, opts) {
+      createResource(name, connections, folder, opts) {
+        const panels = panelBuilders.map(build => build(connections));
         return new grafana.oss.Dashboard(
           name,
           {

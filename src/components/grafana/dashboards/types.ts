@@ -10,12 +10,9 @@ export namespace GrafanaDashboard {
   export interface DashboardConfig {
     createResource(
       name: string,
+      connections: GrafanaConnection[],
       folder?: grafana.oss.Folder,
       opts?: pulumi.ComponentResourceOptions,
     ): grafana.oss.Dashboard;
   }
-
-  export type DashboardBuilder = (
-    connections: GrafanaConnection[],
-  ) => DashboardConfig;
 }

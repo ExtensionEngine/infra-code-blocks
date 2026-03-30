@@ -6,7 +6,7 @@ import { GrafanaConnection } from './connections';
 export namespace Grafana {
   export type Args = {
     connectionBuilders: GrafanaConnection.ConnectionBuilder[];
-    dashboardBuilders?: GrafanaDashboard.DashboardBuilder[];
+    dashboardBuilders: GrafanaDashboard.DashboardConfig[];
   };
 }
 
@@ -24,9 +24,9 @@ export class Grafana extends pulumi.ComponentResource {
 
     this.name = name;
 
-    this.connections = args.connectionBuilders.map(build =>
-      build({ parent: this }),
-    );
+    this.connections = args.connectionBuilders.map(build => {
+      return build({ parent: this });
+    });
 
     const folder = new grafana.oss.Folder(
       `${name}-folder`,
@@ -34,15 +34,16 @@ export class Grafana extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    const dashboardConfigs = (args.dashboardBuilders ?? []).map(factory =>
-      factory(this.connections),
-    );
-
-    this.dashboards = dashboardConfigs.map((config, i) =>
-      config.createResource(`${name}-dashboard-${i}`, folder, {
-        parent: folder,
-      }),
-    );
+    this.dashboards = args.dashboardBuilders.map((build, i) => {
+      return build.createResource(
+        `${name}-dashboard-${i}`,
+        this.connections,
+        folder,
+        {
+          parent: folder,
+        },
+      );
+    });
 
     this.registerOutputs();
   }

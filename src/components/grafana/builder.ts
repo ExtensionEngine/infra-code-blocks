@@ -12,7 +12,7 @@ export class GrafanaBuilder {
   private readonly name: string;
   private readonly connectionBuilders: GrafanaConnection.ConnectionBuilder[] =
     [];
-  private readonly dashboardBuilders: GrafanaDashboard.DashboardBuilder[] = [];
+  private readonly dashboards: GrafanaDashboard.DashboardConfig[] = [];
 
   constructor(name: string) {
     this.name = name;
@@ -47,8 +47,8 @@ export class GrafanaBuilder {
     return this;
   }
 
-  public addDashboard(builder: GrafanaDashboard.DashboardBuilder): this {
-    this.dashboardBuilders.push(builder);
+  public addDashboard(dashboard: GrafanaDashboard.DashboardConfig): this {
+    this.dashboards.push(dashboard);
 
     return this;
   }
@@ -60,11 +60,17 @@ export class GrafanaBuilder {
       );
     }
 
+    if (!this.dashboards.length) {
+      throw new Error(
+        'At least one dashboard is required. Call addDashboard() to add a dashboard.',
+      );
+    }
+
     return new Grafana(
       this.name,
       {
         connectionBuilders: this.connectionBuilders,
-        dashboardBuilders: this.dashboardBuilders,
+        dashboardBuilders: this.dashboards,
       },
       opts,
     );

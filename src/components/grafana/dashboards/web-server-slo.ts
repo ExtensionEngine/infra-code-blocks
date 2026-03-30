@@ -1,8 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
-import { GrafanaConnection } from '../connections';
 import { GrafanaDashboard } from './types';
-import { DashboardBuilder } from './dashboard-builder';
+import { DashboardBuilder } from './builder';
 import { queries as promQ } from '../../prometheus';
 import {
   createAvailabilityPanel,
@@ -27,18 +26,15 @@ const defaults = {
   targetLatency: 250,
 };
 
-export function createWebServerSloDashboard(
-  connections: GrafanaConnection[],
-  config: {
-    title: pulumi.Input<string>;
-    namespace: string;
-    filter: string;
-    target?: number;
-    window?: promQ.TimeRange;
-    shortWindow?: promQ.TimeRange;
-    targetLatency?: number;
-  },
-): GrafanaDashboard.DashboardConfig {
+export function createWebServerSloDashboard(config: {
+  title: pulumi.Input<string>;
+  namespace: string;
+  filter: string;
+  target?: number;
+  window?: promQ.TimeRange;
+  shortWindow?: promQ.TimeRange;
+  targetLatency?: number;
+}): GrafanaDashboard.DashboardConfig {
   const argsWithDefaults = mergeWithDefaults(defaults, config);
   return new DashboardBuilder({ title: argsWithDefaults.title })
     .addPanel(conns => createAvailabilityPanel(conns, argsWithDefaults))
@@ -52,5 +48,5 @@ export function createWebServerSloDashboard(
     .addPanel(conns => createLatencyPercentilePanel(conns, argsWithDefaults))
     .addPanel(conns => createLatencyPercentagePanel(conns, argsWithDefaults))
     .addPanel(conns => createLatencyBurnRatePanel(conns, argsWithDefaults))
-    .build(connections);
+    .build();
 }
