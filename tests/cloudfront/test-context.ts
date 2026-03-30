@@ -48,7 +48,6 @@ export interface ProgramOutput {
 }
 
 export interface CloudFrontTestContext
-  extends
-    ConfigContext<Config>,
+  extends ConfigContext<Config>,
     AwsContext<AwsClients>,
     PulumiProgramContext<ProgramOutput> {}
