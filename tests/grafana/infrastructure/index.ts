@@ -71,25 +71,26 @@ const webServer = new studion.WebServerBuilder(appName)
   .withOtelCollector(otelCollector)
   .build({ parent });
 
-const grafanaSloDashboard =
-  studion.grafana.dashboard.createWebServerSloDashboard({
-    name: `${appName}-slo-dashboard`,
-    title: 'ICB Grafana Test SLO',
-    ampNamespace: prometheusNamespace,
-    filter: apiFilter,
-    target: 0.99,
-    window: '1d',
-    shortWindow: '1h',
-    targetLatency: 250,
-  });
+const ampDataSourceName = `${appName}-slo-amp-datasource`;
 
 const grafanaSloComponent = new studion.grafana.GrafanaBuilder(`${appName}-slo`)
   .addAmp(`${appName}-slo-amp`, {
     awsAccountId: '008923505280',
     endpoint: prometheusWorkspace.prometheusEndpoint,
     region: aws.config.requireRegion(),
+    dataSourceName: ampDataSourceName,
   })
-  .addDashboard(grafanaSloDashboard)
+  .addSloDashboard({
+    name: `${appName}-slo-dashboard`,
+    title: 'ICB Grafana Test SLO',
+    ampNamespace: prometheusNamespace,
+    filter: apiFilter,
+    dataSourceName: ampDataSourceName,
+    target: 0.99,
+    window: '1d',
+    shortWindow: '1h',
+    targetLatency: 250,
+  })
   .build({ parent });
 
 export { webServer, prometheusWorkspace, grafanaSloComponent };
