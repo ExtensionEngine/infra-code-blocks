@@ -12,19 +12,21 @@ export namespace AMPConnection {
     endpoint: pulumi.Input<string>;
     region?: string;
     pluginVersion?: string;
+    installPlugin?: boolean;
   };
 }
 
 const defaults = {
-  pluginVersion: 'latest',
   region: awsConfig.require('region'),
+  pluginVersion: 'latest',
+  installPlugin: true,
 };
 
 export class AMPConnection extends GrafanaConnection {
   public readonly name: string;
   public readonly dataSource: grafana.oss.DataSource;
-  public readonly plugin: grafana.cloud.PluginInstallation;
   public readonly rolePolicy: aws.iam.RolePolicy;
+  public readonly plugin?: grafana.cloud.PluginInstallation;
 
   constructor(
     name: string,
@@ -38,7 +40,11 @@ export class AMPConnection extends GrafanaConnection {
     this.name = name;
 
     this.rolePolicy = this.createRolePolicy();
-    this.plugin = this.createPlugin(argsWithDefaults.pluginVersion);
+
+    if (argsWithDefaults.installPlugin) {
+      this.plugin = this.createPlugin(argsWithDefaults.pluginVersion);
+    }
+
     this.dataSource = this.createDataSource(
       argsWithDefaults.region,
       argsWithDefaults.endpoint,
@@ -106,7 +112,7 @@ export class AMPConnection extends GrafanaConnection {
           sigV4AssumeRoleArn: this.role.arn,
         }),
       },
-      { dependsOn: [this.plugin], parent: this },
+      { dependsOn: this.plugin ? [this.plugin] : [], parent: this },
     );
   }
 }
