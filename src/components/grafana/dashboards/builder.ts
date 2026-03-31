@@ -55,7 +55,7 @@ export class GrafanaDashboardBuilder {
 
     return (folder, opts) => {
       return new grafana.oss.Dashboard(
-        name,
+        `${name}-dashboard`,
         {
           folder: folder?.uid,
           configJson: pulumi.jsonStringify({

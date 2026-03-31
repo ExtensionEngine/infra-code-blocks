@@ -7,10 +7,7 @@ import {
 } from './connections';
 import { Grafana } from './grafana';
 import type { GrafanaDashboardBuilder } from './dashboards/builder';
-import {
-  createWebServerSloDashboard,
-  WebServerSloDashboard,
-} from './dashboards/web-server-slo';
+import { createSloDashboard, SloDashboard } from './dashboards/slo';
 
 export class GrafanaBuilder {
   private readonly name: string;
@@ -59,8 +56,8 @@ export class GrafanaBuilder {
     return this;
   }
 
-  public addSloDashboard(config: WebServerSloDashboard.Args): this {
-    this.dashboardBuilders.push(createWebServerSloDashboard(config));
+  public addSloDashboard(config: SloDashboard.Args): this {
+    this.dashboardBuilders.push(createSloDashboard(config));
 
     return this;
   }
@@ -76,13 +73,13 @@ export class GrafanaBuilder {
   public build(opts: pulumi.ComponentResourceOptions = {}): Grafana {
     if (!this.connectionBuilders.length) {
       throw new Error(
-        'At least one connection is required. Call addConnection() to add custom connection or use one of existing connection builders.',
+        'At least one connection is required. Call addConnection() to add a custom connection or use one of the existing connection builders.',
       );
     }
 
     if (!this.dashboardBuilders.length) {
       throw new Error(
-        'At least one dashboard is required. Call addDashboard() to add a dashboard.',
+        'At least one dashboard is required. Call addDashboard() to add a custom dashboard or use one of the existing dashboard builders.',
       );
     }
 

@@ -1,4 +1,3 @@
-import * as pulumi from '@pulumi/pulumi';
 import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
 import { GrafanaDashboardBuilder } from './builder';
 import { queries as promQ } from '../../prometheus';
@@ -18,13 +17,13 @@ import {
   createLatencyBurnRatePanel,
 } from '../panels/latency';
 
-export namespace WebServerSloDashboard {
+export namespace SloDashboard {
   export type Args = {
     name: string;
     title: string;
     ampNamespace: string;
     filter: string;
-    dataSourceName: pulumi.Input<string>;
+    dataSourceName: string;
     target?: number;
     window?: promQ.TimeRange;
     shortWindow?: promQ.TimeRange;
@@ -39,8 +38,8 @@ const defaults = {
   targetLatency: 250,
 };
 
-export function createWebServerSloDashboard(
-  config: WebServerSloDashboard.Args,
+export function createSloDashboard(
+  config: SloDashboard.Args,
 ): GrafanaDashboardBuilder.CreateDashboard {
   const argsWithDefaults = mergeWithDefaults(defaults, config);
   return new GrafanaDashboardBuilder(config.name, argsWithDefaults.title)

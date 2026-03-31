@@ -1,4 +1,3 @@
-import * as pulumi from '@pulumi/pulumi';
 import { queries as promQ } from '../../prometheus';
 import { Panel } from './types';
 import {
@@ -12,7 +11,7 @@ export function createSuccessRatePanel(config: {
   window: promQ.TimeRange;
   filter: string;
   ampNamespace: string;
-  dataSourceName: pulumi.Input<string>;
+  dataSourceName: string;
 }): Panel {
   return createStatPercentagePanel(
     'Success Rate',
@@ -34,7 +33,7 @@ export function createSuccessRateTimeSeriesPanel(config: {
   shortWindow: promQ.TimeRange;
   filter: string;
   ampNamespace: string;
-  dataSourceName: pulumi.Input<string>;
+  dataSourceName: string;
 }): Panel {
   return createTimeSeriesPercentagePanel(
     'HTTP Request Success Rate',
@@ -56,7 +55,7 @@ export function createSuccessRateBurnRatePanel(config: {
   target: number;
   filter: string;
   ampNamespace: string;
-  dataSourceName: pulumi.Input<string>;
+  dataSourceName: string;
 }): Panel {
   return createBurnRatePanel(
     'Success Rate Burn Rate',
