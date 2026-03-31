@@ -1,4 +1,3 @@
-import * as pulumi from '@pulumi/pulumi';
 import { queries as promQ } from '../../prometheus';
 import { Panel } from './types';
 import {
@@ -14,7 +13,7 @@ export function createLatencyPanel(config: {
   targetLatency: number;
   filter: string;
   ampNamespace: string;
-  dataSourceName: pulumi.Input<string>;
+  dataSourceName: string;
 }): Panel {
   return createStatPercentagePanel(
     'Request % below 250ms',
@@ -38,7 +37,7 @@ export function createLatencyPercentilePanel(config: {
   shortWindow: promQ.TimeRange;
   filter: string;
   ampNamespace: string;
-  dataSourceName: pulumi.Input<string>;
+  dataSourceName: string;
 }): Panel {
   return createTimeSeriesPanel(
     '99th Percentile Latency',
@@ -63,7 +62,7 @@ export function createLatencyPercentagePanel(config: {
   shortWindow: promQ.TimeRange;
   filter: string;
   ampNamespace: string;
-  dataSourceName: pulumi.Input<string>;
+  dataSourceName: string;
 }): Panel {
   return createTimeSeriesPercentagePanel(
     'Request percentage below 250ms',
@@ -86,7 +85,7 @@ export function createLatencyBurnRatePanel(config: {
   target: number;
   targetLatency: number;
   ampNamespace: string;
-  dataSourceName: pulumi.Input<string>;
+  dataSourceName: string;
 }): Panel {
   return createBurnRatePanel(
     'Latency Burn Rate',

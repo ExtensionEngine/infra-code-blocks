@@ -1,10 +1,8 @@
-import * as pulumi from '@pulumi/pulumi';
-
 export type Panel = {
   title: string;
   gridPos: Panel.Position;
   type: string;
-  datasource: pulumi.Input<string>;
+  datasource: string;
   targets: {
     expr: string;
     legendFormat: string;

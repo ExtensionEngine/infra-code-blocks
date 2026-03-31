@@ -1,4 +1,3 @@
-import * as pulumi from '@pulumi/pulumi';
 import { Panel, Metric } from './types';
 
 const percentageFieldConfig = {
@@ -10,7 +9,7 @@ const percentageFieldConfig = {
 export function createStatPercentagePanel(
   title: string,
   position: Panel.Position,
-  dataSource: pulumi.Input<string>,
+  dataSource: string,
   metric: Metric,
 ): Panel {
   return {
@@ -43,7 +42,7 @@ export function createStatPercentagePanel(
 export function createTimeSeriesPercentagePanel(
   title: string,
   position: Panel.Position,
-  dataSource: pulumi.Input<string>,
+  dataSource: string,
   metric: Metric,
 ): Panel {
   return createTimeSeriesPanel(
@@ -60,7 +59,7 @@ export function createTimeSeriesPercentagePanel(
 export function createTimeSeriesPanel(
   title: string,
   position: Panel.Position,
-  dataSource: pulumi.Input<string>,
+  dataSource: string,
   metric: Metric,
   unit?: string,
   min?: number,
@@ -98,7 +97,7 @@ export function createTimeSeriesPanel(
 export function createBurnRatePanel(
   title: string,
   position: Panel.Position,
-  dataSource: pulumi.Input<string>,
+  dataSource: string,
   metric: Metric,
 ): Panel {
   return {
