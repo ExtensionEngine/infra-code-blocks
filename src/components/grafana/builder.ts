@@ -10,8 +10,10 @@ import type { GrafanaDashboardBuilder } from './dashboards/builder';
 
 export class GrafanaBuilder {
   private readonly name: string;
-  private readonly connectionBuilders: GrafanaConnection.Builder[] = [];
-  private readonly dashboardBuilders: GrafanaDashboardBuilder.Dashboard[] = [];
+  private readonly connectionBuilders: GrafanaConnection.CreateConnection[] =
+    [];
+  private readonly dashboardBuilders: GrafanaDashboardBuilder.CreateDashboard[] =
+    [];
 
   constructor(name: string) {
     this.name = name;
@@ -40,13 +42,15 @@ export class GrafanaBuilder {
     return this;
   }
 
-  public addConnection(builder: GrafanaConnection.Builder): this {
+  public addConnection(builder: GrafanaConnection.CreateConnection): this {
     this.connectionBuilders.push(builder);
 
     return this;
   }
 
-  public addDashboard(dashboard: GrafanaDashboardBuilder.Dashboard): this {
+  public addDashboard(
+    dashboard: GrafanaDashboardBuilder.CreateDashboard,
+  ): this {
     this.dashboardBuilders.push(dashboard);
 
     return this;

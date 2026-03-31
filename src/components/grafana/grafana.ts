@@ -5,8 +5,8 @@ import { GrafanaConnection } from './connections';
 
 export namespace Grafana {
   export type Args = {
-    connectionBuilders: GrafanaConnection.Builder[];
-    dashboardBuilders: GrafanaDashboardBuilder.Dashboard[];
+    connectionBuilders: GrafanaConnection.CreateConnection[];
+    dashboardBuilders: GrafanaDashboardBuilder.CreateDashboard[];
   };
 }
 

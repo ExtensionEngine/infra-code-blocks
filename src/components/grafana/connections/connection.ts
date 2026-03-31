@@ -10,7 +10,7 @@ export namespace GrafanaConnection {
     awsAccountId: string;
   };
 
-  export type Builder = (
+  export type CreateConnection = (
     opts: pulumi.ComponentResourceOptions,
   ) => GrafanaConnection;
 }

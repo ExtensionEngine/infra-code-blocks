@@ -33,7 +33,7 @@ export function createWebServerSloDashboard(config: {
   window?: promQ.TimeRange;
   shortWindow?: promQ.TimeRange;
   targetLatency?: number;
-}): GrafanaDashboardBuilder.Dashboard {
+}): GrafanaDashboardBuilder.CreateDashboard {
   const argsWithDefaults = mergeWithDefaults(defaults, config);
   return new GrafanaDashboardBuilder(config.name, argsWithDefaults.title)
     .addPanel(createAvailabilityPanel(argsWithDefaults))

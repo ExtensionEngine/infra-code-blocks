@@ -10,7 +10,7 @@ export namespace GrafanaDashboardBuilder {
     refresh?: string;
   };
 
-  export type Dashboard = (
+  export type CreateDashboard = (
     connections: GrafanaConnection[],
     folder?: grafana.oss.Folder,
     opts?: pulumi.ComponentResourceOptions,
@@ -45,7 +45,7 @@ export class GrafanaDashboardBuilder {
     return this;
   }
 
-  build(): GrafanaDashboardBuilder.Dashboard {
+  build(): GrafanaDashboardBuilder.CreateDashboard {
     if (!this.panelBuilders.length) {
       throw new Error(
         'At least one panel is required. Call addPanel() to add a panel.',
