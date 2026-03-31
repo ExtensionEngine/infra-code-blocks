@@ -11,19 +11,21 @@ export namespace XRayConnection {
   export type Args = GrafanaConnection.Args & {
     region?: string;
     pluginVersion?: string;
+    installPlugin?: boolean;
   };
 }
 
 const defaults = {
-  pluginVersion: 'latest',
   region: awsConfig.require('region'),
+  pluginVersion: 'latest',
+  installPlugin: true,
 };
 
 export class XRayConnection extends GrafanaConnection {
   public readonly name: string;
   public readonly dataSource: grafana.oss.DataSource;
-  public readonly plugin: grafana.cloud.PluginInstallation;
   public readonly rolePolicy: aws.iam.RolePolicy;
+  public readonly plugin?: grafana.cloud.PluginInstallation;
 
   constructor(
     name: string,
@@ -37,7 +39,11 @@ export class XRayConnection extends GrafanaConnection {
     this.name = name;
 
     this.rolePolicy = this.createRolePolicy();
-    this.plugin = this.createPlugin(argsWithDefaults.pluginVersion);
+
+    if (argsWithDefaults.installPlugin) {
+      this.plugin = this.createPlugin(argsWithDefaults.pluginVersion);
+    }
+
     this.dataSource = this.createDataSource(argsWithDefaults.region);
 
     this.registerOutputs();
@@ -102,7 +108,7 @@ export class XRayConnection extends GrafanaConnection {
           defaultRegion: region,
         }),
       },
-      { dependsOn: [this.plugin], parent: this },
+      { dependsOn: this.plugin ? [this.plugin] : [], parent: this },
     );
   }
 }
