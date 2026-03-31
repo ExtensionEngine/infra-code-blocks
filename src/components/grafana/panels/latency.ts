@@ -1,12 +1,11 @@
+import * as pulumi from '@pulumi/pulumi';
 import { queries as promQ } from '../../prometheus';
-import { AMPConnection } from '../connections';
-import { PanelBuilder } from './types';
+import { Panel } from './types';
 import {
   createStatPercentagePanel,
   createTimeSeriesPanel,
   createTimeSeriesPercentagePanel,
   createBurnRatePanel,
-  requireConnection,
 } from './helpers';
 
 export function createLatencyPanel(config: {
@@ -15,25 +14,23 @@ export function createLatencyPanel(config: {
   targetLatency: number;
   filter: string;
   ampNamespace: string;
-}): PanelBuilder {
-  return connections => {
-    const ds = requireConnection(connections, AMPConnection).dataSource.name;
-    return createStatPercentagePanel(
-      'Request % below 250ms',
-      { x: 16, y: 0, w: 8, h: 8 },
-      ds,
-      {
-        label: 'Request % below 250ms',
-        query: promQ.getLatencyPercentageQuery(
-          config.ampNamespace,
-          config.window,
-          config.targetLatency,
-          config.filter,
-        ),
-        thresholds: [],
-      },
-    );
-  };
+  dataSourceName: pulumi.Input<string>;
+}): Panel {
+  return createStatPercentagePanel(
+    'Request % below 250ms',
+    { x: 16, y: 0, w: 8, h: 8 },
+    config.dataSourceName,
+    {
+      label: 'Request % below 250ms',
+      query: promQ.getLatencyPercentageQuery(
+        config.ampNamespace,
+        config.window,
+        config.targetLatency,
+        config.filter,
+      ),
+      thresholds: [],
+    },
+  );
 }
 
 export function createLatencyPercentilePanel(config: {
@@ -41,26 +38,24 @@ export function createLatencyPercentilePanel(config: {
   shortWindow: promQ.TimeRange;
   filter: string;
   ampNamespace: string;
-}): PanelBuilder {
-  return connections => {
-    const ds = requireConnection(connections, AMPConnection).dataSource.name;
-    return createTimeSeriesPanel(
-      '99th Percentile Latency',
-      { x: 12, y: 16, w: 12, h: 8 },
-      ds,
-      {
-        label: '99th Percentile Latency',
-        query: promQ.getPercentileLatencyQuery(
-          config.ampNamespace,
-          config.shortWindow,
-          config.target,
-          config.filter,
-        ),
-        thresholds: [],
-      },
-      'ms',
-    );
-  };
+  dataSourceName: pulumi.Input<string>;
+}): Panel {
+  return createTimeSeriesPanel(
+    '99th Percentile Latency',
+    { x: 12, y: 16, w: 12, h: 8 },
+    config.dataSourceName,
+    {
+      label: '99th Percentile Latency',
+      query: promQ.getPercentileLatencyQuery(
+        config.ampNamespace,
+        config.shortWindow,
+        config.target,
+        config.filter,
+      ),
+      thresholds: [],
+    },
+    'ms',
+  );
 }
 
 export function createLatencyPercentagePanel(config: {
@@ -68,50 +63,46 @@ export function createLatencyPercentagePanel(config: {
   shortWindow: promQ.TimeRange;
   filter: string;
   ampNamespace: string;
-}): PanelBuilder {
-  return connections => {
-    const ds = requireConnection(connections, AMPConnection).dataSource.name;
-    return createTimeSeriesPercentagePanel(
-      'Request percentage below 250ms',
-      { x: 0, y: 24, w: 12, h: 8 },
-      ds,
-      {
-        label: 'Request percentage below 250ms',
-        query: promQ.getLatencyPercentageQuery(
-          config.ampNamespace,
-          config.shortWindow,
-          config.targetLatency,
-          config.filter,
-        ),
-        thresholds: [],
-      },
-    );
-  };
+  dataSourceName: pulumi.Input<string>;
+}): Panel {
+  return createTimeSeriesPercentagePanel(
+    'Request percentage below 250ms',
+    { x: 0, y: 24, w: 12, h: 8 },
+    config.dataSourceName,
+    {
+      label: 'Request percentage below 250ms',
+      query: promQ.getLatencyPercentageQuery(
+        config.ampNamespace,
+        config.shortWindow,
+        config.targetLatency,
+        config.filter,
+      ),
+      thresholds: [],
+    },
+  );
 }
 
 export function createLatencyBurnRatePanel(config: {
   target: number;
   targetLatency: number;
   ampNamespace: string;
-}): PanelBuilder {
-  return connections => {
-    const ds = requireConnection(connections, AMPConnection).dataSource.name;
-    return createBurnRatePanel(
-      'Latency Burn Rate',
-      { x: 16, y: 8, w: 8, h: 4 },
-      ds,
-      {
-        label: 'Burn Rate',
-        query: promQ.getBurnRateQuery(
-          promQ.getLatencyRateQuery(
-            config.ampNamespace,
-            '1h',
-            config.targetLatency,
-          ),
-          config.target,
+  dataSourceName: pulumi.Input<string>;
+}): Panel {
+  return createBurnRatePanel(
+    'Latency Burn Rate',
+    { x: 16, y: 8, w: 8, h: 4 },
+    config.dataSourceName,
+    {
+      label: 'Burn Rate',
+      query: promQ.getBurnRateQuery(
+        promQ.getLatencyRateQuery(
+          config.ampNamespace,
+          '1h',
+          config.targetLatency,
         ),
-        thresholds: [],
-      },
-    );
-  };
+        config.target,
+      ),
+      thresholds: [],
+    },
+  );
 }

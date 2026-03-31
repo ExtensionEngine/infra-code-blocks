@@ -1,5 +1,4 @@
 import * as pulumi from '@pulumi/pulumi';
-import { GrafanaConnection } from '../connections';
 import { Panel, Metric } from './types';
 
 const percentageFieldConfig = {
@@ -137,14 +136,4 @@ export function createBurnRatePanel(
       },
     },
   };
-}
-
-export function requireConnection<T extends GrafanaConnection>(
-  connections: GrafanaConnection[],
-  connectionType: new (...args: any[]) => T,
-): T {
-  const connection = connections.find(c => c instanceof connectionType);
-  if (!connection)
-    throw new Error(`Required connection ${connectionType.name} not found`);
-  return connection as T;
 }

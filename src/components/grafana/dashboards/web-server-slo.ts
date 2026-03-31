@@ -1,3 +1,4 @@
+import * as pulumi from '@pulumi/pulumi';
 import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
 import { GrafanaDashboardBuilder } from './builder';
 import { queries as promQ } from '../../prometheus';
@@ -29,6 +30,7 @@ export function createWebServerSloDashboard(config: {
   title: string;
   ampNamespace: string;
   filter: string;
+  dataSourceName: pulumi.Input<string>;
   target?: number;
   window?: promQ.TimeRange;
   shortWindow?: promQ.TimeRange;

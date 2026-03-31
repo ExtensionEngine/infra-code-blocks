@@ -95,12 +95,10 @@ export class XRayConnection extends GrafanaConnection {
   }
 
   private createDataSource(region: string): grafana.oss.DataSource {
-    const dataSourceName = `${this.name}-x-ray-datasource`;
-
     return new grafana.oss.DataSource(
-      dataSourceName,
+      `${this.name}-x-ray-datasource`,
       {
-        name: dataSourceName,
+        name: this.dataSourceName,
         type: pluginName,
         jsonDataEncoded: pulumi.jsonStringify({
           authType: 'grafana_assume_role',

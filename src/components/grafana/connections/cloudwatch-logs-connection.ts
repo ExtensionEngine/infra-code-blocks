@@ -67,12 +67,10 @@ export class CloudWatchLogsConnection extends GrafanaConnection {
   }
 
   private createDataSource(region: string): grafana.oss.DataSource {
-    const dataSourceName = `${this.name}-cloudwatch-logs-datasource`;
-
     return new grafana.oss.DataSource(
-      dataSourceName,
+      `${this.name}-cloudwatch-logs-datasource`,
       {
-        name: dataSourceName,
+        name: this.dataSourceName,
         type: 'cloudwatch',
         jsonDataEncoded: pulumi.jsonStringify({
           authType: 'grafana_assume_role',

@@ -97,12 +97,10 @@ export class AMPConnection extends GrafanaConnection {
     region: string,
     endpoint: AMPConnection.Args['endpoint'],
   ): grafana.oss.DataSource {
-    const dataSourceName = `${this.name}-amp-datasource`;
-
     return new grafana.oss.DataSource(
-      dataSourceName,
+      `${this.name}-amp-datasource`,
       {
-        name: dataSourceName,
+        name: this.dataSourceName,
         type: pluginName,
         url: endpoint,
         jsonDataEncoded: pulumi.jsonStringify({
