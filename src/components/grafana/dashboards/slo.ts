@@ -17,7 +17,7 @@ import {
   createLatencyBurnRatePanel,
 } from '../panels/latency';
 
-export namespace WebServerSloDashboard {
+export namespace SloDashboard {
   export type Args = {
     name: string;
     title: string;
@@ -38,8 +38,8 @@ const defaults = {
   targetLatency: 250,
 };
 
-export function createWebServerSloDashboard(
-  config: WebServerSloDashboard.Args,
+export function createSloDashboard(
+  config: SloDashboard.Args,
 ): GrafanaDashboardBuilder.CreateDashboard {
   const argsWithDefaults = mergeWithDefaults(defaults, config);
   return new GrafanaDashboardBuilder(config.name, argsWithDefaults.title)
