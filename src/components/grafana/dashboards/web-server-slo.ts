@@ -18,6 +18,20 @@ import {
   createLatencyBurnRatePanel,
 } from '../panels/latency';
 
+export namespace WebServerSloDashboard {
+  export type Args = {
+    name: string;
+    title: string;
+    ampNamespace: string;
+    filter: string;
+    dataSourceName: pulumi.Input<string>;
+    target?: number;
+    window?: promQ.TimeRange;
+    shortWindow?: promQ.TimeRange;
+    targetLatency?: number;
+  };
+}
+
 const defaults = {
   target: 0.99,
   window: '30d',
@@ -25,17 +39,9 @@ const defaults = {
   targetLatency: 250,
 };
 
-export function createWebServerSloDashboard(config: {
-  name: string;
-  title: string;
-  ampNamespace: string;
-  filter: string;
-  dataSourceName: pulumi.Input<string>;
-  target?: number;
-  window?: promQ.TimeRange;
-  shortWindow?: promQ.TimeRange;
-  targetLatency?: number;
-}): GrafanaDashboardBuilder.CreateDashboard {
+export function createWebServerSloDashboard(
+  config: WebServerSloDashboard.Args,
+): GrafanaDashboardBuilder.CreateDashboard {
   const argsWithDefaults = mergeWithDefaults(defaults, config);
   return new GrafanaDashboardBuilder(config.name, argsWithDefaults.title)
     .addPanel(createAvailabilityPanel(argsWithDefaults))

@@ -7,6 +7,10 @@ import {
 } from './connections';
 import { Grafana } from './grafana';
 import type { GrafanaDashboardBuilder } from './dashboards/builder';
+import {
+  createWebServerSloDashboard,
+  WebServerSloDashboard,
+} from './dashboards/web-server-slo';
 
 export class GrafanaBuilder {
   private readonly name: string;
@@ -51,6 +55,12 @@ export class GrafanaBuilder {
 
   public addConnection(builder: GrafanaConnection.CreateConnection): this {
     this.connectionBuilders.push(builder);
+
+    return this;
+  }
+
+  public addSloDashboard(config: WebServerSloDashboard.Args): this {
+    this.dashboardBuilders.push(createWebServerSloDashboard(config));
 
     return this;
   }
