@@ -14,9 +14,16 @@ export class GrafanaBuilder {
     [];
   private readonly dashboardBuilders: GrafanaDashboardBuilder.CreateDashboard[] =
     [];
+  private folderName?: string;
 
   constructor(name: string) {
     this.name = name;
+  }
+
+  public withFolderName(folderName: string): this {
+    this.folderName = folderName;
+
+    return this;
   }
 
   public addAmp(name: string, args: AMPConnection.Args): this {
@@ -74,6 +81,7 @@ export class GrafanaBuilder {
       {
         connectionBuilders: this.connectionBuilders,
         dashboardBuilders: this.dashboardBuilders,
+        folderName: this.folderName,
       },
       opts,
     );
