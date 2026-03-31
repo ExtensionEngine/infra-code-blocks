@@ -1,5 +1,4 @@
 import * as pulumi from '@pulumi/pulumi';
-import { GrafanaConnection } from '../connections';
 
 export type Panel = {
   title: string;
@@ -50,15 +49,13 @@ export namespace Panel {
   };
 }
 
-export type Threshold = {
-  value: number | null;
-  color: string;
-};
-
 export type Metric = {
   label: string;
   query: string;
   thresholds: Threshold[];
 };
 
-export type PanelBuilder = (connections: GrafanaConnection[]) => Panel;
+export type Threshold = {
+  value: number | null;
+  color: string;
+};
