@@ -28,6 +28,7 @@ export namespace SloDashboard {
     window?: promQ.TimeRange;
     shortWindow?: promQ.TimeRange;
     targetLatency?: number;
+    dashboardConfig?: GrafanaDashboardBuilder.Config;
   };
 }
 
@@ -36,21 +37,97 @@ const defaults = {
   window: '30d',
   shortWindow: '5m',
   targetLatency: 250,
+  dashboardConfig: {},
 };
 
 export function createSloDashboard(
   config: SloDashboard.Args,
 ): GrafanaDashboardBuilder.CreateDashboard {
   const argsWithDefaults = mergeWithDefaults(defaults, config);
-  return new GrafanaDashboardBuilder(config.name, argsWithDefaults.title)
-    .addPanel(createAvailabilityPanel(argsWithDefaults))
-    .addPanel(createAvailabilityBurnRatePanel(argsWithDefaults))
-    .addPanel(createSuccessRatePanel(argsWithDefaults))
-    .addPanel(createSuccessRateTimeSeriesPanel(argsWithDefaults))
-    .addPanel(createSuccessRateBurnRatePanel(argsWithDefaults))
-    .addPanel(createLatencyPanel(argsWithDefaults))
-    .addPanel(createLatencyPercentilePanel(argsWithDefaults))
-    .addPanel(createLatencyPercentagePanel(argsWithDefaults))
-    .addPanel(createLatencyBurnRatePanel(argsWithDefaults))
+  const {
+    target,
+    window,
+    shortWindow,
+    targetLatency,
+    ampNamespace,
+    dataSourceName,
+    filter,
+  } = argsWithDefaults;
+
+  return new GrafanaDashboardBuilder(config.name)
+    .withTitle(argsWithDefaults.title)
+    .withConfig(argsWithDefaults.dashboardConfig)
+    .addPanel(
+      createAvailabilityPanel({ target, window, ampNamespace, dataSourceName }),
+    )
+    .addPanel(
+      createAvailabilityBurnRatePanel({
+        target,
+        window,
+        ampNamespace,
+        dataSourceName,
+      }),
+    )
+    .addPanel(
+      createSuccessRatePanel({
+        target,
+        window,
+        filter,
+        ampNamespace,
+        dataSourceName,
+      }),
+    )
+    .addPanel(
+      createSuccessRateTimeSeriesPanel({
+        shortWindow,
+        filter,
+        ampNamespace,
+        dataSourceName,
+      }),
+    )
+    .addPanel(
+      createSuccessRateBurnRatePanel({
+        target,
+        filter,
+        ampNamespace,
+        dataSourceName,
+      }),
+    )
+    .addPanel(
+      createLatencyPanel({
+        target,
+        window,
+        targetLatency,
+        filter,
+        ampNamespace,
+        dataSourceName,
+      }),
+    )
+    .addPanel(
+      createLatencyPercentilePanel({
+        target,
+        shortWindow,
+        filter,
+        ampNamespace,
+        dataSourceName,
+      }),
+    )
+    .addPanel(
+      createLatencyPercentagePanel({
+        targetLatency,
+        shortWindow,
+        filter,
+        ampNamespace,
+        dataSourceName,
+      }),
+    )
+    .addPanel(
+      createLatencyBurnRatePanel({
+        target,
+        targetLatency,
+        ampNamespace,
+        dataSourceName,
+      }),
+    )
     .build();
 }
