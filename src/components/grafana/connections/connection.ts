@@ -8,9 +8,10 @@ const grafanaConfig = new pulumi.Config('grafana');
 export namespace GrafanaConnection {
   export type Args = {
     awsAccountId: string;
+    dataSourceName?: string;
   };
 
-  export type ConnectionBuilder = (
+  export type CreateConnection = (
     opts: pulumi.ComponentResourceOptions,
   ) => GrafanaConnection;
 }
@@ -19,6 +20,7 @@ export abstract class GrafanaConnection extends pulumi.ComponentResource {
   public readonly name: string;
   public readonly role: aws.iam.Role;
   public abstract readonly dataSource: grafana.oss.DataSource;
+  protected readonly dataSourceName: string;
 
   constructor(
     type: string,
@@ -29,6 +31,8 @@ export abstract class GrafanaConnection extends pulumi.ComponentResource {
     super(type, name, {}, opts);
 
     this.name = name;
+
+    this.dataSourceName = args.dataSourceName ?? `${name}-datasource`;
 
     this.role = this.createIamRole(args.awsAccountId);
 

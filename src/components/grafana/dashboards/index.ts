@@ -1,2 +1,2 @@
-export { default as WebServerSloDashboardBuilder } from './web-server-slo';
-export * as panel from './panels';
+export { GrafanaDashboardBuilder as DashboardBuilder } from './builder';
+export { createSloDashboard } from './slo';

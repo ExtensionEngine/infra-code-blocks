@@ -1,4 +1,5 @@
 export * as dashboard from './dashboards';
+export * as panels from './panels';
 export {
   GrafanaConnection,
   AMPConnection,

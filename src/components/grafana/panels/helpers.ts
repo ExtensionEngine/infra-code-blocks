@@ -1,4 +1,4 @@
-import { Grafana } from './types';
+import { Panel, Metric } from './types';
 
 const percentageFieldConfig = {
   unit: 'percent',
@@ -8,10 +8,10 @@ const percentageFieldConfig = {
 
 export function createStatPercentagePanel(
   title: string,
-  position: Grafana.Panel.Position,
+  position: Panel.Position,
   dataSource: string,
-  metric: Grafana.Metric,
-): Grafana.Panel {
+  metric: Metric,
+): Panel {
   return {
     title,
     gridPos: position,
@@ -41,10 +41,10 @@ export function createStatPercentagePanel(
 
 export function createTimeSeriesPercentagePanel(
   title: string,
-  position: Grafana.Panel.Position,
+  position: Panel.Position,
   dataSource: string,
-  metric: Grafana.Metric,
-): Grafana.Panel {
+  metric: Metric,
+): Panel {
   return createTimeSeriesPanel(
     title,
     position,
@@ -58,13 +58,13 @@ export function createTimeSeriesPercentagePanel(
 
 export function createTimeSeriesPanel(
   title: string,
-  position: Grafana.Panel.Position,
+  position: Panel.Position,
   dataSource: string,
-  metric: Grafana.Metric,
+  metric: Metric,
   unit?: string,
   min?: number,
   max?: number,
-): Grafana.Panel {
+): Panel {
   return {
     title,
     type: 'timeseries',
@@ -96,10 +96,10 @@ export function createTimeSeriesPanel(
 
 export function createBurnRatePanel(
   title: string,
-  position: Grafana.Panel.Position,
+  position: Panel.Position,
   dataSource: string,
-  metric: Grafana.Metric,
-): Grafana.Panel {
+  metric: Metric,
+): Panel {
   return {
     type: 'stat',
     title,
