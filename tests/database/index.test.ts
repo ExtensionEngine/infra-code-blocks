@@ -72,7 +72,7 @@ describe('Database component deployment', () => {
     assert.ok(database.instance, 'Database instance should be defined');
 
     const command = new DescribeDBInstancesCommand({
-      DBInstanceIdentifier: database.instance.dbInstanceIdentifier,
+      DBInstanceIdentifier: database.instance.identifier,
     });
 
     const { DBInstances } = await ctx.clients.rds.send(command);
@@ -83,7 +83,7 @@ describe('Database component deployment', () => {
     const [DBInstance] = DBInstances;
     assert.strictEqual(
       DBInstance.DBInstanceIdentifier,
-      database.instance.dbInstanceIdentifier,
+      database.instance.identifier,
       'Database instance identifier should match',
     );
   });
@@ -104,13 +104,13 @@ describe('Database component deployment', () => {
       instance,
       {
         dbName: ctx.config.dbName,
-        masterUsername: ctx.config.dbUsername,
+        username: ctx.config.dbUsername,
         multiAz: false,
         applyImmediately: false,
-        allocatedStorage: '20',
+        allocatedStorage: 20,
         maxAllocatedStorage: 100,
-        dbInstanceClass: 'db.t4g.micro',
-        enablePerformanceInsights: false,
+        instanceClass: 'db.t4g.micro',
+        performanceInsightsEnabled: false,
         allowMajorVersionUpgrade: false,
         autoMinorVersionUpgrade: true,
         engineVersion: '17.2',

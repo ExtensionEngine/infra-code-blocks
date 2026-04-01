@@ -14,6 +14,7 @@ const vpc = util.getCommonVpc();
 const defaultDb = new studion.DatabaseBuilder(`${config.appName}-default-db`)
   .withInstance({
     dbName: config.dbName,
+    skipFinalSnapshot: true,
   })
   .withCredentials({
     username: config.dbUsername,
@@ -52,6 +53,7 @@ const configurableDb = new studion.DatabaseBuilder(
     applyImmediately: config.applyImmediately,
     allowMajorVersionUpgrade: config.allowMajorVersionUpgrade,
     autoMinorVersionUpgrade: config.autoMinorVersionUpgrade,
+    skipFinalSnapshot: config.skipFinalSnapshot,
   })
   .withCredentials({
     username: config.dbUsername,
