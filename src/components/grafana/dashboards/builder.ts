@@ -22,17 +22,22 @@ const defaults = {
 
 export class GrafanaDashboardBuilder {
   private readonly name: string;
-  private readonly title: string;
   private readonly panels: Panel[] = [];
   private configuration: GrafanaDashboardBuilder.Config = {};
+  private title?: string;
 
-  constructor(name: string, title: string) {
+  constructor(name: string) {
     this.name = name;
-    this.title = title;
   }
 
   withConfig(options: GrafanaDashboardBuilder.Config): this {
     this.configuration = options;
+
+    return this;
+  }
+
+  withTitle(title: string): this {
+    this.title = title;
 
     return this;
   }
@@ -44,6 +49,12 @@ export class GrafanaDashboardBuilder {
   }
 
   build(): GrafanaDashboardBuilder.CreateDashboard {
+    if (!this.title) {
+      throw new Error(
+        'Dashboard title is required. Call withTitle() to set it.',
+      );
+    }
+
     if (!this.panels.length) {
       throw new Error(
         'At least one panel is required. Call addPanel() to add a panel.',
