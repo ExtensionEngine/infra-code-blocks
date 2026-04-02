@@ -70,24 +70,22 @@ const configurableDb = new studion.DatabaseBuilder(
   .withTags(config.tags)
   .build({ parent });
 
-const snapshot = defaultDb.instance.dbInstanceIdentifier.apply(
-  dbInstanceIdentifier => {
-    return new aws.rds.Snapshot(
-      `${config.appName}-snapshot`,
-      {
-        dbInstanceIdentifier: dbInstanceIdentifier!,
-        dbSnapshotIdentifier: `${config.appName}-snapshot-id`,
-        tags: config.tags,
-      },
-      { parent },
-    );
-  },
-);
+const snapshot = defaultDb.instance.identifier.apply(identifier => {
+  return new aws.rds.Snapshot(
+    `${config.appName}-snapshot`,
+    {
+      dbInstanceIdentifier: identifier!,
+      dbSnapshotIdentifier: `${config.appName}-snapshot-id`,
+      tags: config.tags,
+    },
+    { parent },
+  );
+});
 
 const snapshotDb = snapshot.apply(snapshot => {
   return new studion.DatabaseBuilder(`${config.appName}-snapshot-db`)
     .withInstance({
-      applyImmediately: true,
+      skipFinalSnapshot: true,
     })
     .withVpc(vpc.vpc)
     .withTags(config.tags)
