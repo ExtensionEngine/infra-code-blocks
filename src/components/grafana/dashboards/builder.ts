@@ -30,14 +30,14 @@ export class GrafanaDashboardBuilder {
     this.name = name;
   }
 
-  withTitle(title: string): this {
-    this.title = title;
+  withConfig(options: GrafanaDashboardBuilder.Config): this {
+    this.configuration = options;
 
     return this;
   }
 
-  withConfig(options: GrafanaDashboardBuilder.Config): this {
-    this.configuration = options;
+  withTitle(title: string): this {
+    this.title = title;
 
     return this;
   }
@@ -50,7 +50,9 @@ export class GrafanaDashboardBuilder {
 
   build(): GrafanaDashboardBuilder.CreateDashboard {
     if (!this.title) {
-      throw new Error('Title is required. Call withTitle() to set a title.');
+      throw new Error(
+        'Dashboard title is required. Call withTitle() to set it.',
+      );
     }
 
     if (!this.panels.length) {

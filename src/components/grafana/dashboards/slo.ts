@@ -55,8 +55,8 @@ export function createSloDashboard(
   } = argsWithDefaults;
 
   return new GrafanaDashboardBuilder(config.name)
-    .withTitle(argsWithDefaults.title)
     .withConfig(argsWithDefaults.dashboardConfig)
+    .withTitle(argsWithDefaults.title)
     .addPanel(
       createAvailabilityPanel({ target, window, ampNamespace, dataSourceName }),
     )
