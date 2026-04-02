@@ -7,7 +7,7 @@ interface Config {
   region: string;
   usersPath: string;
   appName: string;
-  prometheusNamespace: string;
+  ampNamespace: string;
   grafanaUrl: string;
   grafanaAuth: string;
 }
@@ -18,8 +18,9 @@ interface AwsClients {
 
 export interface ProgramOutput {
   webServer: studion.WebServer;
-  prometheusWorkspace: aws.amp.Workspace;
-  grafanaSloComponent: studion.grafana.Grafana;
+  ampWorkspace: aws.amp.Workspace;
+  ampGrafana: studion.grafana.Grafana;
+  configurableGrafanaComponent: studion.grafana.Grafana;
 }
 
 export interface GrafanaTestContext

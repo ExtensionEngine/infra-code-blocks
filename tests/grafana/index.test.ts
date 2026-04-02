@@ -3,7 +3,8 @@ import { InlineProgramArgs, OutputMap } from '@pulumi/pulumi/automation';
 import { IAMClient } from '@aws-sdk/client-iam';
 import * as automation from '../automation';
 import { requireEnv, unwrapOutputs } from '../util';
-import { testGrafanaSloDashboard } from './grafana-slo-dashboard.test';
+import { testAmpGrafana } from './amp-grafana.test';
+import { testConfigurableGrafana } from './configurable-grafana.test';
 import * as infraConfig from './infrastructure/config';
 import { GrafanaTestContext, ProgramOutput } from './test-context';
 
@@ -19,7 +20,7 @@ const ctx: GrafanaTestContext = {
     region,
     usersPath: infraConfig.usersPath,
     appName: infraConfig.appName,
-    prometheusNamespace: infraConfig.prometheusNamespace,
+    ampNamespace: infraConfig.ampNamespace,
     grafanaUrl: requireEnv('GRAFANA_URL'),
     grafanaAuth: requireEnv('GRAFANA_AUTH'),
   },
@@ -36,5 +37,6 @@ describe('Grafana component deployment', () => {
 
   after(() => automation.destroy(programArgs));
 
-  describe('SLO dashboard', () => testGrafanaSloDashboard(ctx));
+  describe('AMP Grafana', () => testAmpGrafana(ctx));
+  describe('Configurable Grafana', () => testConfigurableGrafana(ctx));
 });

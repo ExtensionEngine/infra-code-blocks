@@ -6,30 +6,28 @@ import {
   GetRolePolicyCommand,
   ListRolePoliciesCommand,
 } from '@aws-sdk/client-iam';
-import type { Dispatcher } from 'undici';
-import { request } from 'undici';
 import { Unwrap } from '@pulumi/pulumi';
 import { backOff } from '../util';
 import { GrafanaTestContext } from './test-context';
+import { grafanaRequest, requestEndpointWithExpectedStatus } from './util';
 
 const backOffConfig = { numOfAttempts: 15 };
 
-export function testGrafanaSloDashboard(ctx: GrafanaTestContext) {
-  it('should have created the Prometheus data source', async () => {
-    const grafana = ctx.outputs!.grafanaSloComponent;
-    const prometheusDataSource = (
+export function testAmpGrafana(ctx: GrafanaTestContext) {
+  it('should have created the AMP data source', async () => {
+    const grafana = ctx.outputs!.ampGrafana;
+    const ampDataSource = (
       grafana.connections[0] as studion.grafana.AMPConnection
     ).dataSource;
-    const prometheusDataSourceName =
-      prometheusDataSource.name as unknown as Unwrap<
-        typeof prometheusDataSource.name
-      >;
+    const ampDataSourceName = ampDataSource.name as unknown as Unwrap<
+      typeof ampDataSource.name
+    >;
 
     await backOff(async () => {
       const { body, statusCode } = await grafanaRequest(
         ctx,
         'GET',
-        `/api/datasources/name/${encodeURIComponent(prometheusDataSourceName)}`,
+        `/api/datasources/name/${encodeURIComponent(ampDataSourceName)}`,
       );
       assert.strictEqual(statusCode, 200, 'Expected data source to exist');
 
@@ -40,20 +38,19 @@ export function testGrafanaSloDashboard(ctx: GrafanaTestContext) {
         'Expected Amazon Prometheus data source type',
       );
 
-      const workspace = ctx.outputs!.prometheusWorkspace;
-      const prometheusEndpoint =
-        workspace.prometheusEndpoint as unknown as Unwrap<
-          typeof workspace.prometheusEndpoint
-        >;
+      const workspace = ctx.outputs!.ampWorkspace;
+      const ampEndpoint = workspace.prometheusEndpoint as unknown as Unwrap<
+        typeof workspace.prometheusEndpoint
+      >;
       assert.ok(
-        (data.url as string).includes(prometheusEndpoint.replace(/\/$/, '')),
+        (data.url as string).includes(ampEndpoint.replace(/\/$/, '')),
         'Expected data source URL to contain the AMP workspace endpoint',
       );
     }, backOffConfig);
   });
 
   it('should have created the dashboard with expected panels', async () => {
-    const dashboard = ctx.outputs!.grafanaSloComponent.dashboards[0];
+    const dashboard = ctx.outputs!.ampGrafana.dashboards[0];
     const dashboardUid = dashboard.uid as unknown as Unwrap<
       typeof dashboard.uid
     >;
@@ -98,18 +95,16 @@ export function testGrafanaSloDashboard(ctx: GrafanaTestContext) {
   it('should display metrics data in the dashboard', async () => {
     await requestEndpointWithExpectedStatus(ctx, ctx.config.usersPath, 200);
 
-    const prometheusDataSource = (
-      ctx.outputs!.grafanaSloComponent
-        .connections[0] as studion.grafana.AMPConnection
+    const ampDataSource = (
+      ctx.outputs!.ampGrafana.connections[0] as studion.grafana.AMPConnection
     ).dataSource;
-    const prometheusDataSourceName =
-      prometheusDataSource.name as unknown as Unwrap<
-        typeof prometheusDataSource.name
-      >;
+    const ampDataSourceName = ampDataSource.name as unknown as Unwrap<
+      typeof ampDataSource.name
+    >;
     const { body: dsBody } = await grafanaRequest(
       ctx,
       'GET',
-      `/api/datasources/name/${encodeURIComponent(prometheusDataSourceName)}`,
+      `/api/datasources/name/${encodeURIComponent(ampDataSourceName)}`,
     );
     const dsData = (await dsBody.json()) as Record<string, unknown>;
     const dataSourceUid = dsData.uid as string;
@@ -126,7 +121,7 @@ export function testGrafanaSloDashboard(ctx: GrafanaTestContext) {
                 type: 'grafana-amazonprometheus-datasource',
                 uid: dataSourceUid,
               },
-              expr: `{__name__=~"${ctx.config.prometheusNamespace}_.*"}`,
+              expr: `{__name__=~"${ctx.config.ampNamespace}_.*"}`,
               instant: true,
               refId: 'A',
             },
@@ -143,13 +138,13 @@ export function testGrafanaSloDashboard(ctx: GrafanaTestContext) {
       const frames = data.results?.A?.frames ?? [];
       assert.ok(
         frames.length > 0,
-        `Expected Grafana to return metric frames for namespace '${ctx.config.prometheusNamespace}'`,
+        `Expected Grafana to return metric frames for namespace '${ctx.config.ampNamespace}'`,
       );
     }, backOffConfig);
   });
 
   it('should have created the IAM role with AMP inline policy', async () => {
-    const iamRole = ctx.outputs!.grafanaSloComponent.connections[0].role;
+    const iamRole = ctx.outputs!.ampGrafana.connections[0].role;
     const grafanaAmpRoleArn = iamRole.arn as unknown as Unwrap<
       typeof iamRole.arn
     >;
@@ -188,42 +183,5 @@ export function testGrafanaSloDashboard(ctx: GrafanaTestContext) {
       expectedActions,
       'AMP policy actions do not match expected actions',
     );
-  });
-}
-
-async function requestEndpointWithExpectedStatus(
-  ctx: GrafanaTestContext,
-  path: string,
-  expectedStatus: number,
-): Promise<void> {
-  await backOff(async () => {
-    const webServer = ctx.outputs!.webServer;
-    const dnsName = webServer.lb.lb.dnsName as unknown as Unwrap<
-      typeof webServer.lb.lb.dnsName
-    >;
-    const endpoint = `http://${dnsName}${path}`;
-    const response = await request(endpoint);
-    assert.strictEqual(
-      response.statusCode,
-      expectedStatus,
-      `Endpoint ${endpoint} should return ${expectedStatus}`,
-    );
-  }, backOffConfig);
-}
-
-async function grafanaRequest(
-  ctx: GrafanaTestContext,
-  method: Dispatcher.HttpMethod,
-  path: string,
-  body?: unknown,
-) {
-  const url = `${ctx.config.grafanaUrl.replace(/\/$/, '')}${path}`;
-  return request(url, {
-    method,
-    headers: {
-      Authorization: `Bearer ${ctx.config.grafanaAuth}`,
-      'Content-Type': 'application/json',
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 }

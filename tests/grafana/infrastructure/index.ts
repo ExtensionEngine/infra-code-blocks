@@ -2,13 +2,7 @@ import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
 import * as studion from '@studion/infra-code-blocks';
 import { getCommonVpc } from '../../util';
-import {
-  appImage,
-  appPort,
-  appName,
-  prometheusNamespace,
-  apiFilter,
-} from './config';
+import { appImage, appPort, appName, ampNamespace, apiFilter } from './config';
 
 const stackName = pulumi.getStack();
 const parent = new pulumi.ComponentResource(
@@ -23,7 +17,7 @@ const tags = {
 const vpc = getCommonVpc();
 const cluster = new aws.ecs.Cluster(`${appName}-cluster`, { tags }, { parent });
 
-const prometheusWorkspace = new aws.amp.Workspace(
+const ampWorkspace = new aws.amp.Workspace(
   `${appName}-workspace`,
   { tags },
   { parent },
@@ -43,8 +37,8 @@ const otelCollector = new studion.openTelemetry.OtelCollectorBuilder(
   stackName,
 )
   .withDefault({
-    prometheusNamespace,
-    prometheusWorkspace,
+    prometheusNamespace: ampNamespace,
+    prometheusWorkspace: ampWorkspace,
     region: aws.config.requireRegion(),
     logGroup: cloudWatchLogGroup,
     logStreamName: `${appName}-stream`,
@@ -71,19 +65,19 @@ const webServer = new studion.WebServerBuilder(appName)
   .withOtelCollector(otelCollector)
   .build({ parent });
 
-const ampDataSourceName = `${appName}-slo-amp-datasource`;
+const ampDataSourceName = `${appName}-amp-datasource`;
 
-const grafanaSloComponent = new studion.grafana.GrafanaBuilder(`${appName}-slo`)
+const ampGrafana = new studion.grafana.GrafanaBuilder(`${appName}-amp`)
   .addAmp(`${appName}-slo-amp`, {
     awsAccountId: '008923505280',
-    endpoint: prometheusWorkspace.prometheusEndpoint,
+    endpoint: ampWorkspace.prometheusEndpoint,
     region: aws.config.requireRegion(),
     dataSourceName: ampDataSourceName,
   })
   .addSloDashboard({
     name: `${appName}-slo-dashboard`,
     title: 'ICB Grafana Test SLO',
-    ampNamespace: prometheusNamespace,
+    ampNamespace: ampNamespace,
     filter: apiFilter,
     dataSourceName: ampDataSourceName,
     target: 0.99,
@@ -93,4 +87,46 @@ const grafanaSloComponent = new studion.grafana.GrafanaBuilder(`${appName}-slo`)
   })
   .build({ parent });
 
-export { webServer, prometheusWorkspace, grafanaSloComponent };
+const configurableAmpDataSourceName = `${appName}-configurable-amp-datasource`;
+
+const configurableGrafanaComponent = new studion.grafana.GrafanaBuilder(
+  `${appName}-configurable`,
+)
+  .withFolderName('ICB Configurable Test Folder')
+  .addConnection(
+    opts =>
+      new studion.grafana.AMPConnection(
+        `${appName}-cfg-amp`,
+        {
+          awsAccountId: '008923505280',
+          endpoint: ampWorkspace.prometheusEndpoint,
+          region: aws.config.requireRegion(),
+          dataSourceName: configurableAmpDataSourceName,
+          installPlugin: false,
+        },
+        opts,
+      ),
+  )
+  .addDashboard(
+    new studion.grafana.dashboard.DashboardBuilder(
+      `${appName}-configurable-dashboard`,
+    )
+      .withTitle('ICB Grafana Configurable Dashboard')
+      .addPanel({
+        title: 'AMP Requests',
+        type: 'stat',
+        datasource: configurableAmpDataSourceName,
+        gridPos: { x: 0, y: 0, w: 8, h: 8 },
+        targets: [
+          {
+            expr: `${ampNamespace}_http_requests_total`,
+            legendFormat: 'requests',
+          },
+        ],
+        fieldConfig: { defaults: {} },
+      })
+      .build(),
+  )
+  .build({ parent });
+
+export { webServer, ampWorkspace, ampGrafana, configurableGrafanaComponent };
