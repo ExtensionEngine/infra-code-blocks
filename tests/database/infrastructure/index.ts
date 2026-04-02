@@ -96,6 +96,7 @@ const snapshotDb = snapshot.apply(snapshot => {
 const replicaDb = new studion.DatabaseBuilder(`${config.appName}-replica-db`)
   .withInstance({
     dbName: config.dbName,
+    skipFinalSnapshot: true,
   })
   .withCredentials({
     username: config.dbUsername,
@@ -109,6 +110,7 @@ const configurableReplicaDb = new studion.DatabaseBuilder(
 )
   .withInstance({
     dbName: config.dbName,
+    skipFinalSnapshot: true,
   })
   .withCredentials({
     username: config.dbUsername,
