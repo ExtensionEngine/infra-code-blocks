@@ -134,6 +134,7 @@ const ssmConnectDb = new studion.DatabaseBuilder(
 )
   .withInstance({
     dbName: config.dbName,
+    skipFinalSnapshot: true,
   })
   .withCredentials({
     username: config.dbUsername,

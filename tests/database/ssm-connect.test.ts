@@ -25,17 +25,17 @@ export function testSSMConnectDb(ctx: DatabaseTestContext) {
 
   it('should create a db instance', async () => {
     const ssmConnectDb = ctx.outputs.ssmConnectDb.value;
-    const { dbInstanceIdentifier } = ssmConnectDb.instance;
+    const { identifier } = ssmConnectDb.instance;
 
     const command = new DescribeDBInstancesCommand({
-      DBInstanceIdentifier: dbInstanceIdentifier,
+      DBInstanceIdentifier: identifier,
     });
 
     const { DBInstances } = await ctx.clients.rds.send(command);
     assert.ok(
       DBInstances &&
         DBInstances.length === 1 &&
-        DBInstances[0].DBInstanceIdentifier === dbInstanceIdentifier,
+        DBInstances[0].DBInstanceIdentifier === identifier,
       'Database instance should be created',
     );
   });
@@ -256,8 +256,8 @@ export function testSSMConnectDb(ctx: DatabaseTestContext) {
   it('EC2 instance should be able to connect to the database', async () => {
     const ssmConnectDb = ctx.outputs.ssmConnectDb.value;
     const instanceId = ssmConnectDb.ec2SSMConnect.ec2.id;
-    const dbHost = ssmConnectDb.instance.endpoint.address;
-    const dbPort = ssmConnectDb.instance.endpoint.port;
+    const dbHost = ssmConnectDb.instance.address;
+    const dbPort = ssmConnectDb.instance.port;
 
     const testCommand = `
       if timeout 5 bash -c "</dev/tcp/${dbHost}/${dbPort}";
