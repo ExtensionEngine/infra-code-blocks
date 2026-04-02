@@ -1,4 +1,3 @@
-import { cleanupReplicas, cleanupSnapshots } from './util';
 import { describe, before, after } from 'node:test';
 import {
   DescribeDBInstancesCommand,
@@ -55,9 +54,7 @@ describe('Database component deployment', () => {
   });
 
   after(async () => {
-    await cleanupReplicas(ctx);
     await automation.destroy(programArgs);
-    await cleanupSnapshots(ctx);
   });
 
   it('should create a database', async () => {
