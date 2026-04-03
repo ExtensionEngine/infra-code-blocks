@@ -53,9 +53,7 @@ describe('Database component deployment', () => {
     ctx.outputs = await automation.deploy(programArgs);
   });
 
-  after(async () => {
-    await automation.destroy(programArgs);
-  });
+  after(() => automation.destroy(programArgs));
 
   it('should create a database', async () => {
     const database = ctx.outputs.defaultDb.value;
