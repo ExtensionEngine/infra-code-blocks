@@ -24,7 +24,8 @@ import { RDSClient } from '@aws-sdk/client-rds';
 import { requireEnv } from '../util';
 import { SSMClient } from '@aws-sdk/client-ssm';
 import { testConfigurableDb } from './configurable-db.test';
-import { testConfigurableReplica } from './configurable-replica-db.test';
+import { testConfigurableReplicaDb } from './configurable-replica-db.test';
+import { testMultipleReplicasDb } from './multiple-replicas-db.test';
 import { testReplicaDb } from './replica-db.test';
 import { testSnapshotDb } from './snapshot-db.test';
 import { testSSMConnectDb } from './ssm-connect.test';
@@ -212,6 +213,7 @@ describe('Database component deployment', () => {
   describe('With configurable options', () => testConfigurableDb(ctx));
   describe('With snapshot', () => testSnapshotDb(ctx));
   describe('With replica', () => testReplicaDb(ctx));
-  describe('With configurable replica', () => testConfigurableReplica(ctx));
+  describe('With configurable replica', () => testConfigurableReplicaDb(ctx));
+  describe('With multiple replicas', () => testMultipleReplicasDb(ctx));
   describe('With SSM connect', () => testSSMConnectDb(ctx));
 });
