@@ -93,10 +93,10 @@ describe('Database component deployment', () => {
   });
 
   it('should configure database instance with correct defaults', () => {
-    const instance = ctx.outputs.defaultDb.value.instance;
+    const database = ctx.outputs.defaultDb.value;
 
     assert.partialDeepStrictEqual(
-      instance,
+      database.instance,
       {
         dbName: ctx.config.dbName,
         username: ctx.config.dbUsername,
@@ -112,6 +112,8 @@ describe('Database component deployment', () => {
         engine: 'postgres',
         storageEncrypted: true,
         publiclyAccessible: false,
+        skipFinalSnapshot: false,
+        finalSnapshotIdentifier: `${database.name}-final-snapshot-${config.stackName}`,
       },
       'Database instance should be configured correctly',
     );
