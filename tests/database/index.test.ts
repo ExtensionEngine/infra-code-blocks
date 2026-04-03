@@ -112,7 +112,6 @@ describe('Database component deployment', () => {
         engine: 'postgres',
         storageEncrypted: true,
         publiclyAccessible: false,
-        skipFinalSnapshot: false,
         finalSnapshotIdentifier: `${database.name}-final-snapshot-${config.stackName}`,
       },
       'Database instance should be configured correctly',
