@@ -22,6 +22,7 @@ interface DatabaseTestConfig {
   applyImmediately: boolean;
   allowMajorVersionUpgrade: boolean;
   autoMinorVersionUpgrade: boolean;
+  skipFinalSnapshot: boolean;
   allocatedStorage: number;
   maxAllocatedStorage: number;
 }

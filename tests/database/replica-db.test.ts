@@ -6,17 +6,17 @@ import { it } from 'node:test';
 export function testReplicaDb(ctx: DatabaseTestContext) {
   it('should create a primary instance with a replica', async () => {
     const replicaDb = ctx.outputs.replicaDb.value;
-    const { dbInstanceIdentifier } = replicaDb.instance;
+    const { identifier } = replicaDb.instance;
 
     const command = new DescribeDBInstancesCommand({
-      DBInstanceIdentifier: dbInstanceIdentifier,
+      DBInstanceIdentifier: identifier,
     });
 
     const { DBInstances } = await ctx.clients.rds.send(command);
     assert.ok(
       DBInstances &&
         DBInstances.length === 1 &&
-        DBInstances[0].DBInstanceIdentifier === dbInstanceIdentifier,
+        DBInstances[0].DBInstanceIdentifier === identifier,
       'Primary database instance should be created',
     );
   });
@@ -47,12 +47,12 @@ export function testReplicaDb(ctx: DatabaseTestContext) {
 
     assert.strictEqual(
       replicaInstance.replicateSourceDb,
-      dbInstance.dbInstanceIdentifier,
+      dbInstance.identifier,
       'Replica instance should have correct source db instance identifier',
     );
 
     const command = new DescribeDBInstancesCommand({
-      DBInstanceIdentifier: dbInstance.dbInstanceIdentifier,
+      DBInstanceIdentifier: dbInstance.identifier,
     });
 
     const { DBInstances } = await ctx.clients.rds.send(command);
@@ -97,9 +97,9 @@ export function testReplicaDb(ctx: DatabaseTestContext) {
         storageEncrypted: true,
         publiclyAccessible: false,
         skipFinalSnapshot: true,
-        vpcSecurityGroupIds: primaryInstance.vpcSecurityGroups,
+        vpcSecurityGroupIds: primaryInstance.vpcSecurityGroupIds,
         dbSubnetGroupName: primaryInstance.dbSubnetGroupName,
-        parameterGroupName: primaryInstance.dbParameterGroupName,
+        parameterGroupName: primaryInstance.parameterGroupName,
       },
       'Replica instance should be configured correctly',
     );

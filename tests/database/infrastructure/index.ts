@@ -14,6 +14,7 @@ const vpc = util.getCommonVpc();
 const defaultDb = new studion.DatabaseBuilder(`${config.appName}-default-db`)
   .withInstance({
     dbName: config.dbName,
+    skipFinalSnapshot: true,
   })
   .withCredentials({
     username: config.dbUsername,
@@ -52,6 +53,7 @@ const configurableDb = new studion.DatabaseBuilder(
     applyImmediately: config.applyImmediately,
     allowMajorVersionUpgrade: config.allowMajorVersionUpgrade,
     autoMinorVersionUpgrade: config.autoMinorVersionUpgrade,
+    skipFinalSnapshot: config.skipFinalSnapshot,
   })
   .withCredentials({
     username: config.dbUsername,
@@ -68,24 +70,22 @@ const configurableDb = new studion.DatabaseBuilder(
   .withTags(config.tags)
   .build({ parent });
 
-const snapshot = defaultDb.instance.dbInstanceIdentifier.apply(
-  dbInstanceIdentifier => {
-    return new aws.rds.Snapshot(
-      `${config.appName}-snapshot`,
-      {
-        dbInstanceIdentifier: dbInstanceIdentifier!,
-        dbSnapshotIdentifier: `${config.appName}-snapshot-id`,
-        tags: config.tags,
-      },
-      { parent },
-    );
-  },
-);
+const snapshot = defaultDb.instance.identifier.apply(identifier => {
+  return new aws.rds.Snapshot(
+    `${config.appName}-snapshot`,
+    {
+      dbInstanceIdentifier: identifier!,
+      dbSnapshotIdentifier: `${config.appName}-snapshot-id`,
+      tags: config.tags,
+    },
+    { parent },
+  );
+});
 
 const snapshotDb = snapshot.apply(snapshot => {
   return new studion.DatabaseBuilder(`${config.appName}-snapshot-db`)
     .withInstance({
-      applyImmediately: true,
+      skipFinalSnapshot: true,
     })
     .withVpc(vpc.vpc)
     .withTags(config.tags)
@@ -96,6 +96,7 @@ const snapshotDb = snapshot.apply(snapshot => {
 const replicaDb = new studion.DatabaseBuilder(`${config.appName}-replica-db`)
   .withInstance({
     dbName: config.dbName,
+    skipFinalSnapshot: true,
   })
   .withCredentials({
     username: config.dbUsername,
@@ -109,6 +110,7 @@ const configurableReplicaDb = new studion.DatabaseBuilder(
 )
   .withInstance({
     dbName: config.dbName,
+    skipFinalSnapshot: true,
   })
   .withCredentials({
     username: config.dbUsername,
@@ -132,6 +134,7 @@ const ssmConnectDb = new studion.DatabaseBuilder(
 )
   .withInstance({
     dbName: config.dbName,
+    skipFinalSnapshot: true,
   })
   .withCredentials({
     username: config.dbUsername,

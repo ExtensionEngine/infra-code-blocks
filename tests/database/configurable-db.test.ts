@@ -23,7 +23,7 @@ export function testConfigurableDb(ctx: DatabaseTestContext) {
     assert.ok(configurableDb.instance, 'Database instance should be defined');
 
     const command = new DescribeDBInstancesCommand({
-      DBInstanceIdentifier: configurableDb.instance.dbInstanceIdentifier,
+      DBInstanceIdentifier: configurableDb.instance.identifier,
     });
 
     const { DBInstances } = await ctx.clients.rds.send(command);
@@ -34,7 +34,7 @@ export function testConfigurableDb(ctx: DatabaseTestContext) {
     const [DBInstance] = DBInstances;
     assert.strictEqual(
       DBInstance.DBInstanceIdentifier,
-      configurableDb.instance.dbInstanceIdentifier,
+      configurableDb.instance.identifier,
       'Database instance identifier should match',
     );
   });
@@ -57,6 +57,11 @@ export function testConfigurableDb(ctx: DatabaseTestContext) {
       ctx.config.autoMinorVersionUpgrade,
       'Auto minor version upgrade argument should be set correctly',
     );
+    assert.strictEqual(
+      configurableDb.instance.skipFinalSnapshot,
+      ctx.config.skipFinalSnapshot,
+      'Skip final snapshot argument should be set correctly',
+    );
   });
 
   it('should properly configure password', () => {
@@ -64,9 +69,9 @@ export function testConfigurableDb(ctx: DatabaseTestContext) {
 
     assert.ok(configurableDb.password, 'Password should exist');
     assert.strictEqual(
-      configurableDb.instance.masterUserPassword,
+      configurableDb.instance.password,
       ctx.config.dbPassword,
-      'Master user password should be set correctly',
+      'Password should be set correctly',
     );
   });
 
@@ -75,7 +80,7 @@ export function testConfigurableDb(ctx: DatabaseTestContext) {
 
     assert.strictEqual(
       configurableDb.instance.allocatedStorage,
-      ctx.config.allocatedStorage.toString(),
+      ctx.config.allocatedStorage,
       'Allocated storage argument should be set correctly',
     );
     assert.strictEqual(
@@ -89,7 +94,7 @@ export function testConfigurableDb(ctx: DatabaseTestContext) {
     const configurableDb = ctx.outputs.configurableDb.value;
 
     assert.strictEqual(
-      configurableDb.instance.enablePerformanceInsights,
+      configurableDb.instance.performanceInsightsEnabled,
       true,
       'Performance insights should be enabled',
     );
@@ -152,7 +157,7 @@ export function testConfigurableDb(ctx: DatabaseTestContext) {
     const paramGroup = ctx.outputs.paramGroup.value;
 
     assert.strictEqual(
-      configurableDb.instance.dbParameterGroupName,
+      configurableDb.instance.parameterGroupName,
       paramGroup.name,
       'Parameter group name should be set correctly',
     );
@@ -162,7 +167,7 @@ export function testConfigurableDb(ctx: DatabaseTestContext) {
     const configurableDb = ctx.outputs.configurableDb.value;
 
     const command = new ListTagsForResourceCommand({
-      ResourceName: configurableDb.instance.dbInstanceArn,
+      ResourceName: configurableDb.instance.arn,
     });
     const { TagList } = await ctx.clients.rds.send(command);
     assert.ok(TagList && TagList.length > 0, 'Tags should exist');

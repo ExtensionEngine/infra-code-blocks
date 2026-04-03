@@ -9,17 +9,17 @@ import { it } from 'node:test';
 export function testConfigurableReplica(ctx: DatabaseTestContext) {
   it('should create a primary instance with a configurable replica', async () => {
     const configurableReplicaDb = ctx.outputs.configurableReplicaDb.value;
-    const { dbInstanceIdentifier } = configurableReplicaDb.instance;
+    const { identifier } = configurableReplicaDb.instance;
 
     const command = new DescribeDBInstancesCommand({
-      DBInstanceIdentifier: dbInstanceIdentifier,
+      DBInstanceIdentifier: identifier,
     });
 
     const { DBInstances } = await ctx.clients.rds.send(command);
     assert.ok(
       DBInstances &&
         DBInstances.length === 1 &&
-        DBInstances[0].DBInstanceIdentifier === dbInstanceIdentifier,
+        DBInstances[0].DBInstanceIdentifier === identifier,
       'Primary database instance should be created',
     );
   });
