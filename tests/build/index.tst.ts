@@ -365,8 +365,10 @@ describe('Build output', () => {
         });
       });
 
-      it('should have withReplica method', () => {
-        expect(builder.withReplica).type.toBeCallableWith();
+      it('should have addReplica method', () => {
+        expect(builder.addReplica).type.toBeCallableWith({
+          name: 'replica-db',
+        });
       });
 
       it('should have withSSMConnect method', () => {
