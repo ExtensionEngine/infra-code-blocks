@@ -12,6 +12,48 @@ import { GrafanaTestContext } from './test-context';
 import { grafanaRequest, requestEndpointWithExpectedStatus } from './util';
 
 export function testAmpGrafana(ctx: GrafanaTestContext) {
+  it('should have created the IAM role with AMP inline policy', async () => {
+    const iamRole = ctx.outputs!.ampGrafana.connections[0].role;
+    const grafanaAmpRoleArn = iamRole.arn as unknown as Unwrap<
+      typeof iamRole.arn
+    >;
+    const roleName = grafanaAmpRoleArn.split('/').pop()!;
+    const { Role } = await ctx.clients.iam.send(
+      new GetRoleCommand({ RoleName: roleName }),
+    );
+    assert.ok(Role, 'Grafana IAM role should exist');
+
+    const { PolicyNames } = await ctx.clients.iam.send(
+      new ListRolePoliciesCommand({ RoleName: roleName }),
+    );
+    assert.ok(
+      PolicyNames && PolicyNames.length > 0,
+      'IAM role should have at least one inline policy',
+    );
+
+    const { PolicyDocument } = await ctx.clients.iam.send(
+      new GetRolePolicyCommand({
+        RoleName: roleName,
+        PolicyName: PolicyNames[0],
+      }),
+    );
+    const policy = JSON.parse(decodeURIComponent(PolicyDocument!)) as {
+      Statement: Array<{ Action: string[] }>;
+    };
+    const actions = policy.Statement.flatMap(s => s.Action).sort();
+    const expectedActions = [
+      'aps:GetSeries',
+      'aps:GetLabels',
+      'aps:GetMetricMetadata',
+      'aps:QueryMetrics',
+    ].sort();
+    assert.deepStrictEqual(
+      actions,
+      expectedActions,
+      'AMP policy actions do not match expected actions',
+    );
+  });
+
   it('should have created the AMP data source', async () => {
     const grafana = ctx.outputs!.ampGrafana;
     const ampDataSource = (
@@ -139,47 +181,5 @@ export function testAmpGrafana(ctx: GrafanaTestContext) {
         `Expected Grafana to return metric frames for namespace '${ctx.config.ampNamespace}'`,
       );
     });
-  });
-
-  it('should have created the IAM role with AMP inline policy', async () => {
-    const iamRole = ctx.outputs!.ampGrafana.connections[0].role;
-    const grafanaAmpRoleArn = iamRole.arn as unknown as Unwrap<
-      typeof iamRole.arn
-    >;
-    const roleName = grafanaAmpRoleArn.split('/').pop()!;
-    const { Role } = await ctx.clients.iam.send(
-      new GetRoleCommand({ RoleName: roleName }),
-    );
-    assert.ok(Role, 'Grafana IAM role should exist');
-
-    const { PolicyNames } = await ctx.clients.iam.send(
-      new ListRolePoliciesCommand({ RoleName: roleName }),
-    );
-    assert.ok(
-      PolicyNames && PolicyNames.length > 0,
-      'IAM role should have at least one inline policy',
-    );
-
-    const { PolicyDocument } = await ctx.clients.iam.send(
-      new GetRolePolicyCommand({
-        RoleName: roleName,
-        PolicyName: PolicyNames[0],
-      }),
-    );
-    const policy = JSON.parse(decodeURIComponent(PolicyDocument!)) as {
-      Statement: Array<{ Action: string[] }>;
-    };
-    const actions = policy.Statement.flatMap(s => s.Action).sort();
-    const expectedActions = [
-      'aps:GetSeries',
-      'aps:GetLabels',
-      'aps:GetMetricMetadata',
-      'aps:QueryMetrics',
-    ].sort();
-    assert.deepStrictEqual(
-      actions,
-      expectedActions,
-      'AMP policy actions do not match expected actions',
-    );
   });
 }
