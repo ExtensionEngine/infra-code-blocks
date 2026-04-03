@@ -10,6 +10,7 @@ interface Config {
   ampNamespace: string;
   grafanaUrl: string;
   grafanaAuth: string;
+  grafanaAwsAccountId: string;
 }
 
 interface AwsClients {

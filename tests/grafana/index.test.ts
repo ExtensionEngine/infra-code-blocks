@@ -15,6 +15,8 @@ const programArgs: InlineProgramArgs = {
 };
 
 const region = requireEnv('AWS_REGION');
+requireEnv('GRAFANA_CLOUD_ACCESS_POLICY_TOKEN');
+
 const ctx: GrafanaTestContext = {
   config: {
     region,
@@ -23,6 +25,7 @@ const ctx: GrafanaTestContext = {
     ampNamespace: infraConfig.ampNamespace,
     grafanaUrl: requireEnv('GRAFANA_URL'),
     grafanaAuth: requireEnv('GRAFANA_AUTH'),
+    grafanaAwsAccountId: requireEnv('GRAFANA_AWS_ACCOUNT_ID'),
   },
   clients: {
     iam: new IAMClient({ region }),

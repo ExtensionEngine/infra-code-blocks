@@ -15,6 +15,7 @@ const tags = {
 };
 
 const vpc = getCommonVpc();
+
 const cluster = new aws.ecs.Cluster(`${appName}-cluster`, { tags }, { parent });
 
 const ampWorkspace = new aws.amp.Workspace(
@@ -65,11 +66,12 @@ const webServer = new studion.WebServerBuilder(appName)
   .withOtelCollector(otelCollector)
   .build({ parent });
 
-const ampDataSourceName = `${appName}-amp-datasource`;
+const awsAccountId = process.env.GRAFANA_AWS_ACCOUNT_ID!;
 
+const ampDataSourceName = `${appName}-amp-datasource`;
 const ampGrafana = new studion.grafana.GrafanaBuilder(`${appName}-amp`)
   .addAmp(`${appName}-slo-amp`, {
-    awsAccountId: '008923505280',
+    awsAccountId,
     endpoint: ampWorkspace.prometheusEndpoint,
     region: aws.config.requireRegion(),
     dataSourceName: ampDataSourceName,
@@ -88,7 +90,6 @@ const ampGrafana = new studion.grafana.GrafanaBuilder(`${appName}-amp`)
   .build({ parent });
 
 const configurableAmpDataSourceName = `${appName}-configurable-amp-datasource`;
-
 const configurableGrafanaComponent = new studion.grafana.GrafanaBuilder(
   `${appName}-configurable`,
 )
@@ -98,7 +99,7 @@ const configurableGrafanaComponent = new studion.grafana.GrafanaBuilder(
       new studion.grafana.AMPConnection(
         `${appName}-cfg-amp`,
         {
-          awsAccountId: '008923505280',
+          awsAccountId,
           endpoint: ampWorkspace.prometheusEndpoint,
           region: aws.config.requireRegion(),
           dataSourceName: configurableAmpDataSourceName,
