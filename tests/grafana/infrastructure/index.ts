@@ -90,7 +90,7 @@ const ampGrafana = new studion.grafana.GrafanaBuilder(`${appName}-amp`)
   .build({ parent });
 
 const configurableAmpDataSourceName = `${appName}-configurable-amp-datasource`;
-const configurableGrafanaComponent = new studion.grafana.GrafanaBuilder(
+const configurableGrafana = new studion.grafana.GrafanaBuilder(
   `${appName}-configurable`,
 )
   .withFolderName('ICB Configurable Test Folder')
@@ -130,4 +130,4 @@ const configurableGrafanaComponent = new studion.grafana.GrafanaBuilder(
   )
   .build({ parent });
 
-export { webServer, ampWorkspace, ampGrafana, configurableGrafanaComponent };
+export { webServer, ampWorkspace, ampGrafana, configurableGrafana };

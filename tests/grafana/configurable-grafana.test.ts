@@ -9,7 +9,7 @@ import { grafanaRequest } from './util';
 export function testConfigurableGrafana(ctx: GrafanaTestContext) {
   it('should have created the configurable AMP data source', async () => {
     const ampDataSource = (
-      ctx.outputs!.configurableGrafanaComponent
+      ctx.outputs!.configurableGrafana
         .connections[0] as studion.grafana.AMPConnection
     ).dataSource;
     const ampDataSourceName = ampDataSource.name as unknown as Unwrap<
@@ -43,7 +43,7 @@ export function testConfigurableGrafana(ctx: GrafanaTestContext) {
   });
 
   it('should have created the folder with the configured name', async () => {
-    const folder = ctx.outputs!.configurableGrafanaComponent.folder;
+    const folder = ctx.outputs!.configurableGrafana.folder;
     const folderUid = folder.uid as unknown as Unwrap<typeof folder.uid>;
 
     await backOff(async () => {
@@ -64,7 +64,7 @@ export function testConfigurableGrafana(ctx: GrafanaTestContext) {
   });
 
   it('should have created the custom dashboard', async () => {
-    const dashboard = ctx.outputs!.configurableGrafanaComponent.dashboards[0];
+    const dashboard = ctx.outputs!.configurableGrafana.dashboards[0];
     const dashboardUid = dashboard.uid as unknown as Unwrap<
       typeof dashboard.uid
     >;

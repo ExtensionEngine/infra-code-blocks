@@ -21,7 +21,7 @@ export interface ProgramOutput {
   webServer: studion.WebServer;
   ampWorkspace: aws.amp.Workspace;
   ampGrafana: studion.grafana.Grafana;
-  configurableGrafanaComponent: studion.grafana.Grafana;
+  configurableGrafana: studion.grafana.Grafana;
 }
 
 export interface GrafanaTestContext
