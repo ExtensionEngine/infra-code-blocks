@@ -12,8 +12,7 @@ export class DatabaseBuilder {
   private kmsKeyId?: Database.Args['kmsKeyId'];
   private parameterGroupName?: Database.Args['parameterGroupName'];
   private tags?: Database.Args['tags'];
-  private createReplica?: Database.Args['createReplica'];
-  private replicaConfig?: Database.Args['replicaConfig'];
+  private replicaConfigs?: Database.Args['replicaConfigs'];
   private enableSSMConnect?: Database.Args['enableSSMConnect'];
   private ssmConnectConfig?: Database.Args['ssmConnectConfig'];
 
@@ -79,9 +78,9 @@ export class DatabaseBuilder {
     return this;
   }
 
-  public withReplica(replicaConfig: Database.Args['replicaConfig'] = {}): this {
-    this.createReplica = true;
-    this.replicaConfig = replicaConfig;
+  public addReplica(replicaConfig: Database.ReplicaConfig): this {
+    this.replicaConfigs ??= [];
+    this.replicaConfigs.push(replicaConfig);
 
     return this;
   }
@@ -116,13 +115,17 @@ export class DatabaseBuilder {
       throw new Error(`You can't set username when using snapshotIdentifier.`);
     }
 
-    if (this.createReplica && this.replicaConfig?.enableMonitoring) {
-      if (!this.enableMonitoring && !this.replicaConfig.monitoringRole) {
-        throw new Error(
-          `If you want enable monitoring on the replica instance either provide monitoring role or
-          enable monitoring on the primary instance to reuse the same monitoring role.`,
-        );
-      }
+    if (this.replicaConfigs?.length) {
+      this.replicaConfigs.forEach(config => {
+        if (config.enableMonitoring) {
+          if (!this.enableMonitoring && !config.monitoringRole) {
+            throw new Error(
+              `If you want enable monitoring on the replica instance either provide monitoring role or
+              enable monitoring on the primary instance to reuse the same monitoring role.`,
+            );
+          }
+        }
+      });
     }
 
     if (!this.vpc) {
@@ -143,8 +146,7 @@ export class DatabaseBuilder {
         kmsKeyId: this.kmsKeyId,
         parameterGroupName: this.parameterGroupName,
         tags: this.tags,
-        createReplica: this.createReplica,
-        replicaConfig: this.replicaConfig,
+        replicaConfigs: this.replicaConfigs,
         enableSSMConnect: this.enableSSMConnect,
         ssmConnectConfig: this.ssmConnectConfig,
       },

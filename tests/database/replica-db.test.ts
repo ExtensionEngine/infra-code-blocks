@@ -23,18 +23,24 @@ export function testReplicaDb(ctx: DatabaseTestContext) {
 
   it('should create a replica', async () => {
     const replicaDb = ctx.outputs.replicaDb.value;
-    const { identifier } = replicaDb.replica.instance;
 
-    assert.ok(replicaDb.replica, 'Replica should be defined');
+    assert.ok(
+      replicaDb.replicas &&
+        replicaDb.replicas.length === 1 &&
+        replicaDb.replicas[0].name === `${ctx.config.appName}-default-replica`,
+      'Replica should be defined',
+    );
+
+    const replicaInstance = replicaDb.replicas[0].instance;
 
     const command = new DescribeDBInstancesCommand({
-      DBInstanceIdentifier: identifier,
+      DBInstanceIdentifier: replicaInstance.identifier,
     });
     const { DBInstances } = await ctx.clients.rds.send(command);
     assert.ok(
       DBInstances &&
         DBInstances.length === 1 &&
-        DBInstances[0].DBInstanceIdentifier === identifier,
+        DBInstances[0].DBInstanceIdentifier === replicaInstance.identifier,
       'Replica instance should be created',
     );
   });
@@ -43,7 +49,7 @@ export function testReplicaDb(ctx: DatabaseTestContext) {
     const replicaDb = ctx.outputs.replicaDb.value;
 
     const dbInstance = replicaDb.instance;
-    const replicaInstance = replicaDb.replica.instance;
+    const replicaInstance = replicaDb.replicas[0].instance;
 
     assert.strictEqual(
       replicaInstance.replicateSourceDb,
@@ -79,7 +85,7 @@ export function testReplicaDb(ctx: DatabaseTestContext) {
     const replicaDb = ctx.outputs.replicaDb.value;
 
     const primaryInstance = replicaDb.instance;
-    const replicaInstance = replicaDb.replica.instance;
+    const replicaInstance = replicaDb.replicas[0].instance;
 
     assert.partialDeepStrictEqual(
       replicaInstance,
