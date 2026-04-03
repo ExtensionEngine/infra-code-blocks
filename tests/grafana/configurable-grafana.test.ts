@@ -11,8 +11,6 @@ import { backOff } from '../util';
 import { GrafanaTestContext } from './test-context';
 import { grafanaRequest } from './util';
 
-const backOffConfig = { numOfAttempts: 15 };
-
 export function testConfigurableGrafana(ctx: GrafanaTestContext) {
   it('should have created the folder with the configured name', async () => {
     const folder = ctx.outputs!.configurableGrafanaComponent.folder;
@@ -32,7 +30,7 @@ export function testConfigurableGrafana(ctx: GrafanaTestContext) {
         'ICB Configurable Test Folder',
         'Expected folder title to match withFolderName() value',
       );
-    }, backOffConfig);
+    });
   });
 
   it('should have created the custom dashboard', async () => {
@@ -61,6 +59,6 @@ export function testConfigurableGrafana(ctx: GrafanaTestContext) {
         data.dashboard.panels.length > 0,
         'Expected at least one panel',
       );
-    }, backOffConfig);
+    });
   });
 }

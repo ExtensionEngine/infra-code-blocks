@@ -11,8 +11,6 @@ import { backOff } from '../util';
 import { GrafanaTestContext } from './test-context';
 import { grafanaRequest, requestEndpointWithExpectedStatus } from './util';
 
-const backOffConfig = { numOfAttempts: 15 };
-
 export function testAmpGrafana(ctx: GrafanaTestContext) {
   it('should have created the AMP data source', async () => {
     const grafana = ctx.outputs!.ampGrafana;
@@ -46,7 +44,7 @@ export function testAmpGrafana(ctx: GrafanaTestContext) {
         (data.url as string).includes(ampEndpoint.replace(/\/$/, '')),
         'Expected data source URL to contain the AMP workspace endpoint',
       );
-    }, backOffConfig);
+    });
   });
 
   it('should have created the dashboard with expected panels', async () => {
@@ -89,7 +87,7 @@ export function testAmpGrafana(ctx: GrafanaTestContext) {
         expectedPanels.sort(),
         'Dashboard panels do not match expected panels',
       );
-    }, backOffConfig);
+    });
   });
 
   it('should display metrics data in the dashboard', async () => {
@@ -140,7 +138,7 @@ export function testAmpGrafana(ctx: GrafanaTestContext) {
         frames.length > 0,
         `Expected Grafana to return metric frames for namespace '${ctx.config.ampNamespace}'`,
       );
-    }, backOffConfig);
+    });
   });
 
   it('should have created the IAM role with AMP inline policy', async () => {
