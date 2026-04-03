@@ -263,7 +263,7 @@ export class Database extends pulumi.ComponentResource {
     const replica = new DatabaseReplica(
       `${this.name}-replica`,
       {
-        replicateSourceDb: this.instance.dbInstanceIdentifier.apply(id => id!),
+        replicateSourceDb: this.instance.identifier.apply(id => id!),
         dbSecurityGroup: this.dbSecurityGroup,
         monitoringRole,
         ...config,
