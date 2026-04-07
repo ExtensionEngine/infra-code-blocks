@@ -101,7 +101,7 @@ const replicaDb = new studion.DatabaseBuilder(`${config.appName}-replica-db`)
   .withCredentials({
     username: config.dbUsername,
   })
-  .addReplica({ name: `${config.appName}-default-replica` })
+  .addReplica(`${config.appName}-default-replica`)
   .withVpc(vpc.vpc)
   .build({ parent });
 
@@ -118,8 +118,7 @@ const configurableReplicaDb = new studion.DatabaseBuilder(
   .withParameterGroup(paramGroup.name)
   .withMonitoring()
   .withTags(config.tags)
-  .addReplica({
-    name: `${config.appName}-config-replica`,
+  .addReplica(`${config.appName}-config-replica`, {
     enableMonitoring: true,
     parameterGroupName: paramGroup.name,
     applyImmediately: config.applyImmediately,
@@ -140,9 +139,9 @@ const multipleReplicasDb = new studion.DatabaseBuilder(
   .withCredentials({
     username: config.dbUsername,
   })
-  .addReplica({ name: `${config.appName}-multi-replicas-one` })
-  .addReplica({ name: `${config.appName}-multi-replicas-two` })
-  .addReplica({ name: `${config.appName}-multi-replicas-three` })
+  .addReplica(`${config.appName}-multi-replicas-one`)
+  .addReplica(`${config.appName}-multi-replicas-two`)
+  .addReplica(`${config.appName}-multi-replicas-three`)
   .withVpc(vpc.vpc)
   .build({ parent });
 
