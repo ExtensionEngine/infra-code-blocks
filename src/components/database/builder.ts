@@ -78,7 +78,10 @@ export class DatabaseBuilder {
     return this;
   }
 
-  public addReplica(name: string, replicaConfig: Database.ReplicaConfig): this {
+  public addReplica(
+    name: string,
+    replicaConfig: Database.ReplicaConfig = {},
+  ): this {
     this.replicaConfigs.set(name, replicaConfig);
 
     return this;
