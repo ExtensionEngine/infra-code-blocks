@@ -5,8 +5,6 @@ import { Unwrap } from '@pulumi/pulumi';
 import { backOff } from '../util';
 import { GrafanaTestContext } from './test-context';
 
-const backOffConfig = { numOfAttempts: 15 };
-
 export async function grafanaRequest(
   ctx: GrafanaTestContext,
   method: Dispatcher.HttpMethod,
@@ -41,5 +39,5 @@ export async function requestEndpointWithExpectedStatus(
       expectedStatus,
       `Endpoint ${endpoint} should return ${expectedStatus}`,
     );
-  }, backOffConfig);
+  });
 }
