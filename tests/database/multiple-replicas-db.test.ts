@@ -25,32 +25,45 @@ export function testMultipleReplicasDb(ctx: DatabaseTestContext) {
     const multipleReplicasDb = ctx.outputs.multipleReplicasDb.value;
 
     assert.ok(
-      multipleReplicasDb.replicas &&
-        multipleReplicasDb.replicas.length === 3 &&
-        multipleReplicasDb.replicas[0].name ===
-          `${ctx.config.appName}-multi-replicas-one` &&
-        multipleReplicasDb.replicas[1].name ===
-          `${ctx.config.appName}-multi-replicas-two` &&
-        multipleReplicasDb.replicas[2].name ===
-          `${ctx.config.appName}-multi-replicas-three`,
+      multipleReplicasDb.replicas && multipleReplicasDb.replicas.length === 3,
       'Multiple replicas should be defined',
     );
 
-    multipleReplicasDb.replicas.forEach(async (replica: any) => {
-      const replicaInstance = replica.instance;
+    assert.ok(
+      multipleReplicasDb.replicas[0].name ===
+        `${ctx.config.appName}-multi-replicas-one`,
+      'Replica should have correct name',
+    );
 
-      const command = new DescribeDBInstancesCommand({
-        DBInstanceIdentifier: replicaInstance.identifier,
-      });
+    assert.ok(
+      multipleReplicasDb.replicas[1].name ===
+        `${ctx.config.appName}-multi-replicas-two`,
+      'Replica should have correct name',
+    );
 
-      const { DBInstances } = await ctx.clients.rds.send(command);
-      assert.ok(
-        DBInstances &&
-          DBInstances.length === 1 &&
-          DBInstances[0].DBInstanceIdentifier === replicaInstance.identifier,
-        'Replica instance should be created',
-      );
-    });
+    assert.ok(
+      multipleReplicasDb.replicas[2].name ===
+        `${ctx.config.appName}-multi-replicas-three`,
+      'Replica should have correct name',
+    );
+
+    await Promise.all(
+      multipleReplicasDb.replicas.map(async (replica: any) => {
+        const replicaInstance = replica.instance;
+
+        const command = new DescribeDBInstancesCommand({
+          DBInstanceIdentifier: replicaInstance.identifier,
+        });
+
+        const { DBInstances } = await ctx.clients.rds.send(command);
+        assert.ok(
+          DBInstances &&
+            DBInstances.length === 1 &&
+            DBInstances[0].DBInstanceIdentifier === replicaInstance.identifier,
+          'Replica instance should be created',
+        );
+      }),
+    );
   });
 
   it('should properly associate primary instance with multiple replicas', async () => {

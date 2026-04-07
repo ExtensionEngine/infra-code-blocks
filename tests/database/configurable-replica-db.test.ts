@@ -29,11 +29,14 @@ export function testConfigurableReplicaDb(ctx: DatabaseTestContext) {
 
     assert.ok(
       configurableReplicaDb.replicas &&
-        configurableReplicaDb.replicas.length === 1 &&
-        configurableReplicaDb.replicas[0].name ===
-          `${ctx.config.appName}-config-replica`,
-
+        configurableReplicaDb.replicas.length === 1,
       'Replica should be defined',
+    );
+
+    assert.ok(
+      configurableReplicaDb.replicas[0].name ===
+        `${ctx.config.appName}-config-replica`,
+      'Replica should have correct name',
     );
 
     const replicaInstance = configurableReplicaDb.replicas[0].instance;

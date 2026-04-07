@@ -25,10 +25,13 @@ export function testReplicaDb(ctx: DatabaseTestContext) {
     const replicaDb = ctx.outputs.replicaDb.value;
 
     assert.ok(
-      replicaDb.replicas &&
-        replicaDb.replicas.length === 1 &&
-        replicaDb.replicas[0].name === `${ctx.config.appName}-default-replica`,
+      replicaDb.replicas && replicaDb.replicas.length === 1,
       'Replica should be defined',
+    );
+
+    assert.ok(
+      replicaDb.replicas[0].name === `${ctx.config.appName}-default-replica`,
+      'Replica should have correct name',
     );
 
     const replicaInstance = replicaDb.replicas[0].instance;
