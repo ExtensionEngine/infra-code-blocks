@@ -6,7 +6,7 @@ import * as assert from 'node:assert';
 import { DatabaseTestContext } from './test-context';
 import { it } from 'node:test';
 
-export function testConfigurableReplica(ctx: DatabaseTestContext) {
+export function testConfigurableReplicaDb(ctx: DatabaseTestContext) {
   it('should create a primary instance with a configurable replica', async () => {
     const configurableReplicaDb = ctx.outputs.configurableReplicaDb.value;
     const { identifier } = configurableReplicaDb.instance;
@@ -26,25 +26,36 @@ export function testConfigurableReplica(ctx: DatabaseTestContext) {
 
   it('should create a replica', async () => {
     const configurableReplicaDb = ctx.outputs.configurableReplicaDb.value;
-    const { identifier } = configurableReplicaDb.replica.instance;
 
-    assert.ok(configurableReplicaDb.replica, 'Replica should be defined');
+    assert.ok(
+      configurableReplicaDb.replicas &&
+        configurableReplicaDb.replicas.length === 1,
+      'Replica should be defined',
+    );
+
+    assert.ok(
+      configurableReplicaDb.replicas[0].name ===
+        `${ctx.config.appName}-config-replica`,
+      'Replica should have correct name',
+    );
+
+    const replicaInstance = configurableReplicaDb.replicas[0].instance;
 
     const command = new DescribeDBInstancesCommand({
-      DBInstanceIdentifier: identifier,
+      DBInstanceIdentifier: replicaInstance.identifier,
     });
     const { DBInstances } = await ctx.clients.rds.send(command);
     assert.ok(
       DBInstances &&
         DBInstances.length === 1 &&
-        DBInstances[0].DBInstanceIdentifier === identifier,
+        DBInstances[0].DBInstanceIdentifier === replicaInstance.identifier,
       'Replica instance should be created',
     );
   });
 
   it('should properly configure replica instance', () => {
     const configurableReplicaDb = ctx.outputs.configurableReplicaDb.value;
-    const replicaInstance = configurableReplicaDb.replica.instance;
+    const replicaInstance = configurableReplicaDb.replicas[0].instance;
 
     assert.strictEqual(
       replicaInstance.applyImmediately,
@@ -65,7 +76,7 @@ export function testConfigurableReplica(ctx: DatabaseTestContext) {
 
   it('should properly configure replica monitoring options', () => {
     const configurableReplicaDb = ctx.outputs.configurableReplicaDb.value;
-    const replicaInstance = configurableReplicaDb.replica.instance;
+    const replicaInstance = configurableReplicaDb.replicas[0].instance;
     const primaryInstance = configurableReplicaDb.instance;
 
     assert.strictEqual(
@@ -92,7 +103,7 @@ export function testConfigurableReplica(ctx: DatabaseTestContext) {
 
   it('should properly configure replica parameter group', () => {
     const configurableReplicaDb = ctx.outputs.configurableReplicaDb.value;
-    const replicaInstance = configurableReplicaDb.replica.instance;
+    const replicaInstance = configurableReplicaDb.replicas[0].instance;
     const paramGroup = ctx.outputs.paramGroup.value;
 
     assert.strictEqual(
@@ -104,7 +115,7 @@ export function testConfigurableReplica(ctx: DatabaseTestContext) {
 
   it('should properly configure replica tags', async () => {
     const configurableReplicaDb = ctx.outputs.configurableReplicaDb.value;
-    const replicaInstance = configurableReplicaDb.replica.instance;
+    const replicaInstance = configurableReplicaDb.replicas[0].instance;
 
     const command = new ListTagsForResourceCommand({
       ResourceName: replicaInstance.arn,

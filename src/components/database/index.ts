@@ -35,7 +35,7 @@ export namespace Database {
       'replicateSourceDb' | keyof DatabaseReplica.Security
     >
   > & {
-    /*
+    /**
      * Enables monitoring for the replica instance and
      * reuses the same monitoring role from the primary instance
      * if you don't provide a custom `monitoringRole`.
@@ -53,8 +53,7 @@ export namespace Database {
       snapshotIdentifier?: pulumi.Input<string>;
       parameterGroupName?: pulumi.Input<string>;
       kmsKeyId?: pulumi.Input<string>;
-      createReplica?: pulumi.Input<boolean>;
-      replicaConfig?: ReplicaConfig;
+      replicaConfigs?: Map<string, ReplicaConfig>;
       enableSSMConnect?: pulumi.Input<boolean>;
       ssmConnectConfig?: SSMConnectConfig;
       tags?: pulumi.Input<{
@@ -86,7 +85,7 @@ export class Database extends pulumi.ComponentResource {
   kmsKeyId: pulumi.Output<string>;
   monitoringRole?: aws.iam.Role;
   encryptedSnapshotCopy?: aws.rds.SnapshotCopy;
-  replica?: DatabaseReplica;
+  replicas?: DatabaseReplica[];
   ec2SSMConnect?: Ec2SSMConnect;
 
   constructor(
@@ -112,8 +111,7 @@ export class Database extends pulumi.ComponentResource {
       kmsKeyId,
       enableMonitoring,
       snapshotIdentifier,
-      createReplica,
-      replicaConfig = {},
+      replicaConfigs,
       enableSSMConnect,
       ssmConnectConfig = {},
     } = argsWithDefaults;
@@ -143,8 +141,10 @@ export class Database extends pulumi.ComponentResource {
 
     this.instance = this.createDatabaseInstance(argsWithDefaults);
 
-    if (createReplica) {
-      this.replica = this.createDatabaseReplica(replicaConfig);
+    if (replicaConfigs?.size) {
+      this.replicas = [...replicaConfigs.entries()].map(([name, config]) =>
+        this.createDatabaseReplica(name, config),
+      );
     }
 
     if (enableSSMConnect) {
@@ -255,18 +255,20 @@ export class Database extends pulumi.ComponentResource {
     );
   }
 
-  private createDatabaseReplica(config: Database.Args['replicaConfig'] = {}) {
-    const monitoringRole = config.enableMonitoring
-      ? config.monitoringRole || this.monitoringRole
+  private createDatabaseReplica(name: string, config: Database.ReplicaConfig) {
+    const { enableMonitoring, monitoringRole, ...args } = config;
+
+    const resolvedMonitoringRole = enableMonitoring
+      ? monitoringRole || this.monitoringRole
       : undefined;
 
     const replica = new DatabaseReplica(
-      `${this.name}-replica`,
+      name,
       {
         replicateSourceDb: this.instance.identifier.apply(id => id!),
         dbSecurityGroup: this.dbSecurityGroup,
-        monitoringRole,
-        ...config,
+        monitoringRole: resolvedMonitoringRole,
+        ...args,
       },
       { parent: this, dependsOn: [this.instance] },
     );

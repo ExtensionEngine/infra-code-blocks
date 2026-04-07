@@ -101,7 +101,7 @@ const replicaDb = new studion.DatabaseBuilder(`${config.appName}-replica-db`)
   .withCredentials({
     username: config.dbUsername,
   })
-  .withReplica()
+  .addReplica(`${config.appName}-default-replica`)
   .withVpc(vpc.vpc)
   .build({ parent });
 
@@ -118,7 +118,7 @@ const configurableReplicaDb = new studion.DatabaseBuilder(
   .withParameterGroup(paramGroup.name)
   .withMonitoring()
   .withTags(config.tags)
-  .withReplica({
+  .addReplica(`${config.appName}-config-replica`, {
     enableMonitoring: true,
     parameterGroupName: paramGroup.name,
     applyImmediately: config.applyImmediately,
@@ -126,6 +126,22 @@ const configurableReplicaDb = new studion.DatabaseBuilder(
     autoMinorVersionUpgrade: config.autoMinorVersionUpgrade,
     tags: config.tags,
   })
+  .withVpc(vpc.vpc)
+  .build({ parent });
+
+const multipleReplicasDb = new studion.DatabaseBuilder(
+  `${config.appName}-multi-replicas-db`,
+)
+  .withInstance({
+    dbName: config.dbName,
+    skipFinalSnapshot: true,
+  })
+  .withCredentials({
+    username: config.dbUsername,
+  })
+  .addReplica(`${config.appName}-multi-replicas-one`)
+  .addReplica(`${config.appName}-multi-replicas-two`)
+  .addReplica(`${config.appName}-multi-replicas-three`)
   .withVpc(vpc.vpc)
   .build({ parent });
 
@@ -153,5 +169,6 @@ export {
   snapshotDb,
   replicaDb,
   configurableReplicaDb,
+  multipleReplicasDb,
   ssmConnectDb,
 };

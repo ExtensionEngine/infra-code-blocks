@@ -107,6 +107,7 @@ export class DatabaseReplica extends pulumi.ComponentResource {
         storageEncrypted: true,
         publiclyAccessible: false,
         skipFinalSnapshot: true,
+        maintenanceWindow: 'Mon:07:00-Mon:07:30',
         ...monitoringOptions,
         tags: { ...commonTags, ...argsWithDefaults.tags },
       },
