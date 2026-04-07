@@ -12,7 +12,7 @@ export class DatabaseBuilder {
   private kmsKeyId?: Database.Args['kmsKeyId'];
   private parameterGroupName?: Database.Args['parameterGroupName'];
   private tags?: Database.Args['tags'];
-  private replicaConfigs?: Database.Args['replicaConfigs'];
+  private replicaConfigs: Map<string, Database.ReplicaConfig> = new Map();
   private enableSSMConnect?: Database.Args['enableSSMConnect'];
   private ssmConnectConfig?: Database.Args['ssmConnectConfig'];
 
@@ -78,9 +78,8 @@ export class DatabaseBuilder {
     return this;
   }
 
-  public addReplica(replicaConfig: Database.ReplicaConfig): this {
-    this.replicaConfigs ??= [];
-    this.replicaConfigs.push(replicaConfig);
+  public addReplica(name: string, replicaConfig: Database.ReplicaConfig): this {
+    this.replicaConfigs.set(name, replicaConfig);
 
     return this;
   }
@@ -115,7 +114,7 @@ export class DatabaseBuilder {
       throw new Error(`You can't set username when using snapshotIdentifier.`);
     }
 
-    if (this.replicaConfigs?.length) {
+    if (this.replicaConfigs?.size) {
       this.replicaConfigs.forEach(config => {
         if (config.enableMonitoring) {
           if (!this.enableMonitoring && !config.monitoringRole) {

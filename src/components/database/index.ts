@@ -36,10 +36,6 @@ export namespace Database {
     >
   > & {
     /**
-     * Replica resource name
-     */
-    name: string;
-    /**
      * Enables monitoring for the replica instance and
      * reuses the same monitoring role from the primary instance
      * if you don't provide a custom `monitoringRole`.
@@ -57,7 +53,7 @@ export namespace Database {
       snapshotIdentifier?: pulumi.Input<string>;
       parameterGroupName?: pulumi.Input<string>;
       kmsKeyId?: pulumi.Input<string>;
-      replicaConfigs?: ReplicaConfig[];
+      replicaConfigs?: Map<string, ReplicaConfig>;
       enableSSMConnect?: pulumi.Input<boolean>;
       ssmConnectConfig?: SSMConnectConfig;
       tags?: pulumi.Input<{
@@ -145,9 +141,9 @@ export class Database extends pulumi.ComponentResource {
 
     this.instance = this.createDatabaseInstance(argsWithDefaults);
 
-    if (replicaConfigs?.length) {
-      this.replicas = replicaConfigs.map(config =>
-        this.createDatabaseReplica(config),
+    if (replicaConfigs?.size) {
+      this.replicas = [...replicaConfigs.entries()].map(([name, config]) =>
+        this.createDatabaseReplica(name, config),
       );
     }
 
@@ -259,8 +255,8 @@ export class Database extends pulumi.ComponentResource {
     );
   }
 
-  private createDatabaseReplica(config: Database.ReplicaConfig) {
-    const { name, enableMonitoring, monitoringRole, ...args } = config;
+  private createDatabaseReplica(name: string, config: Database.ReplicaConfig) {
+    const { enableMonitoring, monitoringRole, ...args } = config;
 
     const resolvedMonitoringRole = enableMonitoring
       ? monitoringRole || this.monitoringRole
