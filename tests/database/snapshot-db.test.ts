@@ -16,7 +16,7 @@ export function testSnapshotDb(ctx: DatabaseTestContext) {
     assert.ok(snapshotDb.instance, 'Database instance should be defined');
 
     const command = new DescribeDBInstancesCommand({
-      DBInstanceIdentifier: snapshotDb.instance.dbInstanceIdentifier,
+      DBInstanceIdentifier: snapshotDb.instance.identifier,
     });
 
     const { DBInstances } = await ctx.clients.rds.send(command);
@@ -27,7 +27,7 @@ export function testSnapshotDb(ctx: DatabaseTestContext) {
     const [DBInstance] = DBInstances;
     assert.strictEqual(
       DBInstance.DBInstanceIdentifier,
-      snapshotDb.instance.dbInstanceIdentifier,
+      snapshotDb.instance.identifier,
       'Database instance identifier should match',
     );
   });
@@ -66,9 +66,9 @@ export function testSnapshotDb(ctx: DatabaseTestContext) {
     const snapshotDb = ctx.outputs.snapshotDb.value;
 
     assert.strictEqual(
-      snapshotDb.instance.dbSnapshotIdentifier,
+      snapshotDb.instance.snapshotIdentifier,
       snapshotDb.encryptedSnapshotCopy.targetDbSnapshotIdentifier,
-      'Db snapshot identifier should be set correctly',
+      'Snapshot identifier should be set correctly',
     );
   });
 }

@@ -12,5 +12,6 @@ export const dbPassword = 'dbpassword';
 export const applyImmediately = true;
 export const allowMajorVersionUpgrade = true;
 export const autoMinorVersionUpgrade = false;
+export const skipFinalSnapshot = true;
 export const allocatedStorage = 10;
 export const maxAllocatedStorage = 50;

@@ -1,5 +1,4 @@
 import * as aws from '@pulumi/aws';
-import * as awsNative from '@pulumi/aws-native';
 import * as awsx from '@pulumi/awsx';
 import * as pulumi from '@pulumi/pulumi';
 import { commonTags } from '../../shared/common-tags';
@@ -17,6 +16,7 @@ export namespace Database {
     allowMajorVersionUpgrade?: pulumi.Input<boolean>;
     autoMinorVersionUpgrade?: pulumi.Input<boolean>;
     applyImmediately?: pulumi.Input<boolean>;
+    skipFinalSnapshot?: pulumi.Input<boolean>;
   };
 
   export type Credentials = {
@@ -66,6 +66,7 @@ export namespace Database {
 const defaults = {
   multiAz: false,
   applyImmediately: false,
+  skipFinalSnapshot: false,
   allocatedStorage: 20,
   maxAllocatedStorage: 100,
   instanceClass: 'db.t4g.micro',
@@ -77,7 +78,7 @@ const defaults = {
 
 export class Database extends pulumi.ComponentResource {
   name: string;
-  instance: awsNative.rds.DbInstance;
+  instance: aws.rds.Instance;
   vpc: pulumi.Output<awsx.ec2.Vpc>;
   dbSubnetGroup: aws.rds.SubnetGroup;
   dbSecurityGroup: aws.ec2.SecurityGroup;
@@ -262,7 +263,7 @@ export class Database extends pulumi.ComponentResource {
     const replica = new DatabaseReplica(
       `${this.name}-replica`,
       {
-        replicateSourceDb: this.instance.dbInstanceIdentifier.apply(id => id!),
+        replicateSourceDb: this.instance.identifier.apply(id => id!),
         dbSecurityGroup: this.dbSecurityGroup,
         monitoringRole,
         ...config,
@@ -285,29 +286,31 @@ export class Database extends pulumi.ComponentResource {
   }
 
   private createDatabaseInstance(args: Database.Args) {
+    const stack = pulumi.getStack();
+
     const monitoringOptions =
       args.enableMonitoring && this.monitoringRole
         ? {
             monitoringInterval: 60,
             monitoringRoleArn: this.monitoringRole.arn,
-            enablePerformanceInsights: true,
+            performanceInsightsEnabled: true,
             performanceInsightsRetentionPeriod: 7,
           }
         : {};
 
-    const instance = new awsNative.rds.DbInstance(
+    const instance = new aws.rds.Instance(
       `${this.name}-rds`,
       {
-        dbInstanceIdentifier: `${this.name}-db-instance`,
+        identifierPrefix: `${this.name}-`,
         engine: 'postgres',
         engineVersion: args.engineVersion,
-        dbInstanceClass: args.instanceClass,
+        instanceClass: args.instanceClass!,
         dbName: args.dbName,
-        masterUsername: args.username,
-        masterUserPassword: this.password.value,
+        username: args.username,
+        password: this.password.value,
         dbSubnetGroupName: this.dbSubnetGroup.name,
-        vpcSecurityGroups: [this.dbSecurityGroup.id],
-        allocatedStorage: args.allocatedStorage?.toString(),
+        vpcSecurityGroupIds: [this.dbSecurityGroup.id],
+        allocatedStorage: args.allocatedStorage,
         maxAllocatedStorage: args.maxAllocatedStorage,
         multiAz: args.multiAz,
         applyImmediately: args.applyImmediately,
@@ -316,21 +319,17 @@ export class Database extends pulumi.ComponentResource {
         kmsKeyId: this.kmsKeyId,
         storageEncrypted: true,
         publiclyAccessible: false,
-        preferredMaintenanceWindow: 'Mon:07:00-Mon:07:30',
-        preferredBackupWindow: '06:00-06:30',
+        skipFinalSnapshot: args.skipFinalSnapshot,
+        maintenanceWindow: 'Mon:07:00-Mon:07:30',
+        finalSnapshotIdentifier: `${this.name}-final-snapshot-${stack}`,
+        backupWindow: '06:00-06:30',
         backupRetentionPeriod: 14,
-        caCertificateIdentifier: 'rds-ca-rsa2048-g1',
-        dbParameterGroupName: args.parameterGroupName,
-        dbSnapshotIdentifier:
+        caCertIdentifier: 'rds-ca-rsa2048-g1',
+        parameterGroupName: args.parameterGroupName,
+        snapshotIdentifier:
           this.encryptedSnapshotCopy?.targetDbSnapshotIdentifier,
         ...monitoringOptions,
-        tags: pulumi
-          .output(args.tags)
-          .apply(tags => [
-            ...Object.entries({ ...commonTags, ...tags }).map(
-              ([key, value]) => ({ key, value }),
-            ),
-          ]),
+        tags: { ...commonTags, ...args.tags },
       },
       { parent: this, dependsOn: [this.password] },
     );
