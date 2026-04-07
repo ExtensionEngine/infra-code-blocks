@@ -48,21 +48,25 @@ export function testMultipleReplicasDb(ctx: DatabaseTestContext) {
     );
 
     await Promise.all(
-      multipleReplicasDb.replicas.map(async (replica: any) => {
-        const replicaInstance = replica.instance;
+      multipleReplicasDb.replicas.map(
+        async ({
+          instance: { identifier },
+        }: {
+          instance: { identifier: string };
+        }) => {
+          const command = new DescribeDBInstancesCommand({
+            DBInstanceIdentifier: identifier,
+          });
 
-        const command = new DescribeDBInstancesCommand({
-          DBInstanceIdentifier: replicaInstance.identifier,
-        });
-
-        const { DBInstances } = await ctx.clients.rds.send(command);
-        assert.ok(
-          DBInstances &&
-            DBInstances.length === 1 &&
-            DBInstances[0].DBInstanceIdentifier === replicaInstance.identifier,
-          'Replica instance should be created',
-        );
-      }),
+          const { DBInstances } = await ctx.clients.rds.send(command);
+          assert.ok(
+            DBInstances &&
+              DBInstances.length === 1 &&
+              DBInstances[0].DBInstanceIdentifier === identifier,
+            'Replica instance should be created',
+          );
+        },
+      ),
     );
   });
 
