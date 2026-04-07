@@ -116,13 +116,14 @@ export class DatabaseBuilder {
 
     if (this.replicaConfigs?.size) {
       this.replicaConfigs.forEach(config => {
-        if (config.enableMonitoring) {
-          if (!this.enableMonitoring && !config.monitoringRole) {
-            throw new Error(
-              `If you want enable monitoring on the replica instance either provide monitoring role or
-              enable monitoring on the primary instance to reuse the same monitoring role.`,
-            );
-          }
+        if (
+          config.enableMonitoring &&
+          !this.enableMonitoring &&
+          !config.monitoringRole
+        ) {
+          throw new Error(
+            'To enable replica monitoring, either provide a monitoring role or enable primary instance monitoring.',
+          );
         }
       });
     }
