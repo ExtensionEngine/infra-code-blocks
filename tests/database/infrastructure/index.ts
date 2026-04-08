@@ -141,7 +141,6 @@ const multipleReplicasDb = new studion.DatabaseBuilder(
   })
   .addReplica(`${config.appName}-multi-replicas-one`)
   .addReplica(`${config.appName}-multi-replicas-two`)
-  .addReplica(`${config.appName}-multi-replicas-three`)
   .withVpc(vpc.vpc)
   .build({ parent });
 
