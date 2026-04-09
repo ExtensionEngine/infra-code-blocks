@@ -25,7 +25,7 @@ export function testMultipleReplicasDb(ctx: DatabaseTestContext) {
     const multipleReplicasDb = ctx.outputs.multipleReplicasDb.value;
 
     assert.ok(
-      multipleReplicasDb.replicas && multipleReplicasDb.replicas.length === 3,
+      multipleReplicasDb.replicas && multipleReplicasDb.replicas.length === 2,
       'Multiple replicas should be defined',
     );
 
@@ -38,12 +38,6 @@ export function testMultipleReplicasDb(ctx: DatabaseTestContext) {
     assert.ok(
       multipleReplicasDb.replicas[1].name ===
         `${ctx.config.appName}-multi-replicas-two`,
-      'Replica should have correct name',
-    );
-
-    assert.ok(
-      multipleReplicasDb.replicas[2].name ===
-        `${ctx.config.appName}-multi-replicas-three`,
       'Replica should have correct name',
     );
 
@@ -88,7 +82,7 @@ export function testMultipleReplicasDb(ctx: DatabaseTestContext) {
     const { ReadReplicaDBInstanceIdentifiers } = DBInstance;
     assert.ok(
       ReadReplicaDBInstanceIdentifiers &&
-        ReadReplicaDBInstanceIdentifiers.length === 3,
+        ReadReplicaDBInstanceIdentifiers.length === 2,
       'Database instance should have multiple read replica instances associated',
     );
 

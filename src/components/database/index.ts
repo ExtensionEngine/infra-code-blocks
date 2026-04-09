@@ -142,9 +142,15 @@ export class Database extends pulumi.ComponentResource {
     this.instance = this.createDatabaseInstance(argsWithDefaults);
 
     if (replicaConfigs?.size) {
-      this.replicas = [...replicaConfigs.entries()].map(([name, config]) =>
-        this.createDatabaseReplica(name, config),
-      );
+      this.replicas = [];
+      let previous = this.instance;
+
+      for (const [name, config] of replicaConfigs) {
+        this.replicas.push(
+          this.createDatabaseReplica(name, config, { dependsOn: [previous] }),
+        );
+        previous = this.replicas.at(-1)!.instance;
+      }
     }
 
     if (enableSSMConnect) {
@@ -255,7 +261,11 @@ export class Database extends pulumi.ComponentResource {
     );
   }
 
-  private createDatabaseReplica(name: string, config: Database.ReplicaConfig) {
+  private createDatabaseReplica(
+    name: string,
+    config: Database.ReplicaConfig,
+    opts: pulumi.ComponentResourceOptions = {},
+  ) {
     const { enableMonitoring, monitoringRole, ...args } = config;
 
     const resolvedMonitoringRole = enableMonitoring
@@ -270,7 +280,7 @@ export class Database extends pulumi.ComponentResource {
         monitoringRole: resolvedMonitoringRole,
         ...args,
       },
-      { parent: this, dependsOn: [this.instance] },
+      { ...opts, parent: this },
     );
 
     return replica;
