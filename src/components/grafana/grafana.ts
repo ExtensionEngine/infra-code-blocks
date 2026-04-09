@@ -8,11 +8,18 @@ export namespace Grafana {
     connectionBuilders: GrafanaConnection.CreateConnection[];
     dashboardBuilders: GrafanaDashboardBuilder.CreateDashboard[];
     folderName?: string;
+    scopes?: string[];
   };
 }
 
 export class Grafana extends pulumi.ComponentResource {
   public readonly name: string;
+  public readonly stack: pulumi.Output<grafana.cloud.GetStackResult>;
+  public readonly accessPolicy: grafana.cloud.AccessPolicy;
+  public readonly accessPolicyToken: pulumi.Output<string>;
+  public readonly serviceAccount: grafana.cloud.StackServiceAccount;
+  public readonly serviceAccountToken: pulumi.Output<string>;
+  public readonly provider: grafana.Provider;
   public readonly connections: GrafanaConnection[];
   public readonly folder: grafana.oss.Folder;
   public readonly dashboards: grafana.oss.Dashboard[];
@@ -26,20 +33,136 @@ export class Grafana extends pulumi.ComponentResource {
 
     this.name = name;
 
+    this.stack = grafana.cloud.getStackOutput({ slug: this.getStackSlug() });
+
+    this.accessPolicy = this.createAccessPolicy(args.scopes);
+    const accessPolicyToken = this.createAccessPolicyToken();
+    this.accessPolicyToken = pulumi.secret(accessPolicyToken.token);
+
+    this.serviceAccount = this.createServiceAccount();
+    const serviceAccountToken = this.createServiceAccountToken();
+    this.serviceAccountToken = pulumi.secret(serviceAccountToken.key);
+
+    this.provider = this.createProvider();
+
     this.connections = args.connectionBuilders.map(build => {
-      return build({ parent: this });
+      return build(
+        { stack: this.stack },
+        { parent: this, provider: this.provider },
+      );
     });
 
-    this.folder = new grafana.oss.Folder(
-      `${this.name}-folder`,
-      { title: args.folderName ?? `${this.name}-ICB-GENERATED` },
-      { parent: this },
-    );
+    this.folder = this.createFolder(args.folderName, this.provider);
 
     this.dashboards = args.dashboardBuilders.map(build => {
-      return build(this.folder, { parent: this.folder });
+      return build(this.folder, {
+        parent: this.folder,
+        provider: this.provider,
+      });
     });
 
     this.registerOutputs();
+  }
+
+  private getStackSlug(): string {
+    const grafanaConfig = new pulumi.Config('grafana');
+    const grafanaUrl = grafanaConfig.get('url') ?? process.env.GRAFANA_URL;
+
+    if (!grafanaUrl) {
+      throw new Error(
+        'Grafana URL is not configured. Set it via Pulumi config (grafana:url) or GRAFANA_URL env var.',
+      );
+    }
+
+    return new URL(grafanaUrl).hostname.split('.')[0];
+  }
+
+  private createAccessPolicy(scopes?: string[]): grafana.cloud.AccessPolicy {
+    return new grafana.cloud.AccessPolicy(
+      `${this.name}-access-policy`,
+      {
+        region: this.stack.regionSlug,
+        name: `${this.name}-access-policy`,
+        scopes: [
+          ...new Set([
+            'accesspolicies:read',
+            'accesspolicies:write',
+            'accesspolicies:delete',
+            'datasources:read',
+            'datasources:write',
+            'datasources:delete',
+            'stacks:read',
+            'stack-dashboards:read',
+            'stack-dashboards:write',
+            'stack-dashboards:delete',
+            'stack-plugins:read',
+            'stack-plugins:write',
+            'stack-plugins:delete',
+            ...(scopes ?? []),
+          ]),
+        ],
+        realms: [{ type: 'stack', identifier: this.stack.id }],
+      },
+      { parent: this },
+    );
+  }
+
+  private createAccessPolicyToken(): grafana.cloud.AccessPolicyToken {
+    return new grafana.cloud.AccessPolicyToken(
+      `${this.name}-cloud-token`,
+      {
+        region: this.stack.regionSlug,
+        accessPolicyId: this.accessPolicy.policyId,
+        name: `${this.name}-cloud-token`,
+      },
+      { parent: this },
+    );
+  }
+
+  private createServiceAccount(): grafana.cloud.StackServiceAccount {
+    return new grafana.cloud.StackServiceAccount(
+      `${this.name}-sa`,
+      {
+        stackSlug: this.stack.slug,
+        name: `${this.name}-sa`,
+        role: 'Admin',
+      },
+      { parent: this },
+    );
+  }
+
+  private createServiceAccountToken(): grafana.cloud.StackServiceAccountToken {
+    return new grafana.cloud.StackServiceAccountToken(
+      `${this.name}-sa-token`,
+      {
+        stackSlug: this.stack.slug,
+        serviceAccountId: this.serviceAccount.id,
+        name: `${this.name}-sa-token`,
+      },
+      { parent: this },
+    );
+  }
+
+  private createFolder(
+    folderName: string | undefined,
+    provider: grafana.Provider,
+  ): grafana.oss.Folder {
+    return new grafana.oss.Folder(
+      `${this.name}-folder`,
+      { title: folderName ?? `${this.name}-ICB-GENERATED` },
+      { parent: this, provider },
+    );
+  }
+
+  private createProvider(): grafana.Provider {
+    return new grafana.Provider(
+      `${this.name}-provider`,
+      {
+        cloudAccessPolicyToken: this.accessPolicyToken,
+        url: this.stack.url,
+        auth: this.serviceAccountToken,
+      },
+      { parent: this },
+    );
   }
 }

@@ -3,15 +3,17 @@ import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
 import { commonTags } from '../../../shared/common-tags';
 
-const grafanaConfig = new pulumi.Config('grafana');
-
 export namespace GrafanaConnection {
   export type Args = {
     awsAccountId: string;
     dataSourceName?: string;
+    stack: pulumi.Input<grafana.cloud.GetStackResult>;
   };
 
+  export type CreateConnectionContext = Pick<Args, 'stack'>;
+
   export type CreateConnection = (
+    ctx: CreateConnectionContext,
     opts: pulumi.ComponentResourceOptions,
   ) => GrafanaConnection;
 }
@@ -21,6 +23,7 @@ export abstract class GrafanaConnection extends pulumi.ComponentResource {
   public readonly role: aws.iam.Role;
   public abstract readonly dataSource: grafana.oss.DataSource;
   protected readonly dataSourceName: string;
+  protected readonly stack: pulumi.Output<grafana.cloud.GetStackResult>;
 
   constructor(
     type: string,
@@ -31,30 +34,14 @@ export abstract class GrafanaConnection extends pulumi.ComponentResource {
     super(type, name, {}, opts);
 
     this.name = name;
-
     this.dataSourceName = args.dataSourceName ?? `${name}-datasource`;
-
+    this.stack = pulumi.output(args.stack);
     this.role = this.createIamRole(args.awsAccountId);
 
     this.registerOutputs();
   }
 
-  protected getStackSlug(): string {
-    const grafanaUrl = grafanaConfig.get('url') ?? process.env.GRAFANA_URL;
-
-    if (!grafanaUrl) {
-      throw new Error(
-        'Grafana URL is not configured. Set it via Pulumi config (grafana:url) or GRAFANA_URL env var.',
-      );
-    }
-
-    return new URL(grafanaUrl).hostname.split('.')[0];
-  }
-
   private createIamRole(awsAccountId: string): aws.iam.Role {
-    const stackSlug = this.getStackSlug();
-    const grafanaStack = grafana.cloud.getStack({ slug: stackSlug });
-
     const assumeRolePolicy = aws.iam.getPolicyDocumentOutput({
       statements: [
         {
@@ -70,7 +57,7 @@ export abstract class GrafanaConnection extends pulumi.ComponentResource {
             {
               test: 'StringEquals',
               variable: 'sts:ExternalId',
-              values: [pulumi.output(grafanaStack).id],
+              values: [this.stack.id],
             },
           ],
         },

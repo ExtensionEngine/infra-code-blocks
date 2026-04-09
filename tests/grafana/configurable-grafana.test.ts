@@ -8,12 +8,17 @@ import { grafanaRequest } from './util';
 
 export function testConfigurableGrafana(ctx: GrafanaTestContext) {
   it('should have created the configurable AMP data source', async () => {
+    const grafana = ctx.outputs!.configurableGrafana;
+
     const ampDataSource = (
-      ctx.outputs!.configurableGrafana
-        .connections[0] as studion.grafana.AMPConnection
+      grafana.connections[0] as studion.grafana.AMPConnection
     ).dataSource;
     const ampDataSourceName = ampDataSource.name as unknown as Unwrap<
       typeof ampDataSource.name
+    >;
+
+    const authToken = grafana.serviceAccountToken as unknown as Unwrap<
+      typeof grafana.serviceAccountToken
     >;
 
     await backOff(async () => {
@@ -21,6 +26,7 @@ export function testConfigurableGrafana(ctx: GrafanaTestContext) {
         ctx,
         'GET',
         `/api/datasources/name/${encodeURIComponent(ampDataSourceName)}`,
+        authToken,
       );
       assert.strictEqual(statusCode, 200, 'Expected data source to exist');
 
@@ -43,14 +49,21 @@ export function testConfigurableGrafana(ctx: GrafanaTestContext) {
   });
 
   it('should have created the folder with the configured name', async () => {
-    const folder = ctx.outputs!.configurableGrafana.folder;
+    const grafana = ctx.outputs!.configurableGrafana;
+
+    const folder = grafana.folder;
     const folderUid = folder.uid as unknown as Unwrap<typeof folder.uid>;
+
+    const authToken = grafana.serviceAccountToken as unknown as Unwrap<
+      typeof grafana.serviceAccountToken
+    >;
 
     await backOff(async () => {
       const { body, statusCode } = await grafanaRequest(
         ctx,
         'GET',
         `/api/folders/${folderUid}`,
+        authToken,
       );
       assert.strictEqual(statusCode, 200, 'Expected folder to exist');
 
@@ -64,9 +77,15 @@ export function testConfigurableGrafana(ctx: GrafanaTestContext) {
   });
 
   it('should have created the custom dashboard', async () => {
-    const dashboard = ctx.outputs!.configurableGrafana.dashboards[0];
+    const grafana = ctx.outputs!.configurableGrafana;
+
+    const dashboard = grafana.dashboards[0];
     const dashboardUid = dashboard.uid as unknown as Unwrap<
       typeof dashboard.uid
+    >;
+
+    const authToken = grafana.serviceAccountToken as unknown as Unwrap<
+      typeof grafana.serviceAccountToken
     >;
 
     await backOff(async () => {
@@ -74,6 +93,7 @@ export function testConfigurableGrafana(ctx: GrafanaTestContext) {
         ctx,
         'GET',
         `/api/dashboards/uid/${dashboardUid}`,
+        authToken,
       );
       assert.strictEqual(statusCode, 200, 'Expected custom dashboard to exist');
 

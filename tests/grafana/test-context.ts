@@ -9,7 +9,6 @@ interface Config {
   appName: string;
   ampNamespace: string;
   grafanaUrl: string;
-  grafanaAuth: string;
   grafanaAwsAccountId: string;
 }
 
