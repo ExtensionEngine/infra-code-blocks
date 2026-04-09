@@ -15,6 +15,7 @@ export class GrafanaBuilder {
     [];
   private readonly dashboardBuilders: GrafanaDashboardBuilder.CreateDashboard[] =
     [];
+  private readonly scopes: string[] = [];
   private folderName?: string;
 
   constructor(name: string) {
@@ -27,25 +28,36 @@ export class GrafanaBuilder {
     return this;
   }
 
-  public addAmp(name: string, args: AMPConnection.Args): this {
-    this.connectionBuilders.push(opts => new AMPConnection(name, args, opts));
+  public addScope(...scopes: string[]): this {
+    this.scopes.push(...scopes);
+
+    return this;
+  }
+
+  public addAmp(name: string, args: Omit<AMPConnection.Args, 'stack'>): this {
+    this.connectionBuilders.push(
+      (ctx, opts) => new AMPConnection(name, { ...args, ...ctx }, opts),
+    );
 
     return this;
   }
 
   public addCLoudWatchLogs(
     name: string,
-    args: CloudWatchLogsConnection.Args,
+    args: Omit<CloudWatchLogsConnection.Args, 'stack'>,
   ): this {
     this.connectionBuilders.push(
-      opts => new CloudWatchLogsConnection(name, args, opts),
+      (ctx, opts) =>
+        new CloudWatchLogsConnection(name, { ...args, ...ctx }, opts),
     );
 
     return this;
   }
 
-  public addXRay(name: string, args: XRayConnection.Args): this {
-    this.connectionBuilders.push(opts => new XRayConnection(name, args, opts));
+  public addXRay(name: string, args: Omit<XRayConnection.Args, 'stack'>): this {
+    this.connectionBuilders.push(
+      (ctx, opts) => new XRayConnection(name, { ...args, ...ctx }, opts),
+    );
 
     return this;
   }
@@ -89,6 +101,7 @@ export class GrafanaBuilder {
         connectionBuilders: this.connectionBuilders,
         dashboardBuilders: this.dashboardBuilders,
         folderName: this.folderName,
+        scopes: this.scopes,
       },
       opts,
     );

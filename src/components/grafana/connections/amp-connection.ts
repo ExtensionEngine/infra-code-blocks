@@ -85,7 +85,7 @@ export class AMPConnection extends GrafanaConnection {
     return new grafana.cloud.PluginInstallation(
       `${this.name}-amp-plugin`,
       {
-        stackSlug: this.getStackSlug(),
+        stackSlug: this.stack.slug,
         slug: pluginName,
         version: pluginVersion,
       },

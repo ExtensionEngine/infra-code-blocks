@@ -9,13 +9,14 @@ export async function grafanaRequest(
   ctx: GrafanaTestContext,
   method: Dispatcher.HttpMethod,
   path: string,
+  token: string,
   body?: unknown,
 ) {
   const url = `${ctx.config.grafanaUrl.replace(/\/$/, '')}${path}`;
   return request(url, {
     method,
     headers: {
-      Authorization: `Bearer ${ctx.config.grafanaAuth}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
