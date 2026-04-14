@@ -7,6 +7,10 @@ import {
 } from './connections';
 import { Grafana } from './grafana';
 import type { GrafanaDashboardBuilder } from './dashboards/builder';
+import {
+  createLogsAndTracesDashboard,
+  LogsAndTracesDashboard,
+} from './dashboards/logs-and-traces';
 import { createSloDashboard, SloDashboard } from './dashboards/slo';
 
 export class GrafanaBuilder {
@@ -88,6 +92,12 @@ export class GrafanaBuilder {
 
   public addSloDashboard(config: SloDashboard.Args): this {
     this.dashboardBuilders.push(createSloDashboard(config));
+
+    return this;
+  }
+
+  public addLogsAndTracesDashboard(config: LogsAndTracesDashboard.Args): this {
+    this.dashboardBuilders.push(createLogsAndTracesDashboard(config));
 
     return this;
   }
