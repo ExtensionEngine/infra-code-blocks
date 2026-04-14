@@ -136,3 +136,50 @@ export function createBurnRatePanel(
     },
   };
 }
+
+export function createLogsPanel(
+  title: string,
+  position: Panel.Position,
+  dataSource: string,
+  logGroupName: string,
+  expression: string,
+): Panel {
+  return {
+    type: 'logs',
+    title,
+    gridPos: position,
+    datasource: dataSource,
+    targets: [
+      {
+        expression,
+        logGroups: [{ name: logGroupName }],
+        queryMode: 'Logs',
+      },
+    ],
+    fieldConfig: {
+      defaults: {},
+    },
+  };
+}
+
+export function createTablePanel(
+  title: string,
+  position: Panel.Position,
+  dataSource: string,
+  queryType: string,
+): Panel {
+  return {
+    type: 'table',
+    title,
+    gridPos: position,
+    datasource: dataSource,
+    targets: [
+      {
+        queryType,
+      },
+    ],
+    fieldConfig: {
+      defaults: {},
+    },
+  };
+}

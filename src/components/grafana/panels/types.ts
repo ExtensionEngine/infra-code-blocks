@@ -4,8 +4,12 @@ export type Panel = {
   type: string;
   datasource: string;
   targets: {
-    expr: string;
-    legendFormat: string;
+    expr?: string;
+    expression?: string;
+    legendFormat?: string;
+    logGroups?: { name: string }[];
+    queryMode?: string;
+    queryType?: string;
   }[];
   fieldConfig: {
     defaults: {
