@@ -109,11 +109,11 @@ export class Grafana extends pulumi.ComponentResource {
 
   private createAccessPolicyToken(): grafana.cloud.AccessPolicyToken {
     return new grafana.cloud.AccessPolicyToken(
-      `${this.name}-cloud-token`,
+      `${this.name}-access-policy-token`,
       {
         region: this.stack.regionSlug,
         accessPolicyId: this.accessPolicy.policyId,
-        name: `${this.name}-cloud-token`,
+        name: `${this.name}-icb-access-policy-token-${pulumi.getStack()}`,
       },
       { parent: this },
     );
@@ -121,10 +121,10 @@ export class Grafana extends pulumi.ComponentResource {
 
   private createServiceAccount(): grafana.cloud.StackServiceAccount {
     return new grafana.cloud.StackServiceAccount(
-      `${this.name}-sa`,
+      `${this.name}-service-account`,
       {
         stackSlug: this.stack.slug,
-        name: `${this.name}-sa`,
+        name: `${this.name}-icb-service-account-${pulumi.getStack()}`,
         role: 'Admin',
       },
       { parent: this },
@@ -133,11 +133,11 @@ export class Grafana extends pulumi.ComponentResource {
 
   private createServiceAccountToken(): grafana.cloud.StackServiceAccountToken {
     return new grafana.cloud.StackServiceAccountToken(
-      `${this.name}-sa-token`,
+      `${this.name}-service-account-token`,
       {
         stackSlug: this.stack.slug,
         serviceAccountId: this.serviceAccount.id,
-        name: `${this.name}-sa-token`,
+        name: `${this.name}-icb-service-account-token-${pulumi.getStack()}`,
       },
       { parent: this },
     );
