@@ -29,7 +29,8 @@ export namespace Grafana {
 }
 
 /**
- * This component requires a predefined GRAFANA_CLOUD_ACCESS_POLICY_TOKEN with the following scopes:
+ * This component requires a grafana cloud access policy token to be created and set
+ * as `GRAFANA_CLOUD_ACCESS_POLICY_TOKEN` with the following scopes:
  * accesspolicies:read, accesspolicies:write, accesspolicies:delete, stacks:read, stack-service-accounts:write
  */
 export class Grafana extends pulumi.ComponentResource {
