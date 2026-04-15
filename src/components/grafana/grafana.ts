@@ -3,10 +3,21 @@ import * as grafana from '@pulumiverse/grafana';
 import type { GrafanaDashboardBuilder } from './dashboards/builder';
 import { GrafanaConnection } from './connections';
 
-/**
- * Requires a predefined GRAFANA_CLOUD_ACCESS_POLICY_TOKEN with the following scopes:
- * accesspolicies:read, accesspolicies:write, accesspolicies:delete, stacks:read, stack-service-accounts:write
- */
+const DEFAULT_ACCESS_POLICY_SCOPES = [
+  'accesspolicies:read',
+  'accesspolicies:write',
+  'accesspolicies:delete',
+  'datasources:read',
+  'datasources:write',
+  'datasources:delete',
+  'stacks:read',
+  'stack-dashboards:read',
+  'stack-dashboards:write',
+  'stack-dashboards:delete',
+  'stack-plugins:read',
+  'stack-plugins:write',
+  'stack-plugins:delete',
+] as const;
 
 export namespace Grafana {
   export type Args = {
@@ -17,6 +28,10 @@ export namespace Grafana {
   };
 }
 
+/**
+ * This component requires a predefined GRAFANA_CLOUD_ACCESS_POLICY_TOKEN with the following scopes:
+ * accesspolicies:read, accesspolicies:write, accesspolicies:delete, stacks:read, stack-service-accounts:write
+ */
 export class Grafana extends pulumi.ComponentResource {
   public readonly name: string;
   public readonly stack: pulumi.Output<grafana.cloud.GetStackResult>;
@@ -89,22 +104,7 @@ export class Grafana extends pulumi.ComponentResource {
         region: this.stack.regionSlug,
         name: `${this.name}-access-policy`,
         scopes: [
-          ...new Set([
-            'accesspolicies:read',
-            'accesspolicies:write',
-            'accesspolicies:delete',
-            'datasources:read',
-            'datasources:write',
-            'datasources:delete',
-            'stacks:read',
-            'stack-dashboards:read',
-            'stack-dashboards:write',
-            'stack-dashboards:delete',
-            'stack-plugins:read',
-            'stack-plugins:write',
-            'stack-plugins:delete',
-            ...(scopes ?? []),
-          ]),
+          ...new Set([...DEFAULT_ACCESS_POLICY_SCOPES, ...(scopes ?? [])]),
         ],
         realms: [{ type: 'stack', identifier: this.stack.id }],
       },
