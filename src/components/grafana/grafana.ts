@@ -3,6 +3,11 @@ import * as grafana from '@pulumiverse/grafana';
 import type { GrafanaDashboardBuilder } from './dashboards/builder';
 import { GrafanaConnection } from './connections';
 
+/**
+ * Requires a predefined GRAFANA_CLOUD_ACCESS_POLICY_TOKEN with the following scopes:
+ * accesspolicies:read, accesspolicies:write, accesspolicies:delete, stacks:read, stack-service-accounts:write
+ */
+
 export namespace Grafana {
   export type Args = {
     connectionBuilders: GrafanaConnection.CreateConnection[];
