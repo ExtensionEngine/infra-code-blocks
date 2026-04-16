@@ -1,6 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
 import { Panel } from '../panels/types';
+import { Variable } from '../variables/types';
 import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
 
 export namespace GrafanaDashboardBuilder {
@@ -25,6 +26,7 @@ export class GrafanaDashboardBuilder {
   private readonly panels: Panel[] = [];
   private configuration: GrafanaDashboardBuilder.Config = {};
   private title?: string;
+  private variables: Variable[] = [];
 
   constructor(name: string) {
     this.name = name;
@@ -38,6 +40,12 @@ export class GrafanaDashboardBuilder {
 
   withTitle(title: string): this {
     this.title = title;
+
+    return this;
+  }
+
+  withVariable(variable: Variable) {
+    this.variables.push(variable);
 
     return this;
   }
@@ -61,7 +69,7 @@ export class GrafanaDashboardBuilder {
       );
     }
 
-    const { name, title, panels } = this;
+    const { name, title, panels, variables } = this;
     const options = mergeWithDefaults(defaults, this.configuration);
 
     return (folder, opts) => {
@@ -74,6 +82,9 @@ export class GrafanaDashboardBuilder {
             timezone: options.timezone,
             refresh: options.refresh,
             panels,
+            templating: {
+              list: variables,
+            },
           }),
         },
         opts,

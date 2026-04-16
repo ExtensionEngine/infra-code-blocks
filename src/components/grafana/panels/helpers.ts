@@ -1,4 +1,4 @@
-import { Panel, Metric } from './types';
+import { Panel, Metric, Transformation } from './types';
 
 const percentageFieldConfig = {
   unit: 'percent',
@@ -178,6 +178,33 @@ export function createTablePanel(
         queryType,
       },
     ],
+    fieldConfig: {
+      defaults: {},
+    },
+  };
+}
+
+export function createTableForLogsPanel(
+  title: string,
+  position: Panel.Position,
+  dataSource: string,
+  logGroupName: string,
+  expression: string,
+  transformation: Transformation,
+): Panel {
+  return {
+    type: 'table',
+    title,
+    gridPos: position,
+    datasource: dataSource,
+    targets: [
+      {
+        expression,
+        logGroups: [{ name: logGroupName }],
+        queryMode: 'Logs',
+      },
+    ],
+    transformations: [transformation],
     fieldConfig: {
       defaults: {},
     },
