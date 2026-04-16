@@ -95,7 +95,7 @@ const configurableGrafana = new studion.grafana.GrafanaBuilder(
 )
   .withFolderName('ICB Configurable Test Folder')
   .addConnection(
-    opts =>
+    (ctx, opts) =>
       new studion.grafana.AMPConnection(
         `${appName}-cfg-amp`,
         {
@@ -104,6 +104,7 @@ const configurableGrafana = new studion.grafana.GrafanaBuilder(
           region: aws.config.requireRegion(),
           dataSourceName: configurableAmpDataSourceName,
           installPlugin: false,
+          ...ctx,
         },
         opts,
       ),

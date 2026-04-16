@@ -86,7 +86,7 @@ export class XRayConnection extends GrafanaConnection {
     return new grafana.cloud.PluginInstallation(
       `${this.name}-x-ray-plugin`,
       {
-        stackSlug: this.getStackSlug(),
+        stackSlug: this.stack.slug,
         slug: pluginName,
         version: pluginVersion,
       },

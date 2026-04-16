@@ -56,6 +56,7 @@ export function testAmpGrafana(ctx: GrafanaTestContext) {
 
   it('should have created the AMP data source', async () => {
     const grafana = ctx.outputs!.ampGrafana;
+
     const ampDataSource = (
       grafana.connections[0] as studion.grafana.AMPConnection
     ).dataSource;
@@ -63,11 +64,16 @@ export function testAmpGrafana(ctx: GrafanaTestContext) {
       typeof ampDataSource.name
     >;
 
+    const authToken = grafana.serviceAccountToken.key as unknown as Unwrap<
+      typeof grafana.serviceAccountToken.key
+    >;
+
     await backOff(async () => {
       const { body, statusCode } = await grafanaRequest(
         ctx,
         'GET',
         `/api/datasources/name/${encodeURIComponent(ampDataSourceName)}`,
+        authToken,
       );
       assert.strictEqual(statusCode, 200, 'Expected data source to exist');
 
@@ -90,9 +96,15 @@ export function testAmpGrafana(ctx: GrafanaTestContext) {
   });
 
   it('should have created the dashboard with expected panels', async () => {
-    const dashboard = ctx.outputs!.ampGrafana.dashboards[0];
+    const grafana = ctx.outputs!.ampGrafana;
+
+    const dashboard = grafana.dashboards[0];
     const dashboardUid = dashboard.uid as unknown as Unwrap<
       typeof dashboard.uid
+    >;
+
+    const authToken = grafana.serviceAccountToken.key as unknown as Unwrap<
+      typeof grafana.serviceAccountToken.key
     >;
 
     await backOff(async () => {
@@ -100,6 +112,7 @@ export function testAmpGrafana(ctx: GrafanaTestContext) {
         ctx,
         'GET',
         `/api/dashboards/uid/${dashboardUid}`,
+        authToken,
       );
       assert.strictEqual(statusCode, 200, 'Expected dashboard to exist');
 
@@ -135,16 +148,24 @@ export function testAmpGrafana(ctx: GrafanaTestContext) {
   it('should display metrics data in the dashboard', async () => {
     await requestEndpointWithExpectedStatus(ctx, ctx.config.usersPath, 200);
 
+    const grafana = ctx.outputs!.ampGrafana;
+
     const ampDataSource = (
-      ctx.outputs!.ampGrafana.connections[0] as studion.grafana.AMPConnection
+      grafana.connections[0] as studion.grafana.AMPConnection
     ).dataSource;
     const ampDataSourceName = ampDataSource.name as unknown as Unwrap<
       typeof ampDataSource.name
     >;
+
+    const authToken = grafana.serviceAccountToken.key as unknown as Unwrap<
+      typeof grafana.serviceAccountToken.key
+    >;
+
     const { body: dsBody } = await grafanaRequest(
       ctx,
       'GET',
       `/api/datasources/name/${encodeURIComponent(ampDataSourceName)}`,
+      authToken,
     );
     const dsData = (await dsBody.json()) as Record<string, unknown>;
     const dataSourceUid = dsData.uid as string;
@@ -154,6 +175,7 @@ export function testAmpGrafana(ctx: GrafanaTestContext) {
         ctx,
         'POST',
         '/api/ds/query',
+        authToken,
         {
           queries: [
             {
