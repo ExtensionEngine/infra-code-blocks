@@ -61,9 +61,9 @@ export class Grafana extends pulumi.ComponentResource {
   public readonly name: string;
   public readonly stack: pulumi.Output<grafana.cloud.GetStackResult>;
   public readonly accessPolicy: grafana.cloud.AccessPolicy;
-  public readonly accessPolicyToken: pulumi.Output<string>;
+  public readonly accessPolicyToken: grafana.cloud.AccessPolicyRotatingToken;
   public readonly serviceAccount: grafana.cloud.StackServiceAccount;
-  public readonly serviceAccountToken: pulumi.Output<string>;
+  public readonly serviceAccountToken: grafana.cloud.StackServiceAccountRotatingToken;
   public readonly provider: grafana.Provider;
   public readonly connections: GrafanaConnection[];
   public readonly folder: grafana.oss.Folder;
@@ -83,16 +83,14 @@ export class Grafana extends pulumi.ComponentResource {
     this.stack = grafana.cloud.getStackOutput({ slug: this.getStackSlug() });
 
     this.accessPolicy = this.createAccessPolicy(argsWithDefaults.scopes);
-    const accessPolicyToken = this.createAccessPolicyToken(
+    this.accessPolicyToken = this.createAccessPolicyToken(
       argsWithDefaults.accessPolicyTokenRotation,
     );
-    this.accessPolicyToken = pulumi.secret(accessPolicyToken.token);
 
     this.serviceAccount = this.createServiceAccount();
-    const serviceAccountToken = this.createServiceAccountToken(
+    this.serviceAccountToken = this.createServiceAccountToken(
       argsWithDefaults.serviceAccountTokenRotation,
     );
-    this.serviceAccountToken = pulumi.secret(serviceAccountToken.key);
 
     this.provider = this.createProvider();
 
@@ -204,9 +202,9 @@ export class Grafana extends pulumi.ComponentResource {
     return new grafana.Provider(
       `${this.name}-provider`,
       {
-        cloudAccessPolicyToken: this.accessPolicyToken,
+        cloudAccessPolicyToken: this.accessPolicyToken.token,
         url: this.stack.url,
-        auth: this.serviceAccountToken,
+        auth: this.serviceAccountToken.key,
       },
       { parent: this },
     );

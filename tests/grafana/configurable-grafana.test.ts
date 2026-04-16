@@ -17,8 +17,8 @@ export function testConfigurableGrafana(ctx: GrafanaTestContext) {
       typeof ampDataSource.name
     >;
 
-    const authToken = grafana.serviceAccountToken as unknown as Unwrap<
-      typeof grafana.serviceAccountToken
+    const authToken = grafana.serviceAccountToken.key as unknown as Unwrap<
+      typeof grafana.serviceAccountToken.key
     >;
 
     await backOff(async () => {
@@ -54,8 +54,8 @@ export function testConfigurableGrafana(ctx: GrafanaTestContext) {
     const folder = grafana.folder;
     const folderUid = folder.uid as unknown as Unwrap<typeof folder.uid>;
 
-    const authToken = grafana.serviceAccountToken as unknown as Unwrap<
-      typeof grafana.serviceAccountToken
+    const authToken = grafana.serviceAccountToken.key as unknown as Unwrap<
+      typeof grafana.serviceAccountToken.key
     >;
 
     await backOff(async () => {
@@ -84,8 +84,8 @@ export function testConfigurableGrafana(ctx: GrafanaTestContext) {
       typeof dashboard.uid
     >;
 
-    const authToken = grafana.serviceAccountToken as unknown as Unwrap<
-      typeof grafana.serviceAccountToken
+    const authToken = grafana.serviceAccountToken.key as unknown as Unwrap<
+      typeof grafana.serviceAccountToken.key
     >;
 
     await backOff(async () => {
