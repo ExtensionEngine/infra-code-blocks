@@ -1,7 +1,8 @@
 import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
 import { GrafanaDashboardBuilder } from './builder';
-import { createLogsListPanel } from '../panels/logs';
-import { createTracesListPanel } from '../panels/traces';
+import { createStatusCodeVariable } from '../variables/status-code';
+import { createLogLevelVariable } from '../variables/log-level';
+import { createLogsListWithFiltersPanel } from '../panels/logs';
 
 export namespace LogsAndTracesDashboard {
   export type Args = {
@@ -29,9 +30,13 @@ export function createLogsAndTracesDashboard(
   return new GrafanaDashboardBuilder(config.name)
     .withConfig(argsWithDefaults.dashboardConfig)
     .withTitle(title)
+    .withVariable(createStatusCodeVariable())
+    .withVariable(createLogLevelVariable())
     .addPanel(
-      createLogsListPanel({ logGroupName, dataSourceName: logsDataSourceName }),
+      createLogsListWithFiltersPanel({
+        logGroupName,
+        dataSourceName: logsDataSourceName,
+      }),
     )
-    .addPanel(createTracesListPanel({ dataSourceName: tracesDataSourceName }))
     .build();
 }

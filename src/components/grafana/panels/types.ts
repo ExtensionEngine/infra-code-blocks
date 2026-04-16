@@ -11,7 +11,7 @@ export type Panel = {
     queryMode?: string;
     queryType?: string;
   }[];
-  fieldConfig: {
+  fieldConfig?: {
     defaults: {
       unit?: string;
       min?: number;
@@ -29,6 +29,7 @@ export type Panel = {
       };
     };
   };
+  transformations?: Transformation[];
   options?: {
     colorMode?: string;
     graphMode?: string;
@@ -60,4 +61,13 @@ export type Metric = {
 export type Threshold = {
   value: number | null;
   color: string;
+};
+
+export type Transformation = {
+  id: string;
+  options: {
+    renameByName?: Record<string, string>;
+    excludeByName?: Record<string, boolean>;
+    indexByName?: Record<string, number>;
+  };
 };
