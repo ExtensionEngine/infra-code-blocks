@@ -113,13 +113,16 @@ export class Grafana extends pulumi.ComponentResource {
     );
   }
 
-  private createAccessPolicyToken(): grafana.cloud.AccessPolicyToken {
-    return new grafana.cloud.AccessPolicyToken(
+  private createAccessPolicyToken(): grafana.cloud.AccessPolicyRotatingToken {
+    return new grafana.cloud.AccessPolicyRotatingToken(
       `${this.name}-access-policy-token`,
       {
         region: this.stack.regionSlug,
         accessPolicyId: this.accessPolicy.policyId,
-        name: `${this.name}-icb-access-policy-token-${pulumi.getStack()}`,
+        namePrefix: `${this.name}-icb-access-policy-token-${pulumi.getStack()}`,
+        expireAfter: '2160h', // 90 days
+        earlyRotationWindow: '168h', // 7 days before expiry
+        deleteOnDestroy: true,
       },
       { parent: this },
     );
@@ -137,13 +140,16 @@ export class Grafana extends pulumi.ComponentResource {
     );
   }
 
-  private createServiceAccountToken(): grafana.cloud.StackServiceAccountToken {
-    return new grafana.cloud.StackServiceAccountToken(
+  private createServiceAccountToken(): grafana.cloud.StackServiceAccountRotatingToken {
+    return new grafana.cloud.StackServiceAccountRotatingToken(
       `${this.name}-service-account-token`,
       {
         stackSlug: this.stack.slug,
         serviceAccountId: this.serviceAccount.id,
-        name: `${this.name}-icb-service-account-token-${pulumi.getStack()}`,
+        namePrefix: `${this.name}-icb-service-account-token-${pulumi.getStack()}`,
+        secondsToLive: 7_776_000, // 90 days
+        earlyRotationWindowSeconds: 604_800, // 7 days before expiry
+        deleteOnDestroy: true,
       },
       { parent: this },
     );
