@@ -17,6 +17,8 @@ export class GrafanaBuilder {
     [];
   private readonly scopes: string[] = [];
   private folderName?: string;
+  private serviceAccountTokenRotation?: Grafana.ServiceAccountTokenRotation;
+  private accessPolicyTokenRotation?: Grafana.AccessPolicyTokenRotation;
 
   constructor(name: string) {
     this.name = name;
@@ -24,6 +26,22 @@ export class GrafanaBuilder {
 
   public withFolderName(folderName: string): this {
     this.folderName = folderName;
+
+    return this;
+  }
+
+  public withServiceAccountTokenRotation(
+    rotation: Grafana.ServiceAccountTokenRotation,
+  ): this {
+    this.serviceAccountTokenRotation = rotation;
+
+    return this;
+  }
+
+  public withAccessPolicyTokenRotation(
+    rotation: Grafana.AccessPolicyTokenRotation,
+  ): this {
+    this.accessPolicyTokenRotation = rotation;
 
     return this;
   }
@@ -102,6 +120,8 @@ export class GrafanaBuilder {
         dashboardBuilders: this.dashboardBuilders,
         folderName: this.folderName,
         scopes: this.scopes,
+        serviceAccountTokenRotation: this.serviceAccountTokenRotation,
+        accessPolicyTokenRotation: this.accessPolicyTokenRotation,
       },
       opts,
     );

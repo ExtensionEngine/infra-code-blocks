@@ -2,8 +2,9 @@ import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
 import type { GrafanaDashboardBuilder } from './dashboards/builder';
 import { GrafanaConnection } from './connections';
+import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 
-const DEFAULT_ACCESS_POLICY_SCOPES = [
+const REQUIRED_ACCESS_POLICY_SCOPES = [
   'accesspolicies:read',
   'accesspolicies:write',
   'accesspolicies:delete',
@@ -19,12 +20,35 @@ const DEFAULT_ACCESS_POLICY_SCOPES = [
   'stack-plugins:delete',
 ] as const;
 
+const defaults = {
+  serviceAccountTokenRotation: {
+    secondsToLive: 7_776_000, // 90 days
+    earlyRotationWindowSeconds: 604_800, // 7 days
+  },
+  accessPolicyTokenRotation: {
+    expireAfter: '2160h', // 90 days
+    earlyRotationWindow: '168h', // 7 days
+  },
+};
+
 export namespace Grafana {
+  export type ServiceAccountTokenRotation = {
+    secondsToLive: number;
+    earlyRotationWindowSeconds: number;
+  };
+
+  export type AccessPolicyTokenRotation = {
+    expireAfter: string;
+    earlyRotationWindow: string;
+  };
+
   export type Args = {
     connectionBuilders: GrafanaConnection.CreateConnection[];
     dashboardBuilders: GrafanaDashboardBuilder.CreateDashboard[];
     folderName?: string;
     scopes?: string[];
+    serviceAccountTokenRotation?: ServiceAccountTokenRotation;
+    accessPolicyTokenRotation?: AccessPolicyTokenRotation;
   };
 }
 
@@ -52,30 +76,36 @@ export class Grafana extends pulumi.ComponentResource {
   ) {
     super('studion:grafana:Grafana', name, {}, opts);
 
+    const argsWithDefaults = mergeWithDefaults(defaults, args);
+
     this.name = name;
 
     this.stack = grafana.cloud.getStackOutput({ slug: this.getStackSlug() });
 
-    this.accessPolicy = this.createAccessPolicy(args.scopes);
-    const accessPolicyToken = this.createAccessPolicyToken();
+    this.accessPolicy = this.createAccessPolicy(argsWithDefaults.scopes);
+    const accessPolicyToken = this.createAccessPolicyToken(
+      argsWithDefaults.accessPolicyTokenRotation,
+    );
     this.accessPolicyToken = pulumi.secret(accessPolicyToken.token);
 
     this.serviceAccount = this.createServiceAccount();
-    const serviceAccountToken = this.createServiceAccountToken();
+    const serviceAccountToken = this.createServiceAccountToken(
+      argsWithDefaults.serviceAccountTokenRotation,
+    );
     this.serviceAccountToken = pulumi.secret(serviceAccountToken.key);
 
     this.provider = this.createProvider();
 
-    this.connections = args.connectionBuilders.map(build => {
+    this.connections = argsWithDefaults.connectionBuilders.map(build => {
       return build(
         { stack: this.stack },
         { parent: this, provider: this.provider },
       );
     });
 
-    this.folder = this.createFolder(args.folderName, this.provider);
+    this.folder = this.createFolder(argsWithDefaults.folderName, this.provider);
 
-    this.dashboards = args.dashboardBuilders.map(build => {
+    this.dashboards = argsWithDefaults.dashboardBuilders.map(build => {
       return build(this.folder, {
         parent: this.folder,
         provider: this.provider,
@@ -105,7 +135,7 @@ export class Grafana extends pulumi.ComponentResource {
         region: this.stack.regionSlug,
         name: `${this.name}-access-policy`,
         scopes: [
-          ...new Set([...DEFAULT_ACCESS_POLICY_SCOPES, ...(scopes ?? [])]),
+          ...new Set([...REQUIRED_ACCESS_POLICY_SCOPES, ...(scopes ?? [])]),
         ],
         realms: [{ type: 'stack', identifier: this.stack.id }],
       },
@@ -113,15 +143,17 @@ export class Grafana extends pulumi.ComponentResource {
     );
   }
 
-  private createAccessPolicyToken(): grafana.cloud.AccessPolicyRotatingToken {
+  private createAccessPolicyToken(
+    rotation: Grafana.AccessPolicyTokenRotation,
+  ): grafana.cloud.AccessPolicyRotatingToken {
     return new grafana.cloud.AccessPolicyRotatingToken(
       `${this.name}-access-policy-token`,
       {
         region: this.stack.regionSlug,
         accessPolicyId: this.accessPolicy.policyId,
         namePrefix: `${this.name}-icb-access-policy-token-${pulumi.getStack()}`,
-        expireAfter: '2160h', // 90 days
-        earlyRotationWindow: '168h', // 7 days before expiry
+        expireAfter: rotation.expireAfter,
+        earlyRotationWindow: rotation.earlyRotationWindow,
         deleteOnDestroy: true,
       },
       { parent: this },
@@ -140,15 +172,17 @@ export class Grafana extends pulumi.ComponentResource {
     );
   }
 
-  private createServiceAccountToken(): grafana.cloud.StackServiceAccountRotatingToken {
+  private createServiceAccountToken(
+    rotation: Grafana.ServiceAccountTokenRotation,
+  ): grafana.cloud.StackServiceAccountRotatingToken {
     return new grafana.cloud.StackServiceAccountRotatingToken(
       `${this.name}-service-account-token`,
       {
         stackSlug: this.stack.slug,
         serviceAccountId: this.serviceAccount.id,
         namePrefix: `${this.name}-icb-service-account-token-${pulumi.getStack()}`,
-        secondsToLive: 7_776_000, // 90 days
-        earlyRotationWindowSeconds: 604_800, // 7 days before expiry
+        secondsToLive: rotation.secondsToLive,
+        earlyRotationWindowSeconds: rotation.earlyRotationWindowSeconds,
         deleteOnDestroy: true,
       },
       { parent: this },
