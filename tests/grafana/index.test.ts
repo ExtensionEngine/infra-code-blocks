@@ -5,6 +5,7 @@ import * as automation from '../automation';
 import { requireEnv, unwrapOutputs } from '../util';
 import { testAmpGrafana } from './amp-grafana.test';
 import { testConfigurableGrafana } from './configurable-grafana.test';
+import { testLogsAndTracesGrafana } from './logs-and-traces-grafana.test';
 import * as infraConfig from './infrastructure/config';
 import { GrafanaTestContext, ProgramOutput } from './test-context';
 
@@ -42,4 +43,5 @@ describe('Grafana component deployment', () => {
 
   describe('AMP Grafana', () => testAmpGrafana(ctx));
   describe('Configurable Grafana', () => testConfigurableGrafana(ctx));
+  describe('Logs & Traces Grafana', () => testLogsAndTracesGrafana(ctx));
 });

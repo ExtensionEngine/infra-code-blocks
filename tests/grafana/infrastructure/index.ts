@@ -161,6 +161,7 @@ export {
   webServer,
   ampWorkspace,
   ampGrafana,
+  cloudWatchLogGroup,
   configurableGrafana,
   logsAndTracesGrafana,
 };
