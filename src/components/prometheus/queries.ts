@@ -1,5 +1,9 @@
 type TimeUnit = 'ms' | 's' | 'm' | 'h' | 'd' | 'w' | 'y';
 type UnitDuration = `${bigint}${TimeUnit}`;
+/**
+ * PromQL time duration format. Supports floats in seconds (e.g. '90', '1.5'),
+ * unit suffixes (e.g. '30s', '5m', '1h'), and combined durations (e.g. '1h30m').
+ */
 export type TimeRange =
   | `${number}`
   | UnitDuration
