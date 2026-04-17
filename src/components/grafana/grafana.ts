@@ -131,7 +131,7 @@ export class Grafana extends pulumi.ComponentResource {
       `${this.name}-access-policy`,
       {
         region: this.stack.regionSlug,
-        name: `ap-icb-observability-rwd-${pulumi.getStack()}`,
+        name: `${this.name}-ap-icb-observability-rwd-${pulumi.getStack()}`,
         scopes: [
           ...new Set([...REQUIRED_ACCESS_POLICY_SCOPES, ...(scopes ?? [])]),
         ],
@@ -149,7 +149,7 @@ export class Grafana extends pulumi.ComponentResource {
       {
         region: this.stack.regionSlug,
         accessPolicyId: this.accessPolicy.policyId,
-        namePrefix: `icb-${pulumi.getStack()}`,
+        namePrefix: `${this.name}-apt-icb-${pulumi.getStack()}`,
         expireAfter: rotation.expireAfter,
         earlyRotationWindow: rotation.earlyRotationWindow,
         deleteOnDestroy: true,
@@ -163,7 +163,7 @@ export class Grafana extends pulumi.ComponentResource {
       `${this.name}-service-account`,
       {
         stackSlug: this.stack.slug,
-        name: `sa-icb-provisioner-${pulumi.getStack()}`,
+        name: `${this.name}-sa-icb-provisioner-${pulumi.getStack()}`,
         role: 'Admin',
       },
       { parent: this },
@@ -178,7 +178,7 @@ export class Grafana extends pulumi.ComponentResource {
       {
         stackSlug: this.stack.slug,
         serviceAccountId: this.serviceAccount.id,
-        namePrefix: `icb-${pulumi.getStack()}`,
+        namePrefix: `${this.name}-sat-icb-${pulumi.getStack()}`,
         secondsToLive: rotation.secondsToLive,
         earlyRotationWindowSeconds: rotation.earlyRotationWindowSeconds,
         deleteOnDestroy: true,
