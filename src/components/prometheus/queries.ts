@@ -1,4 +1,9 @@
-export type TimeRange = '30s' | '2m' | '5m' | '1h' | '1d';
+type TimeUnit = 'ms' | 's' | 'm' | 'h' | 'd' | 'w' | 'y';
+type UnitDuration = `${bigint}${TimeUnit}`;
+export type TimeRange =
+  | `${number}`
+  | UnitDuration
+  | `${UnitDuration}${UnitDuration}`;
 
 const metricName = 'http_server_duration_milliseconds';
 const countPostfix = 'count';
