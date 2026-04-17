@@ -11,7 +11,7 @@ export type Panel = {
     queryMode?: string;
     queryType?: string;
   }[];
-  fieldConfig?: {
+  fieldConfig: {
     defaults: {
       unit?: string;
       min?: number;
@@ -63,11 +63,20 @@ export type Threshold = {
   color: string;
 };
 
-export type Transformation = {
-  id: string;
+export type OrganizeTransformation = {
+  id: 'organize';
   options: {
     renameByName?: Record<string, string>;
     excludeByName?: Record<string, boolean>;
     indexByName?: Record<string, number>;
   };
 };
+
+export type SortByTransformation = {
+  id: 'sortBy';
+  options: {
+    sort: { field: string; desc: boolean }[];
+  };
+};
+
+export type Transformation = OrganizeTransformation | SortByTransformation;

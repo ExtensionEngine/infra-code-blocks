@@ -44,7 +44,7 @@ export class GrafanaDashboardBuilder {
     return this;
   }
 
-  withVariable(variable: Variable) {
+  addVariable(variable: Variable) {
     this.variables.push(variable);
 
     return this;

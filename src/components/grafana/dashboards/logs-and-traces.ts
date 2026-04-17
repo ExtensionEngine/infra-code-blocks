@@ -1,8 +1,10 @@
 import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
 import { GrafanaDashboardBuilder } from './builder';
 import { createStatusCodeVariable } from '../variables/status-code';
+import { createLimitVariable } from '../variables/limit';
 import { createLogLevelVariable } from '../variables/log-level';
-import { createLogsListWithFiltersPanel } from '../panels/logs';
+import { createLogsViewPanel } from '../panels/logs';
+import { createSearchTextVariable } from '../variables/search-text';
 
 export namespace LogsAndTracesDashboard {
   export type Args = {
@@ -17,23 +19,26 @@ export namespace LogsAndTracesDashboard {
 
 const defaults = {
   title: 'Logs & Traces',
-  dashboardConfig: {},
+  dashboardConfig: {
+    refresh: '1m',
+  },
 };
 
 export function createLogsAndTracesDashboard(
   config: LogsAndTracesDashboard.Args,
 ): GrafanaDashboardBuilder.CreateDashboard {
   const argsWithDefaults = mergeWithDefaults(defaults, config);
-  const { title, logsDataSourceName, logGroupName, tracesDataSourceName } =
-    argsWithDefaults;
+  const { title, logsDataSourceName, logGroupName } = argsWithDefaults;
 
   return new GrafanaDashboardBuilder(config.name)
     .withConfig(argsWithDefaults.dashboardConfig)
     .withTitle(title)
-    .withVariable(createStatusCodeVariable())
-    .withVariable(createLogLevelVariable())
+    .addVariable(createSearchTextVariable())
+    .addVariable(createStatusCodeVariable())
+    .addVariable(createLogLevelVariable())
+    .addVariable(createLimitVariable())
     .addPanel(
-      createLogsListWithFiltersPanel({
+      createLogsViewPanel({
         logGroupName,
         dataSourceName: logsDataSourceName,
       }),
