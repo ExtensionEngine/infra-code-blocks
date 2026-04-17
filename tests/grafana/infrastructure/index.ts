@@ -131,4 +131,37 @@ const configurableGrafana = new studion.grafana.GrafanaBuilder(
   )
   .build({ parent });
 
-export { webServer, ampWorkspace, ampGrafana, configurableGrafana };
+const clodwatchLogsDataSourceName = `${appName}-cw-logs-datasource`;
+const xRayDataSourceName = `${appName}-x-ray-datasource`;
+const logsAndTracesGrafana = new studion.grafana.GrafanaBuilder(
+  `${appName}-logs-traces`,
+)
+  .addCLoudWatchLogs(`${appName}-lt-cwl`, {
+    awsAccountId,
+    region: aws.config.requireRegion(),
+    dataSourceName: clodwatchLogsDataSourceName,
+  })
+  .addXRay(`${appName}-lt-xray`, {
+    awsAccountId,
+    region: aws.config.requireRegion(),
+    dataSourceName: xRayDataSourceName,
+  })
+  .addLogsAndTracesDashboard({
+    name: `${appName}-lat-dashboard`,
+    title: 'ICB Grafana Test Logs & Traces',
+    logsDataSourceName: clodwatchLogsDataSourceName,
+    logGroupName: cloudWatchLogGroup.name as unknown as pulumi.Unwrap<
+      typeof cloudWatchLogGroup.name
+    >,
+    tracesDataSourceName: xRayDataSourceName,
+  })
+  .build();
+
+export {
+  webServer,
+  ampWorkspace,
+  ampGrafana,
+  cloudWatchLogGroup,
+  configurableGrafana,
+  logsAndTracesGrafana,
+};
