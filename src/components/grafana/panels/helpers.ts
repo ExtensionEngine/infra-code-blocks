@@ -1,4 +1,4 @@
-import { Panel, Metric } from './types';
+import { Panel, Metric, Transformation } from './types';
 
 const percentageFieldConfig = {
   unit: 'percent',
@@ -133,6 +133,33 @@ export function createBurnRatePanel(
           ],
         },
       },
+    },
+  };
+}
+
+export function createTablePanel(
+  title: string,
+  position: Panel.Position,
+  dataSource: string,
+  logGroupName: string,
+  expression: string,
+  transformations: Transformation[],
+): Panel {
+  return {
+    type: 'table',
+    title,
+    gridPos: position,
+    datasource: dataSource,
+    targets: [
+      {
+        expression,
+        logGroups: [{ name: logGroupName }],
+        queryMode: 'Logs',
+      },
+    ],
+    transformations,
+    fieldConfig: {
+      defaults: {},
     },
   };
 }

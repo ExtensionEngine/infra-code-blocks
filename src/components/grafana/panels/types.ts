@@ -4,8 +4,12 @@ export type Panel = {
   type: string;
   datasource: string;
   targets: {
-    expr: string;
-    legendFormat: string;
+    expr?: string;
+    expression?: string;
+    legendFormat?: string;
+    logGroups?: { name: string }[];
+    queryMode?: string;
+    queryType?: string;
   }[];
   fieldConfig: {
     defaults: {
@@ -25,6 +29,7 @@ export type Panel = {
       };
     };
   };
+  transformations?: Transformation[];
   options?: {
     colorMode?: string;
     graphMode?: string;
@@ -57,3 +62,21 @@ export type Threshold = {
   value: number | null;
   color: string;
 };
+
+export type OrganizeTransformation = {
+  id: 'organize';
+  options: {
+    renameByName?: Record<string, string>;
+    excludeByName?: Record<string, boolean>;
+    indexByName?: Record<string, number>;
+  };
+};
+
+export type SortByTransformation = {
+  id: 'sortBy';
+  options: {
+    sort: { field: string; desc: boolean }[];
+  };
+};
+
+export type Transformation = OrganizeTransformation | SortByTransformation;
