@@ -5,6 +5,7 @@ import { createLimitVariable } from '../variables/limit';
 import { createLogLevelVariable } from '../variables/log-level';
 import { createLogsViewPanel } from '../panels/logs';
 import { createSearchTextVariable } from '../variables/search-text';
+import { createTraceIdVariable } from '../variables/trace-id';
 
 export namespace LogsAndTracesDashboard {
   export type Args = {
@@ -37,6 +38,7 @@ export function createLogsAndTracesDashboard(
     .addVariable(createStatusCodeVariable())
     .addVariable(createLogLevelVariable())
     .addVariable(createLimitVariable())
+    .addVariable(createTraceIdVariable())
     .addPanel(
       createLogsViewPanel({
         logGroupName,
