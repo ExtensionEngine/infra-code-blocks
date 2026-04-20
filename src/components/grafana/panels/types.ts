@@ -3,14 +3,7 @@ export type Panel = {
   gridPos: Panel.Position;
   type: string;
   datasource: string;
-  targets: {
-    expr?: string;
-    expression?: string;
-    legendFormat?: string;
-    logGroups?: { name: string }[];
-    queryMode?: string;
-    queryType?: string;
-  }[];
+  targets: Target[];
   fieldConfig: {
     defaults: {
       unit?: string;
@@ -51,6 +44,15 @@ export namespace Panel {
     h: number;
   };
 }
+
+export type Target = {
+  expr?: string;
+  expression?: string;
+  legendFormat?: string;
+  logGroups?: { name: string }[];
+  queryMode?: string;
+  queryType?: string;
+};
 
 export type Metric = {
   label: string;

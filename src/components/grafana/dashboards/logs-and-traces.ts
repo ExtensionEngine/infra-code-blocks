@@ -3,9 +3,12 @@ import { GrafanaDashboardBuilder } from './builder';
 import { createStatusCodeVariable } from '../variables/status-code';
 import { createLimitVariable } from '../variables/limit';
 import { createLogLevelVariable } from '../variables/log-level';
-import { createLogsViewPanel } from '../panels/logs';
 import { createSearchTextVariable } from '../variables/search-text';
 import { createTraceIdVariable } from '../variables/trace-id';
+import {
+  createLogsViewPanel,
+  createTracesViewPanel,
+} from '../panels/logs-traces';
 
 export namespace LogsAndTracesDashboard {
   export type Args = {
@@ -29,7 +32,8 @@ export function createLogsAndTracesDashboard(
   config: LogsAndTracesDashboard.Args,
 ): GrafanaDashboardBuilder.CreateDashboard {
   const argsWithDefaults = mergeWithDefaults(defaults, config);
-  const { title, logsDataSourceName, logGroupName } = argsWithDefaults;
+  const { title, logsDataSourceName, logGroupName, tracesDataSourceName } =
+    argsWithDefaults;
 
   return new GrafanaDashboardBuilder(config.name)
     .withConfig(argsWithDefaults.dashboardConfig)
@@ -43,6 +47,11 @@ export function createLogsAndTracesDashboard(
       createLogsViewPanel({
         logGroupName,
         dataSourceName: logsDataSourceName,
+      }),
+    )
+    .addPanel(
+      createTracesViewPanel({
+        dataSourceName: tracesDataSourceName,
       }),
     )
     .build();

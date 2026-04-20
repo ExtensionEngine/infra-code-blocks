@@ -9,16 +9,21 @@ export function createLogsViewPanel(config: {
     'Logs',
     { x: 0, y: 0, w: 24, h: 12 },
     config.dataSourceName,
-    config.logGroupName,
-    `fields @Timestamp
-    | parse @message '"body":"*"' as body
-    | parse @message '"res":{"statusCode":*}' as statusCode
-    | parse @message '"severity_text":"*"' as logLevel
-    | filter body like /\${search_text}/
-    | filter \${status_code}
-    | filter \${log_level}
-    | sort @timestamp desc
-    | limit \${limit}`,
+    [
+      {
+        expression: `fields @Timestamp
+          | parse @message '"body":"*"' as body
+          | parse @message '"res":{"statusCode":*}' as statusCode
+          | parse @message '"severity_text":"*"' as logLevel
+          | filter body like /\${search_text}/
+          | filter \${status_code}
+          | filter \${log_level}
+          | sort @timestamp desc
+          | limit \${limit}`,
+        logGroups: [{ name: config.logGroupName }],
+        queryMode: 'Logs',
+      },
+    ],
     [
       {
         id: 'organize',
@@ -50,6 +55,22 @@ export function createLogsViewPanel(config: {
             },
           ],
         },
+      },
+    ],
+  );
+}
+
+export function createTracesViewPanel(config: {
+  dataSourceName: string;
+}): Panel {
+  return createTablePanel(
+    'Traces',
+    { x: 0, y: 0, w: 24, h: 12 },
+    config.dataSourceName,
+    [
+      {
+        expression: '$traceId',
+        queryType: 'getTrace',
       },
     ],
   );
