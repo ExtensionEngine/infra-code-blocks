@@ -85,7 +85,11 @@ const snapshot = defaultDb.instance.identifier.apply(identifier => {
 const snapshotDb = snapshot.apply(snapshot => {
   return new studion.DatabaseBuilder(`${config.appName}-snapshot-db`)
     .withInstance({
+      dbName: config.dbName,
       skipFinalSnapshot: true,
+    })
+    .withCredentials({
+      username: config.dbUsername,
     })
     .withVpc(vpc.vpc)
     .withTags(config.tags)
