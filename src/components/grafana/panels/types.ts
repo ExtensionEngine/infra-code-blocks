@@ -21,6 +21,16 @@ export type Panel = {
         spanNulls: boolean;
       };
     };
+    overrides?: {
+      matcher: {
+        id: string;
+        options: string;
+      };
+      properties: {
+        id: string;
+        value: string | { title: string; url: string }[] | { type: string };
+      }[];
+    };
   };
   transformations?: Transformation[];
   options?: {
@@ -52,6 +62,7 @@ export type Target = {
   logGroups?: { name: string }[];
   queryMode?: string;
   queryType?: string;
+  query?: string;
 };
 
 export type Metric = {

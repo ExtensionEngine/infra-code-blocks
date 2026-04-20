@@ -143,6 +143,7 @@ export function createTablePanel(
   dataSource: string,
   targets: Target[],
   transformations?: Transformation[],
+  overrides?: any,
 ): Panel {
   return {
     type: 'table',
@@ -153,6 +154,7 @@ export function createTablePanel(
     transformations,
     fieldConfig: {
       defaults: {},
+      overrides,
     },
   };
 }

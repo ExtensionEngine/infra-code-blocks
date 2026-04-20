@@ -11,7 +11,7 @@ export function createLogsViewPanel(config: {
     config.dataSourceName,
     [
       {
-        expression: `fields @Timestamp
+        expression: `fields @Timestamp, trace_id as traceId
           | parse @message '"body":"*"' as body
           | parse @message '"res":{"statusCode":*}' as statusCode
           | parse @message '"severity_text":"*"' as logLevel
@@ -33,6 +33,7 @@ export function createLogsViewPanel(config: {
             logLevel: 'Log Level',
             body: 'Body',
             '@timestamp': 'Timestamp',
+            traceId: 'Trace Id',
           },
           indexByName: {
             '@timestamp': 0,
@@ -57,6 +58,35 @@ export function createLogsViewPanel(config: {
         },
       },
     ],
+    [
+      {
+        matcher: {
+          id: 'byName',
+          options: 'traceId',
+        },
+        properties: [
+          {
+            id: 'displayName',
+            value: 'Traces',
+          },
+          {
+            id: 'links',
+            value: [
+              {
+                title: 'Open traces',
+                url: `/d/\${__dashboard.uid}/\${__dashboard}?var-traceId=\${__data.fields.traceId}`,
+              },
+            ],
+          },
+          {
+            id: 'custom.cellOptions',
+            value: {
+              type: 'data-links',
+            },
+          },
+        ],
+      },
+    ],
   );
 }
 
@@ -69,7 +99,7 @@ export function createTracesViewPanel(config: {
     config.dataSourceName,
     [
       {
-        expression: '$traceId',
+        query: '$traceId',
         queryType: 'getTrace',
       },
     ],
