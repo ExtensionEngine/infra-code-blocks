@@ -97,26 +97,6 @@ export class DatabaseBuilder {
   }
 
   public build(opts: pulumi.ComponentResourceOptions = {}): Database {
-    if (!this.snapshotIdentifier && !this.instanceConfig?.dbName) {
-      throw new Error(
-        'DbName not provided. Make sure to call DatabaseBuilder.withInstance() and set dbName.',
-      );
-    }
-
-    if (!this.snapshotIdentifier && !this.credentialsConfig?.username) {
-      throw new Error(
-        'Username not provided. Make sure to call DatabaseBuilder.withCredentials() and set username.',
-      );
-    }
-
-    if (this.snapshotIdentifier && this.instanceConfig?.dbName) {
-      throw new Error(`You can't set dbName when using snapshotIdentifier.`);
-    }
-
-    if (this.snapshotIdentifier && this.credentialsConfig?.username) {
-      throw new Error(`You can't set username when using snapshotIdentifier.`);
-    }
-
     if (this.replicaConfigs?.size) {
       this.replicaConfigs.forEach(config => {
         if (
