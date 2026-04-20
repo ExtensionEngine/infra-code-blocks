@@ -26,10 +26,12 @@ export function createCustomVariable(
 export function createTextBoxVariable(
   name: string,
   label: string,
+  hide?: string,
 ): TextBoxVariable {
   return {
     type: 'textbox',
     name,
     label,
+    hide,
   };
 }
