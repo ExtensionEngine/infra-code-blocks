@@ -129,6 +129,14 @@ const configurableGrafana = new studion.grafana.GrafanaBuilder(
       })
       .build(),
   )
+  .withServiceAccountTokenRotation({
+    secondsToLive: 3_888_000,
+    earlyRotationWindowSeconds: 259_200,
+  })
+  .withAccessPolicyTokenRotation({
+    expireAfter: '1080h',
+    earlyRotationWindow: '72h',
+  })
   .build({ parent });
 
 export { webServer, ampWorkspace, ampGrafana, configurableGrafana };

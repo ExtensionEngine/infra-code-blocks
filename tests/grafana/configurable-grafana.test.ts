@@ -76,6 +76,55 @@ export function testConfigurableGrafana(ctx: GrafanaTestContext) {
     });
   });
 
+  it('should have applied the configured service account token rotation', async () => {
+    const token = ctx.outputs!.configurableGrafana.serviceAccountToken;
+
+    const hasExpired = token.hasExpired as unknown as Unwrap<
+      typeof token.hasExpired
+    >;
+    const secondsToLive = token.secondsToLive as unknown as Unwrap<
+      typeof token.secondsToLive
+    >;
+    const earlyRotationWindowSeconds =
+      token.earlyRotationWindowSeconds as unknown as Unwrap<
+        typeof token.earlyRotationWindowSeconds
+      >;
+
+    assert.strictEqual(hasExpired, false, 'Expected token to not be expired');
+    assert.strictEqual(
+      secondsToLive,
+      3_888_000,
+      'Expected configured secondsToLive (45 days) to be applied',
+    );
+    assert.strictEqual(
+      earlyRotationWindowSeconds,
+      259_200,
+      'Expected configured earlyRotationWindowSeconds (3 days) to be applied',
+    );
+  });
+
+  it('should have applied the configured access policy token rotation', async () => {
+    const token = ctx.outputs!.configurableGrafana.accessPolicyToken;
+
+    const expireAfter = token.expireAfter as unknown as Unwrap<
+      typeof token.expireAfter
+    >;
+    const earlyRotationWindow = token.earlyRotationWindow as unknown as Unwrap<
+      typeof token.earlyRotationWindow
+    >;
+
+    assert.strictEqual(
+      expireAfter,
+      '1080h',
+      'Expected configured expireAfter (45 days) to be applied',
+    );
+    assert.strictEqual(
+      earlyRotationWindow,
+      '72h',
+      'Expected configured earlyRotationWindow (3 days) to be applied',
+    );
+  });
+
   it('should have created the custom dashboard', async () => {
     const grafana = ctx.outputs!.configurableGrafana;
 
