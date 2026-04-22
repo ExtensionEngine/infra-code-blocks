@@ -28,7 +28,10 @@ export type Panel = {
       };
       properties: {
         id: string;
-        value: string | { title: string; url: string }[] | { type: string };
+        value:
+          | string
+          | { title: string; url: string; targetBlank: boolean }[]
+          | { type: string };
       }[];
     };
   };

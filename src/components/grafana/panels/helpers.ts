@@ -158,3 +158,21 @@ export function createTablePanel(
     },
   };
 }
+
+export function createTracesPanel(
+  title: string,
+  position: Panel.Position,
+  dataSource: string,
+  targets: Target[],
+): Panel {
+  return {
+    type: 'traces',
+    title,
+    gridPos: position,
+    datasource: dataSource,
+    targets,
+    fieldConfig: {
+      defaults: {},
+    },
+  };
+}

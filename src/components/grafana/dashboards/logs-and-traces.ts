@@ -46,7 +46,8 @@ export function createLogsAndTracesDashboard(
     .addPanel(
       createLogsViewPanel({
         logGroupName,
-        dataSourceName: logsDataSourceName,
+        logsDataSourceName,
+        tracesDataSourceName,
       }),
     )
     .addPanel(
