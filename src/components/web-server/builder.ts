@@ -7,16 +7,6 @@ import { OtelCollector } from '../../otel';
 
 export namespace WebServerBuilder {
   export type EcsConfig = Omit<WebServer.EcsConfig, 'vpc' | 'volumes'>;
-
-  export type Args = Omit<
-    WebServer.Args,
-    | 'vpc'
-    | 'cluster'
-    | 'volumes'
-    | 'domain'
-    | 'hostedZoneId'
-    | 'otelCollectorConfig'
-  >;
 }
 
 export class WebServerBuilder {
@@ -93,7 +83,7 @@ export class WebServerBuilder {
   }
 
   public withCertificate(
-    certificate: WebServerBuilder.Args['certificate'],
+    certificate: WebServer.Args['certificate'],
     hostedZoneId: pulumi.Input<string>,
     domain?: pulumi.Input<string>,
   ): this {
