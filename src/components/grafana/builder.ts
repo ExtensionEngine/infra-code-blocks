@@ -11,6 +11,14 @@ import {
   createLogsAndTracesDashboard,
   LogsAndTracesDashboard,
 } from './dashboards/logs-and-traces';
+import {
+  createLogsAndTracesDashboardV2,
+  LogsAndTracesDashboardV2,
+} from './dashboards/logs-and-traces-v2';
+import {
+  createLogsAndTracesDashboardV3,
+  LogsAndTracesDashboardV3,
+} from './dashboards/logs-and-traces-v3';
 import { createSloDashboard, SloDashboard } from './dashboards/slo';
 
 export class GrafanaBuilder {
@@ -98,6 +106,22 @@ export class GrafanaBuilder {
 
   public addLogsAndTracesDashboard(config: LogsAndTracesDashboard.Args): this {
     this.dashboardBuilders.push(createLogsAndTracesDashboard(config));
+
+    return this;
+  }
+
+  public addLogsAndTracesDashboardV2(
+    config: LogsAndTracesDashboardV2.Args,
+  ): this {
+    this.dashboardBuilders.push(createLogsAndTracesDashboardV2(config));
+
+    return this;
+  }
+
+  public addLogsAndTracesDashboardV3(
+    config: LogsAndTracesDashboardV3.Args,
+  ): this {
+    this.dashboardBuilders.push(createLogsAndTracesDashboardV3(config));
 
     return this;
   }

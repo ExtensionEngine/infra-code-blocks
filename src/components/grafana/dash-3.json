@@ -1,0 +1,494 @@
+{
+  "annotations": [
+    {
+      "kind": "AnnotationQuery",
+      "spec": {
+        "builtIn": true,
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "query": {
+          "datasource": {
+            "name": "-- Grafana --"
+          },
+          "group": "grafana",
+          "kind": "DataQuery",
+          "spec": {},
+          "version": "v0"
+        }
+      }
+    }
+  ],
+  "cursorSync": "Off",
+  "editable": true,
+  "elements": {
+    "panel-1": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "datasource": {
+                      "name": "afjuh8qb6xvk0c"
+                    },
+                    "group": "cloudwatch",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "expression": "fields @Timestamp, trace_id as traceId, trace_id as traceIdTab\n          | parse @message '\"body\":\"*\"' as body\n          | parse @message '\"res\":{\"statusCode\":*}' as statusCode\n          | parse @message '\"severity_text\":\"*\"' as logLevel\n          | parse @message '\"url\":\"*\"' as httpUrl\n          | parse @message '\"method\":\"*\"' as httpMethod\n          | filter body like /${search_text}/\n          | filter ${status_code}\n          | filter ${log_level}\n          | sort @timestamp desc\n          | limit ${limit}",
+                      "logGroups": [
+                        {
+                          "name": "icb-test-dev-lg"
+                        }
+                      ],
+                      "queryMode": "Logs",
+                      "region": "default"
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": [
+              {
+                "group": "organize",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "excludeByName": {
+                      "Value": true
+                    },
+                    "indexByName": {
+                      "@timestamp": 0,
+                      "body": 3,
+                      "logLevel": 2,
+                      "statusCode": 1
+                    },
+                    "renameByName": {
+                      "@timestamp": "Timestamp",
+                      "body": "Body",
+                      "httpMethod": "HTTP Method",
+                      "httpUrl": "HTTP URL",
+                      "logLevel": "Log Level",
+                      "statusCode": "Status Code",
+                      "traceId": "Trace Id",
+                      "traceIdTab": "Trace Id Tab"
+                    }
+                  }
+                }
+              },
+              {
+                "group": "sortBy",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "sort": [
+                      {
+                        "desc": true,
+                        "field": "Time"
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "description": "",
+        "id": 1,
+        "links": [],
+        "title": "Logs",
+        "vizConfig": {
+          "group": "table",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "custom": {
+                  "align": "auto",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "traceId"
+                  },
+                  "properties": [
+                    {
+                      "id": "displayName",
+                      "value": "Traces"
+                    },
+                    {
+                      "id": "links",
+                      "value": [
+                        {
+                          "title": "Open traces",
+                          "url": "/d/${__dashboard.uid}/${__dashboard}?var-traceId=${__data.fields.traceId}"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "custom.cellOptions",
+                      "value": {
+                        "type": "data-links"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "traceIdTab"
+                  },
+                  "properties": [
+                    {
+                      "id": "displayName",
+                      "value": "Explore Traces"
+                    },
+                    {
+                      "id": "links",
+                      "value": [
+                        {
+                          "targetBlank": true,
+                          "title": "Open traces in a new tab",
+                          "url": "/explore?left={\"datasource\":\"icb-test-x-ray-datasource\",\"queries\":[{\"queryType\":\"getTrace\",\"query\":\"${__data.fields.traceIdTab}\"}],\"range\":{\"from\":\"now-1h\",\"to\":\"now\"}}"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "custom.cellOptions",
+                      "value": {
+                        "type": "data-links"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "cellHeight": "sm",
+              "showHeader": true
+            }
+          },
+          "version": "13.1.0-24655759693"
+        }
+      }
+    },
+    "panel-2": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "datasource": {
+                      "name": "afjuh8qkk2680d"
+                    },
+                    "group": "grafana-x-ray-datasource",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "group": {
+                        "GroupARN": "arn:aws:xray:us-east-1:587728158746:group/Default",
+                        "GroupName": "Default",
+                        "InsightsConfiguration": {
+                          "InsightsEnabled": false,
+                          "NotificationsEnabled": false
+                        }
+                      },
+                      "query": "$traceId",
+                      "queryMode": "X-Ray",
+                      "queryType": "getTrace",
+                      "region": "default",
+                      "serviceQueryType": "listServices"
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "",
+        "id": 2,
+        "links": [],
+        "title": "Traces",
+        "vizConfig": {
+          "group": "traces",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "options": {
+              "spanFilters": {
+                "criticalPathOnly": false,
+                "matchesOnly": false
+              }
+            }
+          },
+          "version": "13.1.0-24655759693"
+        }
+      }
+    },
+    "panel-3": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "datasource": {
+                      "name": "afjuh8qkk2680d"
+                    },
+                    "group": "grafana-x-ray-datasource",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "group": {
+                        "GroupARN": "arn:aws:xray:us-east-1:587728158746:group/Default",
+                        "GroupName": "Default",
+                        "InsightsConfiguration": {
+                          "InsightsEnabled": false,
+                          "NotificationsEnabled": false
+                        }
+                      },
+                      "query": "$traceId",
+                      "queryMode": "X-Ray",
+                      "queryType": "getTrace",
+                      "region": "default"
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": []
+          }
+        },
+        "description": "",
+        "id": 3,
+        "links": [],
+        "title": "Traces 2",
+        "vizConfig": {
+          "group": "traces",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "options": {
+              "spanFilters": {
+                "criticalPathOnly": false,
+                "matchesOnly": false
+              }
+            }
+          },
+          "version": "13.1.0-24655759693"
+        }
+      }
+    }
+  },
+  "layout": {
+    "kind": "GridLayout",
+    "spec": {
+      "items": [
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-1"
+            },
+            "height": 12,
+            "width": 24,
+            "x": 0,
+            "y": 0
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-2"
+            },
+            "height": 8,
+            "width": 12,
+            "x": 0,
+            "y": 12
+          }
+        },
+        {
+          "kind": "GridLayoutItem",
+          "spec": {
+            "element": {
+              "kind": "ElementReference",
+              "name": "panel-3"
+            },
+            "height": 8,
+            "width": 12,
+            "x": 12,
+            "y": 12
+          }
+        }
+      ]
+    }
+  },
+  "links": [],
+  "liveNow": false,
+  "preload": false,
+  "tags": [],
+  "timeSettings": {
+    "autoRefresh": "1m",
+    "autoRefreshIntervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
+    "fiscalYearStartMonth": 0,
+    "from": "now-6h",
+    "hideTimepicker": false,
+    "timezone": "browser",
+    "to": "now"
+  },
+  "title": "ICB Grafana Test Logs & Traces",
+  "variables": [
+    {
+      "kind": "TextVariable",
+      "spec": {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "hide": "dontHide",
+        "label": "Search Text",
+        "name": "search_text",
+        "query": "",
+        "skipUrlSync": false
+      }
+    },
+    {
+      "kind": "CustomVariable",
+      "spec": {
+        "allowCustomValue": true,
+        "current": {
+          "text": "N/A",
+          "value": "!ispresent(statusCode)"
+        },
+        "hide": "dontHide",
+        "includeAll": false,
+        "label": "Status Code",
+        "multi": false,
+        "name": "status_code",
+        "options": [],
+        "query": "[{\"text\":\"N/A\",\"value\":\"!ispresent(statusCode)\"},{\"text\":\"1xx\",\"value\":\"statusCode >= 100 and statusCode < 200\"},{\"text\":\"2xx\",\"value\":\"statusCode >= 200 and statusCode < 300\"},{\"text\":\"3xx\",\"value\":\"statusCode >= 300 and statusCode < 400\"},{\"text\":\"4xx\",\"value\":\"statusCode >= 400 and statusCode < 500\"},{\"text\":\"5xx\",\"value\":\"statusCode >= 500 and statusCode < 600\"}]",
+        "skipUrlSync": false,
+        "valuesFormat": "json"
+      }
+    },
+    {
+      "kind": "CustomVariable",
+      "spec": {
+        "allowCustomValue": true,
+        "current": {
+          "text": "info",
+          "value": "logLevel = 'info'"
+        },
+        "hide": "dontHide",
+        "includeAll": false,
+        "label": "Log Level",
+        "multi": false,
+        "name": "log_level",
+        "options": [],
+        "query": "[{\"text\":\"trace\",\"value\":\"logLevel = 'trace'\"},{\"text\":\"debug\",\"value\":\"logLevel = 'debug'\"},{\"text\":\"info\",\"value\":\"logLevel = 'info'\"},{\"text\":\"warn\",\"value\":\"logLevel = 'warn'\"},{\"text\":\"error\",\"value\":\"logLevel = 'error'\"},{\"text\":\"fatal\",\"value\":\"logLevel = 'fatal'\"}]",
+        "skipUrlSync": false,
+        "valuesFormat": "json"
+      }
+    },
+    {
+      "kind": "CustomVariable",
+      "spec": {
+        "allowCustomValue": true,
+        "current": {
+          "text": "20",
+          "value": "20"
+        },
+        "hide": "dontHide",
+        "includeAll": false,
+        "label": "Limit",
+        "multi": false,
+        "name": "limit",
+        "options": [],
+        "query": "[{\"text\":\"20\",\"value\":20},{\"text\":\"50\",\"value\":50},{\"text\":\"100\",\"value\":100},{\"text\":\"250\",\"value\":250},{\"text\":\"500\",\"value\":500},{\"text\":\"1000\",\"value\":1000}]",
+        "skipUrlSync": false,
+        "valuesFormat": "json"
+      }
+    },
+    {
+      "kind": "TextVariable",
+      "spec": {
+        "current": {
+          "text": "f2ec4bc9ffdfd0d40e6704063459ad8b",
+          "value": "f2ec4bc9ffdfd0d40e6704063459ad8b"
+        },
+        "hide": "hideVariable",
+        "label": "Trace Id",
+        "name": "traceId",
+        "query": "f2ec4bc9ffdfd0d40e6704063459ad8b",
+        "skipUrlSync": false
+      }
+    }
+  ]
+}

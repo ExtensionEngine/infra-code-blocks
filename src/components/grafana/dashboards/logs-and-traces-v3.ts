@@ -3,14 +3,20 @@ import { GrafanaDashboardBuilder } from './builder';
 import { createStatusCodeVariable } from '../variables/status-code';
 import { createLimitVariable } from '../variables/limit';
 import { createLogLevelVariable } from '../variables/log-level';
-import { createSearchTextVariable } from '../variables/search-text';
+import {
+  createSearchTextVariable,
+  createSearchHttpUrl,
+  createSearchMessage,
+} from '../variables/search-text';
 import { createTraceIdVariable } from '../variables/trace-id';
+import { createHttpMethodVariable } from '../variables/http-method';
 import {
   createLogsViewPanel,
+  createLogsViewPanelV3,
   createTracesViewPanel,
 } from '../panels/logs-traces';
 
-export namespace LogsAndTracesDashboard {
+export namespace LogsAndTracesDashboardV3 {
   export type Args = {
     name: string;
     title: string;
@@ -28,8 +34,8 @@ const defaults = {
   },
 };
 
-export function createLogsAndTracesDashboard(
-  config: LogsAndTracesDashboard.Args,
+export function createLogsAndTracesDashboardV3(
+  config: LogsAndTracesDashboardV3.Args,
 ): GrafanaDashboardBuilder.CreateDashboard {
   const argsWithDefaults = mergeWithDefaults(defaults, config);
   const { title, logsDataSourceName, logGroupName, tracesDataSourceName } =
@@ -39,12 +45,11 @@ export function createLogsAndTracesDashboard(
     .withConfig(argsWithDefaults.dashboardConfig)
     .withTitle(title)
     .addVariable(createSearchTextVariable())
-    .addVariable(createStatusCodeVariable())
     .addVariable(createLogLevelVariable())
     .addVariable(createLimitVariable())
     .addVariable(createTraceIdVariable())
     .addPanel(
-      createLogsViewPanel({
+      createLogsViewPanelV3({
         logGroupName,
         logsDataSourceName,
         tracesDataSourceName,
