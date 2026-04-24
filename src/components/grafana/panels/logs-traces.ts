@@ -253,3 +253,105 @@ export function createLogsViewPanelV2(config: {
     ],
   );
 }
+
+export function createLogsViewPanelV3(config: {
+  logGroupName: string;
+  logsDataSourceName: string;
+  tracesDataSourceName: string;
+}): Panel {
+  return createTablePanel(
+    'Logs',
+    { x: 0, y: 0, w: 24, h: 12 },
+    config.logsDataSourceName,
+    [
+      {
+        expression: `fields @Timestamp, trace_id as traceId, @message
+          | parse @message '"body":"*"' as body
+          | parse @message '"severity_text":"*"' as logLevel
+          | filter \${log_level}
+          | filter @message like /\${search_text}/
+          | sort @timestamp desc
+          | limit \${limit}`,
+        logGroups: [{ name: config.logGroupName }],
+        queryMode: 'Logs',
+      },
+    ],
+    [
+      {
+        id: 'organize',
+        options: {
+          renameByName: {
+            body: 'Body',
+            logLevel: 'Log Level',
+            traceId: 'View traces',
+            '@message': 'Message',
+          },
+          indexByName: {
+            Time: 0,
+            body: 1,
+            logLevel: 2,
+            traceId: 6,
+            '@message': 7,
+          },
+          excludeByName: {
+            Value: true,
+          },
+        },
+      },
+      {
+        id: 'sortBy',
+        options: {
+          sort: [
+            {
+              field: 'Time',
+              desc: true,
+            },
+          ],
+        },
+      },
+    ],
+    [
+      {
+        matcher: {
+          id: 'byName',
+          options: 'traceId',
+        },
+        properties: [
+          {
+            id: 'links',
+            value: [
+              {
+                title: 'View traces',
+                url: '/d/\${__dashboard.uid}/\${__dashboard}?var-traceId=\${__data.fields.traceId}',
+              },
+            ],
+          },
+          {
+            id: 'custom.cellOptions',
+            value: {
+              type: 'data-links',
+            },
+          },
+        ],
+      },
+      {
+        matcher: {
+          id: 'byName',
+          options: '@message',
+        },
+        properties: [
+          {
+            id: 'custom.inspect',
+            value: true,
+          },
+          {
+            id: 'custom.cellOptions',
+            value: {
+              type: 'json-view',
+            },
+          },
+        ],
+      },
+    ],
+  );
+}
