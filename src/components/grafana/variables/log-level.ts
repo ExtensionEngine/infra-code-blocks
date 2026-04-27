@@ -1,13 +1,13 @@
 import { createCustomVariable } from './helpers';
 
 const LOG_LEVELS = [
-  { text: 'All', value: 'logLevel = /./' },
-  { text: 'trace', value: "logLevel = 'trace'" },
-  { text: 'debug', value: "logLevel = 'debug'" },
-  { text: 'info', value: "logLevel = 'info'" },
-  { text: 'warn', value: "logLevel = 'warn'" },
-  { text: 'error', value: "logLevel = 'error'" },
-  { text: 'fatal', value: "logLevel = 'fatal'" },
+  { text: 'All', value: '/./' },
+  { text: 'Trace', value: "'trace'" },
+  { text: 'Debug', value: "'debug'" },
+  { text: 'Info', value: "'info'" },
+  { text: 'Warn', value: "'warn'" },
+  { text: 'Error', value: "'error'" },
+  { text: 'Fatal', value: "'fatal'" },
 ];
 
 export function createLogLevelVariable() {

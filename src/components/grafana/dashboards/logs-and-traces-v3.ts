@@ -7,6 +7,8 @@ import {
   createSearchTextVariable,
   createSearchHttpUrl,
   createSearchMessage,
+  createSearchQueryVariable,
+  createSearchUrlVariable,
 } from '../variables/search-text';
 import { createTraceIdVariable } from '../variables/trace-id';
 import { createHttpMethodVariable } from '../variables/http-method';
@@ -44,7 +46,7 @@ export function createLogsAndTracesDashboardV3(
   return new GrafanaDashboardBuilder(config.name)
     .withConfig(argsWithDefaults.dashboardConfig)
     .withTitle(title)
-    .addVariable(createSearchTextVariable())
+    .addVariable(createSearchQueryVariable())
     .addVariable(createLogLevelVariable())
     .addVariable(createLimitVariable())
     .addVariable(createTraceIdVariable())

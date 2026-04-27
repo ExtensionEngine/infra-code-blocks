@@ -16,6 +16,7 @@ export type TextBoxVariable = {
   type: 'textbox';
   name: string;
   label: string;
+  description?: string;
   hide?: string;
 };
 

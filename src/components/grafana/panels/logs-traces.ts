@@ -265,11 +265,10 @@ export function createLogsViewPanelV3(config: {
     config.logsDataSourceName,
     [
       {
-        expression: `fields @Timestamp, trace_id as traceId, @message
+        expression: `fields @Timestamp, trace_id as traceId, severity_text as logLevel, @message
           | parse @message '"body":"*"' as body
-          | parse @message '"severity_text":"*"' as logLevel
-          | filter \${log_level}
-          | filter @message like /\${search_text}/
+          | filter severity_text like $log_level
+          | filter strcontains(@message, '$search_query')
           | sort @timestamp desc
           | limit \${limit}`,
         logGroups: [{ name: config.logGroupName }],
@@ -290,8 +289,8 @@ export function createLogsViewPanelV3(config: {
             Time: 0,
             body: 1,
             logLevel: 2,
-            traceId: 6,
-            '@message': 7,
+            traceId: 3,
+            '@message': 4,
           },
           excludeByName: {
             Value: true,

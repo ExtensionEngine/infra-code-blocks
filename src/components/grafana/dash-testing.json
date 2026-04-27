@@ -65,7 +65,7 @@
                       "group": "cloudwatch",
                       "version": "v0",
                       "datasource": {
-                        "name": "cfk1dgl3rdqtcf"
+                        "name": "cfkc1jkinfda8b"
                       },
                       "spec": {
                         "dimensions": {},
@@ -74,8 +74,6 @@
                         "label": "",
                         "logGroups": [
                           {
-                            "accountId": "587728158746",
-                            "arn": "arn:aws:logs:us-east-1:587728158746:log-group:icb-test-dev-lg:*",
                             "name": "icb-test-dev-lg"
                           }
                         ],
