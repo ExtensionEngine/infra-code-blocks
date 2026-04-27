@@ -94,7 +94,7 @@ export class S3CacheStrategy
           },
           frameOptions: {
             frameOption: 'DENY',
-            override: true,
+            override: false,
           },
           // instruct browsers to only use HTTPS
           strictTransportSecurity: {
