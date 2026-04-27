@@ -60,7 +60,7 @@ export class GrafanaBuilder {
     return this;
   }
 
-  public addCLoudWatchLogs(
+  public addCloudWatchLogs(
     name: string,
     args: Omit<CloudWatchLogsConnection.Args, 'stack'>,
   ): this {
