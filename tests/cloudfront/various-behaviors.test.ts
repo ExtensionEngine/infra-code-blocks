@@ -348,7 +348,7 @@ export function testCloudFrontWithVariousBehaviors(ctx: CloudFrontTestContext) {
           },
           FrameOptions: {
             FrameOption: 'DENY',
-            Override: true,
+            Override: false,
           },
           StrictTransportSecurity: {
             AccessControlMaxAgeSec: 31536000,
@@ -467,7 +467,7 @@ export function testCloudFrontWithVariousBehaviors(ctx: CloudFrontTestContext) {
           },
           FrameOptions: {
             FrameOption: 'DENY',
-            Override: true,
+            Override: false,
           },
           StrictTransportSecurity: {
             AccessControlMaxAgeSec: 31536000,
