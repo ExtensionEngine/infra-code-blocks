@@ -3,10 +3,7 @@ export type Panel = {
   gridPos: Panel.Position;
   type: string;
   datasource: string;
-  targets: {
-    expr: string;
-    legendFormat: string;
-  }[];
+  targets: Target[];
   fieldConfig: {
     defaults: {
       unit?: string;
@@ -24,7 +21,21 @@ export type Panel = {
         spanNulls: boolean;
       };
     };
+    overrides?: {
+      matcher: {
+        id: string;
+        options: string;
+      };
+      properties: {
+        id: string;
+        value:
+          | string
+          | { title: string; url: string; targetBlank: boolean }[]
+          | { type: string };
+      }[];
+    };
   };
+  transformations?: Transformation[];
   options?: {
     colorMode?: string;
     graphMode?: string;
@@ -47,6 +58,16 @@ export namespace Panel {
   };
 }
 
+export type Target = {
+  expr?: string;
+  expression?: string;
+  legendFormat?: string;
+  logGroups?: { name: string }[];
+  queryMode?: string;
+  queryType?: string;
+  query?: string;
+};
+
 export type Metric = {
   label: string;
   query: string;
@@ -57,3 +78,21 @@ export type Threshold = {
   value: number | null;
   color: string;
 };
+
+export type OrganizeTransformation = {
+  id: 'organize';
+  options: {
+    renameByName?: Record<string, string>;
+    excludeByName?: Record<string, boolean>;
+    indexByName?: Record<string, number>;
+  };
+};
+
+export type SortByTransformation = {
+  id: 'sortBy';
+  options: {
+    sort: { field: string; desc: boolean }[];
+  };
+};
+
+export type Transformation = OrganizeTransformation | SortByTransformation;
