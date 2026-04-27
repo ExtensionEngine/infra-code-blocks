@@ -48,6 +48,16 @@ export namespace Panel {
   };
 }
 
+export type Target = {
+  expr?: string;
+  expression?: string;
+  legendFormat?: string;
+  logGroups?: { name: string }[];
+  queryMode?: string;
+  queryType?: string;
+  query?: string;
+};
+
 export type Metric = {
   label: string;
   query: string;
