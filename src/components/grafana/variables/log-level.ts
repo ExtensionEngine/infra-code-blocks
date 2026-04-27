@@ -1,6 +1,7 @@
 import { createCustomVariable } from './helpers';
 
 const LOG_LEVELS = [
+  { text: 'All', value: 'logLevel = /./' },
   { text: 'trace', value: "logLevel = 'trace'" },
   { text: 'debug', value: "logLevel = 'debug'" },
   { text: 'info', value: "logLevel = 'info'" },
@@ -14,6 +15,6 @@ export function createLogLevelVariable() {
     'log_level',
     'Log Level',
     LOG_LEVELS,
-    LOG_LEVELS[2],
+    LOG_LEVELS[0],
   );
 }
