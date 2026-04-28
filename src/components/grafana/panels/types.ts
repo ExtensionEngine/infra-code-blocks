@@ -1,3 +1,5 @@
+import * as pulumi from '@pulumi/pulumi';
+
 export type Panel = {
   title: string;
   gridPos: Panel.Position;
@@ -62,7 +64,7 @@ export type Target = {
   expr?: string;
   expression?: string;
   legendFormat?: string;
-  logGroups?: { name: string }[];
+  logGroups?: { name: pulumi.Input<string> }[];
   queryMode?: string;
   queryType?: string;
   query?: string;

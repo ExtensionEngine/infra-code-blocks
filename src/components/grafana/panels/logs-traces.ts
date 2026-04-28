@@ -1,8 +1,9 @@
+import * as pulumi from '@pulumi/pulumi';
 import { Panel } from './types';
 import { createTablePanel, createTracesPanel } from './helpers';
 
 export function createLogsViewPanel(config: {
-  logGroupName: string;
+  logGroupName: pulumi.Input<string>;
   logsDataSourceName: string;
   tracesDataSourceName: string;
 }): Panel {

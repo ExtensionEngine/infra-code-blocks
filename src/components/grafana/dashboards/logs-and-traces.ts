@@ -1,3 +1,4 @@
+import * as pulumi from '@pulumi/pulumi';
 import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
 import { GrafanaDashboardBuilder } from './builder';
 import { createLimitVariable } from '../variables/limit';
@@ -14,7 +15,7 @@ export namespace LogsAndTracesDashboard {
     name: string;
     title: string;
     logsDataSourceName: string;
-    logGroupName: string;
+    logGroupName: pulumi.Input<string>;
     tracesDataSourceName: string;
     dashboardConfig?: GrafanaDashboardBuilder.Config;
   };
