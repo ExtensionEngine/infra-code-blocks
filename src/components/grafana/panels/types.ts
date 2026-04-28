@@ -52,7 +52,7 @@ export type Target = {
   expr?: string;
   expression?: string;
   legendFormat?: string;
-  logGroups?: { name: string }[];
+  logGroups?: { name: pulumi.Input<string> }[];
   queryMode?: string;
   queryType?: string;
   query?: string;
