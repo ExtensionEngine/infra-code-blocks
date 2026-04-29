@@ -48,16 +48,6 @@ export namespace Panel {
   };
 }
 
-export type Target = {
-  expr?: string;
-  expression?: string;
-  legendFormat?: string;
-  logGroups?: { name: pulumi.Input<string> }[];
-  queryMode?: string;
-  queryType?: string;
-  query?: string;
-};
-
 export type Metric = {
   label: string;
   query: string;
