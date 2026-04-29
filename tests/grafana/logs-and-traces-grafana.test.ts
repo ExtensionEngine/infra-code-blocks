@@ -210,7 +210,7 @@ export function testLogsAndTracesGrafana(ctx: GrafanaTestContext) {
       const variableNames = data.dashboard.templating.list
         .map(p => p.name)
         .sort();
-      const expectedVariables = ['search', 'log_level', 'limit'];
+      const expectedVariables = ['search', 'log_level', 'limit', 'traceId'];
       assert.deepStrictEqual(
         variableNames,
         expectedVariables.sort(),
