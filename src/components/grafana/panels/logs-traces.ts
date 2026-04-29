@@ -2,6 +2,69 @@ import * as pulumi from '@pulumi/pulumi';
 import { Panel } from './types';
 import { createTablePanel, createTracesPanel } from './helpers';
 
+const expression = `
+  fields @Timestamp, trace_id as traceId, severity_text as logLevel, @message
+  | parse @message '"body":"*"' as body
+  | filter logLevel like $log_level
+  | filter strcontains(@message, '$search')
+  | sort @timestamp desc
+  | limit \${limit}`;
+
+const renameTransformation = {
+  body: 'Body',
+  logLevel: 'Log Level',
+  traceId: 'View traces',
+  '@message': 'Message',
+};
+
+const orderTransformation = {
+  Time: 0,
+  body: 1,
+  logLevel: 2,
+  traceId: 3,
+  '@message': 4,
+};
+
+const sortTransformation = {
+  field: 'Time',
+  desc: true,
+};
+
+const excludeTransformation = {
+  Value: true,
+};
+
+const traceIdOverrides = [
+  {
+    id: 'links',
+    value: [
+      {
+        title: 'View traces',
+        url: '/d/\${__dashboard.uid}/\${__dashboard}?var-traceId=\${__data.fields.traceId}',
+      },
+    ],
+  },
+  {
+    id: 'custom.cellOptions',
+    value: {
+      type: 'data-links',
+    },
+  },
+];
+
+const messageOverrides = [
+  {
+    id: 'custom.inspect',
+    value: true,
+  },
+  {
+    id: 'custom.cellOptions',
+    value: {
+      type: 'json-view',
+    },
+  },
+];
+
 export function createLogsViewPanel(config: {
   logGroupName: pulumi.Input<string>;
   logsDataSourceName: string;
@@ -13,12 +76,7 @@ export function createLogsViewPanel(config: {
     config.logsDataSourceName,
     [
       {
-        expression: `fields @Timestamp, trace_id as traceId, severity_text as logLevel, @message
-          | parse @message '"body":"*"' as body
-          | filter severity_text like $log_level
-          | filter strcontains(@message, '$search_query')
-          | sort @timestamp desc
-          | limit \${limit}`,
+        expression,
         logGroups: [{ name: config.logGroupName }],
         queryMode: 'Logs',
       },
@@ -27,33 +85,15 @@ export function createLogsViewPanel(config: {
       {
         id: 'organize',
         options: {
-          renameByName: {
-            body: 'Body',
-            logLevel: 'Log Level',
-            traceId: 'View traces',
-            '@message': 'Message',
-          },
-          indexByName: {
-            Time: 0,
-            body: 1,
-            logLevel: 2,
-            traceId: 3,
-            '@message': 4,
-          },
-          excludeByName: {
-            Value: true,
-          },
+          renameByName: renameTransformation,
+          indexByName: orderTransformation,
+          excludeByName: excludeTransformation,
         },
       },
       {
         id: 'sortBy',
         options: {
-          sort: [
-            {
-              field: 'Time',
-              desc: true,
-            },
-          ],
+          sort: [sortTransformation],
         },
       },
     ],
@@ -63,41 +103,14 @@ export function createLogsViewPanel(config: {
           id: 'byName',
           options: 'traceId',
         },
-        properties: [
-          {
-            id: 'links',
-            value: [
-              {
-                title: 'View traces',
-                url: '/d/\${__dashboard.uid}/\${__dashboard}?var-traceId=\${__data.fields.traceId}',
-              },
-            ],
-          },
-          {
-            id: 'custom.cellOptions',
-            value: {
-              type: 'data-links',
-            },
-          },
-        ],
+        properties: traceIdOverrides,
       },
       {
         matcher: {
           id: 'byName',
           options: '@message',
         },
-        properties: [
-          {
-            id: 'custom.inspect',
-            value: true,
-          },
-          {
-            id: 'custom.cellOptions',
-            value: {
-              type: 'json-view',
-            },
-          },
-        ],
+        properties: messageOverrides,
       },
     ],
   );

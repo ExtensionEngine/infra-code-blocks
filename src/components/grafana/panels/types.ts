@@ -23,19 +23,7 @@ export type Panel = {
         spanNulls: boolean;
       };
     };
-    overrides?: {
-      matcher: {
-        id: string;
-        options: string;
-      };
-      properties: {
-        id: string;
-        value:
-          | string
-          | { title: string; url: string; targetBlank: boolean }[]
-          | { type: string };
-      }[];
-    };
+    overrides?: Override[];
   };
   transformations?: Transformation[];
   options?: {
@@ -60,16 +48,6 @@ export namespace Panel {
   };
 }
 
-export type Target = {
-  expr?: string;
-  expression?: string;
-  legendFormat?: string;
-  logGroups?: { name: pulumi.Input<string> }[];
-  queryMode?: string;
-  queryType?: string;
-  query?: string;
-};
-
 export type Metric = {
   label: string;
   query: string;
@@ -81,20 +59,39 @@ export type Threshold = {
   color: string;
 };
 
-export type OrganizeTransformation = {
-  id: 'organize';
-  options: {
-    renameByName?: Record<string, string>;
-    excludeByName?: Record<string, boolean>;
-    indexByName?: Record<string, number>;
-  };
+export type Target = {
+  expr?: string;
+  expression?: string;
+  legendFormat?: string;
+  logGroups?: { name: pulumi.Input<string> }[];
+  queryMode?: string;
+  queryType?: string;
+  query?: string;
 };
 
-export type SortByTransformation = {
-  id: 'sortBy';
-  options: {
-    sort: { field: string; desc: boolean }[];
+export type Override = {
+  matcher: {
+    id: string;
+    options: string;
   };
+  properties: {
+    id: string;
+    value: boolean | { title: string; url: string }[] | { type: string };
+  }[];
 };
 
-export type Transformation = OrganizeTransformation | SortByTransformation;
+export type Transformation =
+  | {
+      id: 'organize';
+      options: {
+        renameByName?: Record<string, string>;
+        excludeByName?: Record<string, boolean>;
+        indexByName?: Record<string, number>;
+      };
+    }
+  | {
+      id: 'sortBy';
+      options: {
+        sort: { field: string; desc: boolean }[];
+      };
+    };

@@ -1,4 +1,4 @@
-import { Panel, Metric, Target, Transformation } from './types';
+import { Panel, Metric, Target, Transformation, Override } from './types';
 
 const percentageFieldConfig = {
   unit: 'percent',
@@ -143,7 +143,7 @@ export function createTablePanel(
   dataSource: string,
   targets: Target[],
   transformations?: Transformation[],
-  overrides?: any,
+  overrides?: Override[],
 ): Panel {
   return {
     type: 'table',
