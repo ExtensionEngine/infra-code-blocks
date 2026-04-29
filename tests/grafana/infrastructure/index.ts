@@ -158,9 +158,7 @@ const logsAndTracesGrafana = new studion.grafana.GrafanaBuilder(
     name: `${appName}-lat-dashboard`,
     title: 'ICB Grafana Test Logs & Traces',
     logsDataSourceName: clodwatchLogsDataSourceName,
-    logGroupName: cloudWatchLogGroup.name as unknown as pulumi.Unwrap<
-      typeof cloudWatchLogGroup.name
-    >,
+    logGroupName: cloudWatchLogGroup.name,
     tracesDataSourceName: xRayDataSourceName,
   })
   .build();
