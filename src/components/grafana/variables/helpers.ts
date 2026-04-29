@@ -1,39 +1,57 @@
 import {
-  BuildQuery,
-  CustomVariable,
-  VariableOption,
+  CSVVariable,
+  CustomCSVVariable,
+  CustomJSONVariable,
+  JSONVariable,
   TextBoxVariable,
+  VariableOptions,
 } from './types';
 
-const buildQuery: BuildQuery = options => JSON.stringify(options);
-
-export function createCustomVariable(
+export function createCustomJSONVariable(
   name: string,
   label: string,
-  options: VariableOption[],
-  currentOption: VariableOption,
-): CustomVariable {
+  values: JSONVariable[],
+  current: JSONVariable,
+  options: VariableOptions,
+): CustomJSONVariable {
   return {
     type: 'custom',
     name,
     label,
-    query: buildQuery(options),
-    current: currentOption,
+    query: JSON.stringify(values),
+    current: current,
     valuesFormat: 'json',
+    ...options,
+  };
+}
+
+export function createCustomCSVVariable(
+  name: string,
+  label: string,
+  values: CSVVariable[],
+  current: CSVVariable,
+  options: VariableOptions,
+): CustomCSVVariable {
+  return {
+    type: 'custom',
+    name,
+    label,
+    query: values.join(','),
+    current: current,
+    valuesFormat: 'csv',
+    ...options,
   };
 }
 
 export function createTextBoxVariable(
   name: string,
   label: string,
-  description?: string,
-  hide?: string,
+  options: VariableOptions,
 ): TextBoxVariable {
   return {
     type: 'textbox',
     name,
     label,
-    description,
-    hide,
+    ...options,
   };
 }

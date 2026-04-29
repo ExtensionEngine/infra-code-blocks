@@ -1,25 +1,36 @@
-export type VariableOption = {
+export type JSONVariable = {
   text: string;
-  value: string | number;
+  value: string;
 };
 
-export type CustomVariable = {
-  type: 'custom';
-  name: string;
-  label: string;
-  query: string;
-  current: VariableOption;
-  valuesFormat: 'json';
-};
+export type CSVVariable = string | number;
 
-export type TextBoxVariable = {
-  type: 'textbox';
-  name: string;
-  label: string;
+export type VariableOptions = {
   description?: string;
   hide?: string;
 };
 
-export type Variable = CustomVariable | TextBoxVariable;
+export type BaseVariable = {
+  name: string;
+  label: string;
+} & VariableOptions;
 
-export type BuildQuery = (options: VariableOption[]) => string;
+export type TextBoxVariable = BaseVariable & {
+  type: 'textbox';
+};
+
+export type CustomJSONVariable = BaseVariable & {
+  type: 'custom';
+  query: string;
+  current: JSONVariable;
+  valuesFormat: 'json';
+};
+
+export type CustomCSVVariable = BaseVariable & {
+  type: 'custom';
+  query: string;
+  current: CSVVariable;
+  valuesFormat: 'csv';
+};
+
+export type Variable = TextBoxVariable | CustomJSONVariable | CustomCSVVariable;

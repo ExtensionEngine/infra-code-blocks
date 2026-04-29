@@ -3,7 +3,7 @@ import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
 import { GrafanaDashboardBuilder } from './builder';
 import { createLimitVariable } from '../variables/limit';
 import { createLogLevelVariable } from '../variables/log-level';
-import { createSearchQueryVariable } from '../variables/search-query';
+import { createSearchVariable } from '../variables/search';
 import { createTraceIdVariable } from '../variables/trace-id';
 import {
   createLogsViewPanel,
@@ -38,7 +38,11 @@ export function createLogsAndTracesDashboard(
   return new GrafanaDashboardBuilder(config.name)
     .withConfig(argsWithDefaults.dashboardConfig)
     .withTitle(title)
-    .addVariable(createSearchQueryVariable())
+    .addVariable(
+      createSearchVariable({
+        description: 'Search inside the whole message (case sensitive)',
+      }),
+    )
     .addVariable(createLogLevelVariable())
     .addVariable(createLimitVariable())
     .addVariable(createTraceIdVariable())

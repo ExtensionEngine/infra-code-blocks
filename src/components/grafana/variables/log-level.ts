@@ -1,7 +1,8 @@
-import { createCustomVariable } from './helpers';
+import { createCustomJSONVariable } from './helpers';
+import { VariableOptions } from './types';
 
 const LOG_LEVELS = [
-  { text: 'All', value: '/./' },
+  { text: 'ALL', value: '/./' },
   { text: 'Trace', value: "'trace'" },
   { text: 'Debug', value: "'debug'" },
   { text: 'Info', value: "'info'" },
@@ -10,11 +11,12 @@ const LOG_LEVELS = [
   { text: 'Fatal', value: "'fatal'" },
 ];
 
-export function createLogLevelVariable() {
-  return createCustomVariable(
+export function createLogLevelVariable(options: VariableOptions = {}) {
+  return createCustomJSONVariable(
     'log_level',
     'Log Level',
     LOG_LEVELS,
     LOG_LEVELS[0],
+    options,
   );
 }
