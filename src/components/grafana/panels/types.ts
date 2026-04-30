@@ -1,12 +1,11 @@
+import * as pulumi from '@pulumi/pulumi';
+
 export type Panel = {
   title: string;
   gridPos: Panel.Position;
   type: string;
   datasource: string;
-  targets: {
-    expr: string;
-    legendFormat: string;
-  }[];
+  targets: Target[];
   fieldConfig: {
     defaults: {
       unit?: string;
@@ -24,7 +23,9 @@ export type Panel = {
         spanNulls: boolean;
       };
     };
+    overrides?: Override[];
   };
+  transformations?: Transformation[];
   options?: {
     colorMode?: string;
     graphMode?: string;
@@ -57,3 +58,40 @@ export type Threshold = {
   value: number | null;
   color: string;
 };
+
+export type Target = {
+  expr?: string;
+  expression?: string;
+  legendFormat?: string;
+  logGroups?: { name: pulumi.Input<string> }[];
+  queryMode?: string;
+  queryType?: string;
+  query?: string;
+};
+
+export type Override = {
+  matcher: {
+    id: string;
+    options: string;
+  };
+  properties: {
+    id: string;
+    value: boolean | { title: string; url: string }[] | { type: string };
+  }[];
+};
+
+export type Transformation =
+  | {
+      id: 'organize';
+      options: {
+        renameByName?: Record<string, string>;
+        excludeByName?: Record<string, boolean>;
+        indexByName?: Record<string, number>;
+      };
+    }
+  | {
+      id: 'sortBy';
+      options: {
+        sort: { field: string; desc: boolean }[];
+      };
+    };

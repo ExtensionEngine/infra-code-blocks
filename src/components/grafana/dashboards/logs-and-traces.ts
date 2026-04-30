@@ -1,0 +1,62 @@
+import * as pulumi from '@pulumi/pulumi';
+import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
+import { GrafanaDashboardBuilder } from './builder';
+import { createLimitVariable } from '../variables/limit';
+import { createLogLevelVariable } from '../variables/log-level';
+import { createSearchVariable } from '../variables/search';
+import { createTraceIdVariable } from '../variables/trace-id';
+import {
+  createLogsViewPanel,
+  createTracesViewPanel,
+} from '../panels/logs-traces';
+
+export namespace LogsAndTracesDashboard {
+  export type Args = {
+    name: string;
+    title: string;
+    logsDataSourceName: string;
+    logGroupName: pulumi.Input<string>;
+    tracesDataSourceName: string;
+    dashboardConfig?: GrafanaDashboardBuilder.Config;
+  };
+}
+
+const defaults = {
+  title: 'Logs & Traces',
+  dashboardConfig: {
+    refresh: '1m',
+  },
+};
+
+export function createLogsAndTracesDashboard(
+  config: LogsAndTracesDashboard.Args,
+): GrafanaDashboardBuilder.CreateDashboard {
+  const argsWithDefaults = mergeWithDefaults(defaults, config);
+  const { title, logsDataSourceName, logGroupName, tracesDataSourceName } =
+    argsWithDefaults;
+
+  return new GrafanaDashboardBuilder(config.name)
+    .withConfig(argsWithDefaults.dashboardConfig)
+    .withTitle(title)
+    .addVariable(
+      createSearchVariable({
+        description: 'Search inside the whole message (case sensitive)',
+      }),
+    )
+    .addVariable(createLogLevelVariable())
+    .addVariable(createLimitVariable())
+    .addVariable(createTraceIdVariable())
+    .addPanel(
+      createLogsViewPanel({
+        logGroupName,
+        logsDataSourceName,
+        tracesDataSourceName,
+      }),
+    )
+    .addPanel(
+      createTracesViewPanel({
+        dataSourceName: tracesDataSourceName,
+      }),
+    )
+    .build();
+}
