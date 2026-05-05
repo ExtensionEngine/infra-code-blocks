@@ -5,28 +5,22 @@ import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
 import { GrafanaConnection } from './connection';
 
 const awsConfig = new pulumi.Config('aws');
-const pluginName = 'grafana-amazonprometheus-datasource';
 
 export namespace AMPConnection {
   export type Args = GrafanaConnection.Args & {
     endpoint: pulumi.Input<string>;
     region?: string;
-    pluginVersion?: string;
-    installPlugin?: boolean;
   };
 }
 
 const defaults = {
   region: awsConfig.require('region'),
-  pluginVersion: 'latest',
-  installPlugin: true,
 };
 
 export class AMPConnection extends GrafanaConnection {
   public readonly name: string;
   public readonly dataSource: grafana.oss.DataSource;
   public readonly rolePolicy: aws.iam.RolePolicy;
-  public readonly plugin?: grafana.cloud.PluginInstallation;
 
   constructor(
     name: string,
@@ -40,10 +34,6 @@ export class AMPConnection extends GrafanaConnection {
     this.name = name;
 
     this.rolePolicy = this.createRolePolicy();
-
-    if (argsWithDefaults.installPlugin) {
-      this.plugin = this.createPlugin(argsWithDefaults.pluginVersion);
-    }
 
     this.dataSource = this.createDataSource(
       argsWithDefaults.region,
@@ -79,20 +69,6 @@ export class AMPConnection extends GrafanaConnection {
     );
   }
 
-  private createPlugin(
-    pluginVersion: string,
-  ): grafana.cloud.PluginInstallation {
-    return new grafana.cloud.PluginInstallation(
-      `${this.name}-amp-plugin`,
-      {
-        stackSlug: this.stack.slug,
-        slug: pluginName,
-        version: pluginVersion,
-      },
-      { parent: this },
-    );
-  }
-
   private createDataSource(
     region: string,
     endpoint: AMPConnection.Args['endpoint'],
@@ -101,7 +77,7 @@ export class AMPConnection extends GrafanaConnection {
       `${this.name}-amp-datasource`,
       {
         name: this.dataSourceName,
-        type: pluginName,
+        type: 'grafana-amazonprometheus-datasource',
         url: endpoint,
         jsonDataEncoded: pulumi.jsonStringify({
           sigV4Auth: true,
@@ -110,7 +86,7 @@ export class AMPConnection extends GrafanaConnection {
           sigV4AssumeRoleArn: this.role.arn,
         }),
       },
-      { dependsOn: this.plugin ? [this.plugin] : [], parent: this },
+      { parent: this },
     );
   }
 }
