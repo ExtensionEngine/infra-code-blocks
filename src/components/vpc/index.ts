@@ -4,18 +4,20 @@ import { commonTags } from '../../shared/common-tags';
 import { enums } from '@pulumi/awsx/types';
 import { mergeWithDefaults } from '../../shared/merge-with-defaults';
 
-export type VpcArgs = {
-  /**
-   * Number of availability zones to which the subnets defined in subnetSpecs will be deployed
-   * @default '2'
-   */
-  numberOfAvailabilityZones?: number;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
+export namespace Vpc {
+  export type Args = {
+    /**
+     * Number of availability zones to which the subnets defined in subnetSpecs will be deployed
+     * @default '2'
+     */
+    numberOfAvailabilityZones?: number;
+    tags?: pulumi.Input<{
+      [key: string]: pulumi.Input<string>;
+    }>;
+  };
+}
 
-export const defaults = {
+const defaults = {
   numberOfAvailabilityZones: 2,
 };
 
@@ -24,7 +26,7 @@ export class Vpc extends pulumi.ComponentResource {
 
   constructor(
     name: string,
-    args: VpcArgs,
+    args: Vpc.Args = {},
     opts: pulumi.ComponentResourceOptions = {},
   ) {
     super('studion:vpc:Vpc', name, {}, opts);

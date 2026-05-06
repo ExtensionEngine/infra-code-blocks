@@ -16,7 +16,7 @@ const programArgs: InlineProgramArgs = {
 
 async function provisionCommonInfra() {
   const studion = await import('@studion/infra-code-blocks');
-  const vpc = new studion.Vpc('common-infra-vpc', {});
+  const vpc = new studion.Vpc('common-infra-vpc');
   const org = pulumi.getOrganization();
 
   process.env.ICB_COMMON_INFRA_STACK_REF = `${org}/${projectName}/${stackName}`;

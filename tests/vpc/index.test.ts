@@ -13,7 +13,6 @@ import {
   SubnetState,
   VpcState,
 } from '@aws-sdk/client-ec2';
-import { defaults as vpcDefaults } from '../../src/components/vpc';
 
 const programArgs: InlineProgramArgs = {
   stackName: 'dev',
@@ -40,12 +39,7 @@ describe('Vpc component deployment', () => {
 
   it('should create a default VPC with the correct configuration', async () => {
     const defaultVpc = ctx.outputs.defaultVpc.value;
-    await testVpcConfiguration(
-      ctx,
-      defaultVpc.vpc.vpcId,
-      6,
-      vpcDefaults.numberOfAvailabilityZones,
-    );
+    await testVpcConfiguration(ctx, defaultVpc.vpc.vpcId, 6, 2);
   });
 
   it('should create a VPC with the correct configuration', async () => {
@@ -103,11 +97,7 @@ describe('Vpc component deployment', () => {
       }),
     );
     const natGateways = natGwResult.NatGateways || [];
-    assert.strictEqual(
-      natGateways.length,
-      vpcDefaults.numberOfAvailabilityZones,
-      `Should have ${vpcDefaults.numberOfAvailabilityZones} NAT gateways`,
-    );
+    assert.strictEqual(natGateways.length, 2, `Should have 2 NAT gateways`);
 
     natGateways.forEach(nat => {
       assert.strictEqual(

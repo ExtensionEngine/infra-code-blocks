@@ -12,7 +12,7 @@ Use it when a workload needs package-standard public HTTP/HTTPS ingress, load-ba
 import * as aws from '@pulumi/aws';
 import * as studion from '@studion/infra-code-blocks';
 
-const vpc = new studion.Vpc('app', {});
+const vpc = new studion.Vpc('app');
 const cluster = new aws.ecs.Cluster('app-cluster', {});
 
 const webServer = new studion.WebServerBuilder('app')
@@ -43,7 +43,7 @@ const hostedZone = aws.route53.getZoneOutput({
   privateZone: false,
 });
 
-const vpc = new studion.Vpc('platform', {});
+const vpc = new studion.Vpc('platform');
 const cluster = new aws.ecs.Cluster('platform-cluster', {});
 
 const taskExecutionPolicy: aws.types.input.iam.RoleInlinePolicy = {

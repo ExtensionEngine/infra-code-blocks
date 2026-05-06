@@ -28,7 +28,7 @@ import * as pulumi from '@pulumi/pulumi';
 import * as studion from '@studion/infra-code-blocks';
 
 const env = pulumi.getStack();
-const vpc = new studion.Vpc('app', {});
+const vpc = new studion.Vpc('app');
 const cluster = new aws.ecs.Cluster('app-cluster', {});
 const logGroup = new aws.cloudwatch.LogGroup('otel-logs', {
   retentionInDays: 7,

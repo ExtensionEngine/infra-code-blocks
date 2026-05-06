@@ -107,7 +107,7 @@ Add a minimal VPC to your Pulumi program:
 ```ts
 import * as studion from '@studion/infra-code-blocks';
 
-const vpc = new studion.Vpc('app', {});
+const vpc = new studion.Vpc('app');
 
 export const vpcId = vpc.vpc.vpcId;
 ```
@@ -143,7 +143,7 @@ const hostedZone = aws.route53.getZoneOutput({
   privateZone: false,
 });
 
-const vpc = new studion.Vpc('app', {});
+const vpc = new studion.Vpc('app');
 
 const certificate = new studion.AcmCertificate('app-cert', {
   domain: 'app.example.com',
@@ -164,7 +164,7 @@ import * as pulumi from '@pulumi/pulumi';
 import * as studion from '@studion/infra-code-blocks';
 
 const env = pulumi.getStack();
-const vpc = new studion.Vpc('app', {});
+const vpc = new studion.Vpc('app');
 const cluster = new aws.ecs.Cluster('app-cluster', {});
 const logGroup = new aws.cloudwatch.LogGroup('app-otel-logs', {});
 const workspace = new aws.amp.Workspace('app-amp', {});
@@ -223,7 +223,7 @@ Use the database builder when you want the database and helper instance created 
 ```ts
 import * as studion from '@studion/infra-code-blocks';
 
-const vpc = new studion.Vpc('platform', {});
+const vpc = new studion.Vpc('platform');
 
 const database = new studion.DatabaseBuilder('platform-db')
   .withVpc(vpc.vpc)
@@ -242,7 +242,7 @@ You can also provision `Ec2SSMConnect` directly when you want a standalone helpe
 ```ts
 import * as studion from '@studion/infra-code-blocks';
 
-const vpc = new studion.Vpc('platform', {});
+const vpc = new studion.Vpc('platform');
 
 const ssmConnect = new studion.Ec2SSMConnect('platform-db-ssm', {
   vpc: vpc.vpc,

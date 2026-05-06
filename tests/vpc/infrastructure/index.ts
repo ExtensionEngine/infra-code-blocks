@@ -8,7 +8,7 @@ const tags = {
   Environment: stackName,
 };
 
-const defaultVpc = new studion.Vpc(`${appName}-default`, {});
+const defaultVpc = new studion.Vpc(`${appName}-default`);
 
 const vpc = new studion.Vpc(`${appName}`, {
   numberOfAvailabilityZones: 3,

@@ -11,7 +11,7 @@ Use these components for caches, session stores, queues, and other low-latency s
 ```ts
 import { ElastiCacheRedis, Vpc } from '@studion/infra-code-blocks';
 
-const vpc = new Vpc('app', {});
+const vpc = new Vpc('app');
 
 const cache = new ElastiCacheRedis('app-cache', {
   vpc: vpc.vpc,
