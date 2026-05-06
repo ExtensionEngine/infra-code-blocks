@@ -33,7 +33,6 @@ const ctx: GrafanaTestContext = {
   },
 };
 
-// REQUIRED PLUGINS: grafana-amazonprometheus-datasource, grafana-x-ray-datasource
 describe('Grafana component deployment', () => {
   before(async () => {
     const outputs: OutputMap = await automation.deploy(programArgs);

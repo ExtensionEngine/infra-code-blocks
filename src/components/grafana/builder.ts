@@ -20,6 +20,7 @@ export class GrafanaBuilder {
   private readonly dashboardBuilders: GrafanaDashboardBuilder.CreateDashboard[] =
     [];
   private readonly scopes: string[] = [];
+  private readonly plugins: Grafana.PluginArgs[] = [];
   private folderName?: string;
   private serviceAccountTokenRotation?: Grafana.ServiceAccountTokenRotation;
   private accessPolicyTokenRotation?: Grafana.AccessPolicyTokenRotation;
@@ -53,6 +54,11 @@ export class GrafanaBuilder {
   public addScope(...scopes: string[]): this {
     this.scopes.push(...scopes);
 
+    return this;
+  }
+
+  public addPlugin(plugin: Grafana.PluginArgs): this {
+    this.plugins.push(plugin);
     return this;
   }
 
@@ -130,6 +136,7 @@ export class GrafanaBuilder {
         dashboardBuilders: this.dashboardBuilders,
         folderName: this.folderName,
         scopes: this.scopes,
+        plugins: this.plugins,
         serviceAccountTokenRotation: this.serviceAccountTokenRotation,
         accessPolicyTokenRotation: this.accessPolicyTokenRotation,
       },
