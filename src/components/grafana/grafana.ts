@@ -112,7 +112,7 @@ export class Grafana extends pulumi.ComponentResource {
     this.connections = argsWithDefaults.connectionBuilders.map(build => {
       return build(
         { stack: this.stack },
-        { parent: this, provider: this.provider },
+        { parent: this, provider: this.provider, dependsOn: this.plugins },
       );
     });
 
