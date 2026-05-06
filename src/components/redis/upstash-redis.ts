@@ -48,8 +48,7 @@ export class UpstashRedis extends pulumi.ComponentResource {
       },
     );
 
-    const dbName = `${pulumi.getProject()}-${pulumi.getStack()}`;
-    const argsWithDefaults = mergeWithDefaults({ ...defaults, dbName }, args);
+    const argsWithDefaults = mergeWithDefaults(defaults, args);
 
     this.name = name;
     this.instance = new upstash.RedisDatabase(
