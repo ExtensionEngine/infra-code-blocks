@@ -15,6 +15,9 @@ const defaults = {
   region: awsConfig.require('region'),
 };
 
+/**
+ * This component requires grafana-x-ray-datasource plugin to be installed
+ */
 export class XRayConnection extends GrafanaConnection {
   public readonly name: string;
   public readonly dataSource: grafana.oss.DataSource;

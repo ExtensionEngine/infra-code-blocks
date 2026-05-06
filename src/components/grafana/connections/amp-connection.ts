@@ -17,6 +17,9 @@ const defaults = {
   region: awsConfig.require('region'),
 };
 
+/**
+ * This component requires grafana-amazonprometheus-datasource plugin to be installed
+ */
 export class AMPConnection extends GrafanaConnection {
   public readonly name: string;
   public readonly dataSource: grafana.oss.DataSource;

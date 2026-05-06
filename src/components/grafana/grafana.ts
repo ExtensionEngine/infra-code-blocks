@@ -15,9 +15,6 @@ const REQUIRED_ACCESS_POLICY_SCOPES = [
   'stack-dashboards:read',
   'stack-dashboards:write',
   'stack-dashboards:delete',
-  'stack-plugins:read',
-  'stack-plugins:write',
-  'stack-plugins:delete',
 ] as const;
 
 const defaults = {
@@ -42,18 +39,11 @@ export namespace Grafana {
     earlyRotationWindow: string;
   };
 
-  export type PluginArgs = {
-    name: string;
-    slug: string;
-    version?: string;
-  };
-
   export type Args = {
     connectionBuilders: GrafanaConnection.CreateConnection[];
     dashboardBuilders: GrafanaDashboardBuilder.CreateDashboard[];
     folderName?: string;
     scopes?: string[];
-    plugins?: PluginArgs[];
     serviceAccountTokenRotation?: ServiceAccountTokenRotation;
     accessPolicyTokenRotation?: AccessPolicyTokenRotation;
   };
@@ -72,7 +62,6 @@ export class Grafana extends pulumi.ComponentResource {
   public readonly serviceAccount: grafana.cloud.StackServiceAccount;
   public readonly serviceAccountToken: grafana.cloud.StackServiceAccountRotatingToken;
   public readonly provider: grafana.Provider;
-  public readonly plugins?: grafana.cloud.PluginInstallation[];
   public readonly connections: GrafanaConnection[];
   public readonly folder: grafana.oss.Folder;
   public readonly dashboards: grafana.oss.Dashboard[];
@@ -101,13 +90,6 @@ export class Grafana extends pulumi.ComponentResource {
     );
 
     this.provider = this.createProvider();
-
-    if (argsWithDefaults.plugins?.length) {
-      this.plugins = [];
-      for (const plugin of argsWithDefaults.plugins) {
-        this.plugins.push(this.createPlugin(plugin, this.provider));
-      }
-    }
 
     this.connections = argsWithDefaults.connectionBuilders.map(build => {
       return build(
@@ -209,21 +191,6 @@ export class Grafana extends pulumi.ComponentResource {
     return new grafana.oss.Folder(
       `${this.name}-folder`,
       { title: folderName ?? `${this.name}-ICB-GENERATED` },
-      { parent: this, provider },
-    );
-  }
-
-  private createPlugin(
-    { name, slug, version = 'latest' }: Grafana.PluginArgs,
-    provider: grafana.Provider,
-  ): grafana.cloud.PluginInstallation {
-    return new grafana.cloud.PluginInstallation(
-      `${this.name}-${name}-plugin`,
-      {
-        stackSlug: this.stack.slug,
-        slug,
-        version,
-      },
       { parent: this, provider },
     );
   }
