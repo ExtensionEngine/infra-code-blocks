@@ -105,7 +105,7 @@ export class Grafana extends pulumi.ComponentResource {
     if (argsWithDefaults.plugins?.length) {
       this.plugins = [];
       for (const plugin of argsWithDefaults.plugins) {
-        this.plugins.push(this.createPlugin(plugin));
+        this.plugins.push(this.createPlugin(plugin, this.provider));
       }
     }
 
@@ -213,11 +213,10 @@ export class Grafana extends pulumi.ComponentResource {
     );
   }
 
-  private createPlugin({
-    name,
-    slug,
-    version = 'latest',
-  }: Grafana.PluginArgs): grafana.cloud.PluginInstallation {
+  private createPlugin(
+    { name, slug, version = 'latest' }: Grafana.PluginArgs,
+    provider: grafana.Provider,
+  ): grafana.cloud.PluginInstallation {
     return new grafana.cloud.PluginInstallation(
       `${this.name}-${name}-plugin`,
       {
@@ -225,7 +224,7 @@ export class Grafana extends pulumi.ComponentResource {
         slug,
         version,
       },
-      { parent: this },
+      { parent: this, provider },
     );
   }
 
