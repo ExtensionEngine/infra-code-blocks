@@ -43,7 +43,7 @@ const defaults = {
   instanceClass: 'db.t4g.micro',
   allowMajorVersionUpgrade: false,
   autoMinorVersionUpgrade: true,
-  engineVersion: '17.2',
+  engineVersion: '18',
 };
 
 export class DatabaseReplica extends pulumi.ComponentResource {
