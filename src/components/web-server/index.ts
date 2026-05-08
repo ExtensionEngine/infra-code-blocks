@@ -76,6 +76,10 @@ export namespace WebServer {
        * "/healthcheck"
        */
       healthCheckPath?: pulumi.Input<string>;
+      healthCheckConfig?: Omit<
+        aws.types.input.lb.TargetGroupHealthCheck,
+        'path'
+      >;
       loadBalancingAlgorithmType?: pulumi.Input<string>;
       initContainers?: pulumi.Input<pulumi.Input<WebServer.InitContainer>[]>;
       sidecarContainers?: pulumi.Input<
@@ -133,6 +137,7 @@ export class WebServer extends pulumi.ComponentResource {
         port: args.port,
         certificate: certificate ?? this.acmCertificate?.certificate,
         healthCheckPath: args.healthCheckPath,
+        healthCheckConfig: args.healthCheckConfig,
         loadBalancingAlgorithmType: args.loadBalancingAlgorithmType,
       },
       {

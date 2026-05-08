@@ -5,6 +5,7 @@ import * as util from '../../util';
 import {
   webServerName,
   healthCheckPath,
+  healthCheckConfig,
   webServerWithDomainConfig,
   webServerWithSanCertificateConfig,
   webServerWithCertificateConfig,
@@ -68,7 +69,7 @@ const webServer = new studion.WebServerBuilder(webServerName)
   .addSidecarContainer(sidecar)
   .withVpc(vpc.vpc)
   .withOtelCollector(otelCollector)
-  .withCustomHealthCheckPath(healthCheckPath)
+  .withHealthCheck(healthCheckPath, healthCheckConfig)
   .withLoadBalancingAlgorithm('least_outstanding_requests')
   .build({ parent: cluster });
 
@@ -81,7 +82,7 @@ const webServerWithDomain = new studion.WebServerBuilder(`web-server-domain`)
   .withContainer(webServerImageName, 8080)
   .withEcsConfig(ecs)
   .withVpc(vpc.vpc)
-  .withCustomHealthCheckPath(healthCheckPath)
+  .withHealthCheck(healthCheckPath)
   .withCustomDomain(webServerWithDomainConfig.primary, hostedZone.zoneId)
   .build({ parent: cluster });
 
@@ -100,7 +101,7 @@ const webServerWithSanCertificate = new studion.WebServerBuilder(
   .withContainer(webServerImageName, 8080)
   .withEcsConfig(ecs)
   .withVpc(vpc.vpc)
-  .withCustomHealthCheckPath(healthCheckPath)
+  .withHealthCheck(healthCheckPath)
   .withCertificate(sanWebServerCert.certificate, hostedZone.zoneId)
   .build({
     parent: cluster,
@@ -120,7 +121,7 @@ const webServerWithCertificate = new studion.WebServerBuilder(`web-server-cert`)
   .withContainer(webServerImageName, 8080)
   .withEcsConfig(ecs)
   .withVpc(vpc.vpc)
-  .withCustomHealthCheckPath(healthCheckPath)
+  .withHealthCheck(healthCheckPath)
   .withCertificate(
     certWebServer.certificate,
     hostedZone.zoneId,

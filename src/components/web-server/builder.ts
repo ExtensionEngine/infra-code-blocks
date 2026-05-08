@@ -18,6 +18,7 @@ export class WebServerBuilder {
   private _hostedZoneId?: pulumi.Input<string>;
   private _certificate?: pulumi.Input<aws.acm.Certificate>;
   private _healthCheckPath?: pulumi.Input<string>;
+  private _healthCheckConfig?: WebServer.Args['healthCheckConfig'];
   private _loadBalancingAlgorithmType?: pulumi.Input<string>;
   private _otelCollector?: pulumi.Input<OtelCollector>;
   private _initContainers: pulumi.Input<WebServer.InitContainer>[] = [];
@@ -112,10 +113,12 @@ export class WebServerBuilder {
     return this;
   }
 
-  public withCustomHealthCheckPath(
+  public withHealthCheck(
     path: WebServer.Args['healthCheckPath'],
+    config?: WebServer.Args['healthCheckConfig'],
   ): this {
     this._healthCheckPath = path;
+    this._healthCheckConfig = config;
 
     return this;
   }
@@ -154,6 +157,7 @@ export class WebServerBuilder {
         hostedZoneId: this._hostedZoneId,
         certificate: this._certificate,
         healthCheckPath: this._healthCheckPath,
+        healthCheckConfig: this._healthCheckConfig,
         loadBalancingAlgorithmType: this._loadBalancingAlgorithmType,
         otelCollector: this._otelCollector,
         initContainers: this._initContainers,

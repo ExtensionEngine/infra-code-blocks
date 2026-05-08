@@ -10,6 +10,7 @@ export namespace WebServerLoadBalancer {
     port: pulumi.Input<number>;
     certificate?: pulumi.Input<aws.acm.Certificate>;
     healthCheckPath?: pulumi.Input<string>;
+    healthCheckConfig?: Omit<aws.types.input.lb.TargetGroupHealthCheck, 'path'>;
     loadBalancingAlgorithmType?: pulumi.Input<string>;
   };
 }
@@ -41,6 +42,12 @@ const webServerLoadBalancerNetworkConfig = {
 
 const defaults = {
   healthCheckPath: '/healthcheck',
+  healthCheckConfig: {
+    healthyThreshold: 3,
+    unhealthyThreshold: 2,
+    interval: 60,
+    timeout: 5,
+  },
 };
 
 export class WebServerLoadBalancer extends pulumi.ComponentResource {
@@ -61,8 +68,13 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
     this.name = name;
     const vpc = pulumi.output(args.vpc);
     const argsWithDefaults = mergeWithDefaults(defaults, args);
-    const { port, certificate, healthCheckPath, loadBalancingAlgorithmType } =
-      argsWithDefaults;
+    const {
+      port,
+      certificate,
+      healthCheckPath,
+      healthCheckConfig,
+      loadBalancingAlgorithmType,
+    } = argsWithDefaults;
 
     this.securityGroup = this.createLbSecurityGroup(vpc.vpcId);
 
@@ -84,6 +96,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
       port,
       vpc.vpcId,
       healthCheckPath,
+      healthCheckConfig,
       loadBalancingAlgorithmType,
     );
     this.httpListener = this.createLbHttpListener(
@@ -163,6 +176,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
     port: pulumi.Input<number>,
     vpcId: awsx.ec2.Vpc['vpcId'],
     healthCheckPath: pulumi.Input<string>,
+    healthCheckConfig: WebServerLoadBalancer.Args['healthCheckConfig'],
     loadBalancingAlgorithmType?: pulumi.Input<string>,
   ): aws.lb.TargetGroup {
     return new aws.lb.TargetGroup(
@@ -175,10 +189,7 @@ export class WebServerLoadBalancer extends pulumi.ComponentResource {
         vpcId,
         loadBalancingAlgorithmType,
         healthCheck: {
-          healthyThreshold: 3,
-          unhealthyThreshold: 2,
-          interval: 60,
-          timeout: 5,
+          ...healthCheckConfig,
           path: healthCheckPath,
         },
         tags: { ...commonTags, Name: `${this.name}-target-group` },
