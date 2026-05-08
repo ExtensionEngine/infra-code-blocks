@@ -140,7 +140,7 @@ const configurableGrafana = new studion.grafana.GrafanaBuilder(
     expireAfter: '1080h',
     earlyRotationWindow: '72h',
   })
-  .build({ parent });
+  .build({ parent, dependsOn: [ampGrafana] });
 
 const clodwatchLogsDataSourceName = `${appName}-cw-logs-datasource`;
 const xRayDataSourceName = `${appName}-x-ray-datasource`;
@@ -168,7 +168,7 @@ const logsAndTracesGrafana = new studion.grafana.GrafanaBuilder(
     logGroupName: cloudWatchLogGroup.name,
     tracesDataSourceName: xRayDataSourceName,
   })
-  .build();
+  .build({ parent, dependsOn: [configurableGrafana] });
 
 export {
   webServer,
