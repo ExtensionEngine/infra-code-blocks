@@ -1,55 +1,64 @@
 import * as pulumi from '@pulumi/pulumi';
+import { backOff } from 'exponential-backoff';
 import { request } from 'undici';
 
-type PluginReadyInputs = {
-  grafanaToken: pulumi.Input<string>;
-  pluginSlug: string;
-};
+export namespace PluginReady {
+  export type Args = {
+    grafanaToken: pulumi.Input<string>;
+    grafanaUrl: string;
+    pluginSlug: string;
+  };
+}
 
 const pluginReadyProvider: pulumi.dynamic.ResourceProvider = {
-  async create(inputs: PluginReadyInputs) {
-    const { grafanaToken, pluginSlug } = inputs;
+  async create(inputs: PluginReady.Args) {
+    const { grafanaToken, grafanaUrl, pluginSlug } = inputs;
 
-    const grafanaConfig = new pulumi.Config('grafana');
-    const grafanaUrl = grafanaConfig.get('url') ?? process.env.GRAFANA_URL;
+    const url = new URL(`/api/plugins/${pluginSlug}/settings`, grafanaUrl).href;
 
-    if (!grafanaUrl) {
+    const data = await backOff(
+      async () => {
+        const { statusCode, body } = await request(url, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${grafanaToken}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (statusCode === 200) {
+          return (await body.json()) as { id: string };
+        }
+
+        if (statusCode !== 404) {
+          throw new Error(`Unexpected status code: ${statusCode}`);
+        }
+
+        throw new Error('Plugin not ready yet');
+      },
+      {
+        delayFirstAttempt: true,
+        numOfAttempts: 16,
+        startingDelay: 500,
+        maxDelay: 60000,
+        timeMultiple: 2,
+        jitter: 'none',
+        retry: (err: Error) => err.message === 'Plugin not ready yet',
+      },
+    ).catch(() => {
       throw new Error(
-        'Grafana URL is not configured. Set it via Pulumi config (grafana:url) or GRAFANA_URL env var.',
+        `Timed out waiting for plugin "${pluginSlug}" to become ready`,
       );
-    }
+    });
 
-    const url = `${grafanaUrl.replace(/\/$/, '')}/api/plugins/${pluginSlug}/settings`;
-
-    for (let attempt = 0; attempt < 60; attempt++) {
-      const { statusCode, body } = await request(url, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${grafanaToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (statusCode === 200) {
-        const data = (await body.json()) as { id: string };
-        return { id: data.id, outs: {} };
-      }
-
-      if (statusCode !== 404) {
-        throw new Error('Unexpected error');
-      }
-
-      await new Promise(r => setTimeout(r, 5000));
-    }
-
-    throw new Error('Timed out');
+    return { id: data.id, outs: {} };
   },
 };
 
 export class PluginReady extends pulumi.dynamic.Resource {
   constructor(
     name: string,
-    props: PluginReadyInputs,
+    props: PluginReady.Args,
     opts?: pulumi.CustomResourceOptions,
   ) {
     super(pluginReadyProvider, name, props, opts);

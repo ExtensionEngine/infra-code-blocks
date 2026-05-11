@@ -67,6 +67,7 @@ export namespace Grafana {
  */
 export class Grafana extends pulumi.ComponentResource {
   public readonly name: string;
+  public readonly grafanaUrl: string;
   public readonly stack: pulumi.Output<grafana.cloud.GetStackResult>;
   public readonly accessPolicy: grafana.cloud.AccessPolicy;
   public readonly accessPolicyToken: grafana.cloud.AccessPolicyRotatingToken;
@@ -89,6 +90,7 @@ export class Grafana extends pulumi.ComponentResource {
 
     this.name = name;
 
+    this.grafanaUrl = this.getGrafanaUrl();
     this.stack = grafana.cloud.getStackOutput({ slug: this.getStackSlug() });
 
     this.accessPolicy = this.createAccessPolicy(argsWithDefaults.scopes);
@@ -136,7 +138,7 @@ export class Grafana extends pulumi.ComponentResource {
     this.registerOutputs();
   }
 
-  private getStackSlug(): string {
+  private getGrafanaUrl(): string {
     const grafanaConfig = new pulumi.Config('grafana');
     const grafanaUrl = grafanaConfig.get('url') ?? process.env.GRAFANA_URL;
 
@@ -146,7 +148,11 @@ export class Grafana extends pulumi.ComponentResource {
       );
     }
 
-    return new URL(grafanaUrl).hostname.split('.')[0];
+    return grafanaUrl;
+  }
+
+  private getStackSlug(): string {
+    return new URL(this.grafanaUrl).hostname.split('.')[0];
   }
 
   private createAccessPolicy(scopes?: string[]): grafana.cloud.AccessPolicy {
@@ -240,6 +246,7 @@ export class Grafana extends pulumi.ComponentResource {
       `${this.name}-${name}-plugin-ready`,
       {
         grafanaToken: this.serviceAccountToken.key,
+        grafanaUrl: this.grafanaUrl,
         pluginSlug: slug,
       },
       {
