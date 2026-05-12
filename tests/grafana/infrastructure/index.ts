@@ -70,6 +70,10 @@ const awsAccountId = process.env.GRAFANA_AWS_ACCOUNT_ID!;
 
 const ampDataSourceName = `${appName}-amp-datasource`;
 const ampGrafana = new studion.grafana.GrafanaBuilder(`${appName}-amp`)
+  .addPlugin({
+    name: 'amp',
+    slug: 'grafana-amazonprometheus-datasource',
+  })
   .addAmp(`${appName}-slo-amp`, {
     awsAccountId,
     endpoint: ampWorkspace.prometheusEndpoint,
@@ -103,7 +107,6 @@ const configurableGrafana = new studion.grafana.GrafanaBuilder(
           endpoint: ampWorkspace.prometheusEndpoint,
           region: aws.config.requireRegion(),
           dataSourceName: configurableAmpDataSourceName,
-          installPlugin: false,
           ...ctx,
         },
         opts,
@@ -137,13 +140,17 @@ const configurableGrafana = new studion.grafana.GrafanaBuilder(
     expireAfter: '1080h',
     earlyRotationWindow: '72h',
   })
-  .build({ parent });
+  .build({ parent, dependsOn: [ampGrafana] });
 
 const clodwatchLogsDataSourceName = `${appName}-cw-logs-datasource`;
 const xRayDataSourceName = `${appName}-x-ray-datasource`;
 const logsAndTracesGrafana = new studion.grafana.GrafanaBuilder(
   `${appName}-logs-traces`,
 )
+  .addPlugin({
+    name: 'x-ray',
+    slug: 'grafana-x-ray-datasource',
+  })
   .addCloudWatchLogs(`${appName}-lt-cwl`, {
     awsAccountId,
     region: aws.config.requireRegion(),
@@ -161,7 +168,7 @@ const logsAndTracesGrafana = new studion.grafana.GrafanaBuilder(
     logGroupName: cloudWatchLogGroup.name,
     tracesDataSourceName: xRayDataSourceName,
   })
-  .build();
+  .build({ parent, dependsOn: [configurableGrafana] });
 
 export {
   webServer,

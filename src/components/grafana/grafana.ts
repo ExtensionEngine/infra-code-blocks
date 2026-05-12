@@ -3,6 +3,7 @@ import * as grafana from '@pulumiverse/grafana';
 import type { GrafanaDashboardBuilder } from './dashboards/builder';
 import { GrafanaConnection } from './connections';
 import { mergeWithDefaults } from '../../shared/merge-with-defaults';
+import { PluginReady } from './plugin-ready';
 
 const REQUIRED_ACCESS_POLICY_SCOPES = [
   'accesspolicies:read',
@@ -42,11 +43,18 @@ export namespace Grafana {
     earlyRotationWindow: string;
   };
 
+  export type PluginArgs = {
+    name: string;
+    slug: string;
+    version?: string;
+  };
+
   export type Args = {
     connectionBuilders: GrafanaConnection.CreateConnection[];
     dashboardBuilders: GrafanaDashboardBuilder.CreateDashboard[];
     folderName?: string;
     scopes?: string[];
+    plugins?: PluginArgs[];
     serviceAccountTokenRotation?: ServiceAccountTokenRotation;
     accessPolicyTokenRotation?: AccessPolicyTokenRotation;
   };
@@ -59,12 +67,14 @@ export namespace Grafana {
  */
 export class Grafana extends pulumi.ComponentResource {
   public readonly name: string;
+  public readonly grafanaUrl: string;
   public readonly stack: pulumi.Output<grafana.cloud.GetStackResult>;
   public readonly accessPolicy: grafana.cloud.AccessPolicy;
   public readonly accessPolicyToken: grafana.cloud.AccessPolicyRotatingToken;
   public readonly serviceAccount: grafana.cloud.StackServiceAccount;
   public readonly serviceAccountToken: grafana.cloud.StackServiceAccountRotatingToken;
   public readonly provider: grafana.Provider;
+  public readonly plugins?: PluginReady[];
   public readonly connections: GrafanaConnection[];
   public readonly folder: grafana.oss.Folder;
   public readonly dashboards: grafana.oss.Dashboard[];
@@ -80,6 +90,7 @@ export class Grafana extends pulumi.ComponentResource {
 
     this.name = name;
 
+    this.grafanaUrl = this.getGrafanaUrl();
     this.stack = grafana.cloud.getStackOutput({ slug: this.getStackSlug() });
 
     this.accessPolicy = this.createAccessPolicy(argsWithDefaults.scopes);
@@ -94,10 +105,24 @@ export class Grafana extends pulumi.ComponentResource {
 
     this.provider = this.createProvider();
 
+    if (argsWithDefaults.plugins?.length) {
+      this.plugins = [];
+      let previous;
+
+      for (const plugin of argsWithDefaults.plugins) {
+        this.plugins.push(
+          this.createPlugin(plugin, this.provider, {
+            dependsOn: previous ? [previous] : [],
+          }),
+        );
+        previous = this.plugins.at(-1);
+      }
+    }
+
     this.connections = argsWithDefaults.connectionBuilders.map(build => {
       return build(
         { stack: this.stack },
-        { parent: this, provider: this.provider },
+        { parent: this, provider: this.provider, dependsOn: this.plugins },
       );
     });
 
@@ -113,7 +138,7 @@ export class Grafana extends pulumi.ComponentResource {
     this.registerOutputs();
   }
 
-  private getStackSlug(): string {
+  private getGrafanaUrl(): string {
     const grafanaConfig = new pulumi.Config('grafana');
     const grafanaUrl = grafanaConfig.get('url') ?? process.env.GRAFANA_URL;
 
@@ -123,7 +148,11 @@ export class Grafana extends pulumi.ComponentResource {
       );
     }
 
-    return new URL(grafanaUrl).hostname.split('.')[0];
+    return grafanaUrl;
+  }
+
+  private getStackSlug(): string {
+    return new URL(this.grafanaUrl).hostname.split('.')[0];
   }
 
   private createAccessPolicy(scopes?: string[]): grafana.cloud.AccessPolicy {
@@ -196,6 +225,36 @@ export class Grafana extends pulumi.ComponentResource {
       { title: folderName ?? `${this.name}-ICB-GENERATED` },
       { parent: this, provider },
     );
+  }
+
+  private createPlugin(
+    { name, slug, version = 'latest' }: Grafana.PluginArgs,
+    provider: grafana.Provider,
+    opts: pulumi.ComponentResourceOptions,
+  ): PluginReady {
+    const plugin = new grafana.cloud.PluginInstallation(
+      `${this.name}-${name}-plugin`,
+      {
+        stackSlug: this.stack.slug,
+        slug,
+        version,
+      },
+      { parent: this, provider, ...opts },
+    );
+
+    const pluginReady = new PluginReady(
+      `${this.name}-${name}-plugin-ready`,
+      {
+        grafanaToken: this.serviceAccountToken.key,
+        grafanaUrl: this.grafanaUrl,
+        pluginSlug: slug,
+      },
+      {
+        dependsOn: [plugin],
+      },
+    );
+
+    return pluginReady;
   }
 
   private createProvider(): grafana.Provider {

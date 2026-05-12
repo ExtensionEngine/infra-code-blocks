@@ -5,27 +5,20 @@ import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
 import { GrafanaConnection } from './connection';
 
 const awsConfig = new pulumi.Config('aws');
-const pluginName = 'grafana-x-ray-datasource';
-
 export namespace XRayConnection {
   export type Args = GrafanaConnection.Args & {
     region?: string;
-    pluginVersion?: string;
-    installPlugin?: boolean;
   };
 }
 
 const defaults = {
   region: awsConfig.require('region'),
-  pluginVersion: 'latest',
-  installPlugin: true,
 };
 
 export class XRayConnection extends GrafanaConnection {
   public readonly name: string;
   public readonly dataSource: grafana.oss.DataSource;
   public readonly rolePolicy: aws.iam.RolePolicy;
-  public readonly plugin?: grafana.cloud.PluginInstallation;
 
   constructor(
     name: string,
@@ -39,10 +32,6 @@ export class XRayConnection extends GrafanaConnection {
     this.name = name;
 
     this.rolePolicy = this.createRolePolicy();
-
-    if (argsWithDefaults.installPlugin) {
-      this.plugin = this.createPlugin(argsWithDefaults.pluginVersion);
-    }
 
     this.dataSource = this.createDataSource(argsWithDefaults.region);
 
@@ -80,33 +69,19 @@ export class XRayConnection extends GrafanaConnection {
     );
   }
 
-  private createPlugin(
-    pluginVersion: string,
-  ): grafana.cloud.PluginInstallation {
-    return new grafana.cloud.PluginInstallation(
-      `${this.name}-x-ray-plugin`,
-      {
-        stackSlug: this.stack.slug,
-        slug: pluginName,
-        version: pluginVersion,
-      },
-      { parent: this },
-    );
-  }
-
   private createDataSource(region: string): grafana.oss.DataSource {
     return new grafana.oss.DataSource(
       `${this.name}-x-ray-datasource`,
       {
         name: this.dataSourceName,
-        type: pluginName,
+        type: 'grafana-x-ray-datasource',
         jsonDataEncoded: pulumi.jsonStringify({
           authType: 'grafana_assume_role',
           assumeRoleArn: this.role.arn,
           defaultRegion: region,
         }),
       },
-      { dependsOn: this.plugin ? [this.plugin] : [], parent: this },
+      { parent: this },
     );
   }
 }
