@@ -16,40 +16,43 @@ const pluginReadyProvider: pulumi.dynamic.ResourceProvider = {
 
     const url = new URL(`/api/plugins/${pluginSlug}/settings`, grafanaUrl).href;
 
-    const data = await backOff(
-      async () => {
-        const { statusCode, body } = await request(url, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${grafanaToken}`,
-            'Content-Type': 'application/json',
-          },
-        });
+    let data: { id: string };
+    try {
+      data = await backOff(
+        async () => {
+          const { statusCode, body } = await request(url, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${grafanaToken}`,
+              'Content-Type': 'application/json',
+            },
+          });
 
-        if (statusCode === 200) {
-          return (await body.json()) as { id: string };
-        }
+          if (statusCode === 200) {
+            return (await body.json()) as { id: string };
+          }
 
-        if (statusCode !== 404) {
-          throw new Error(`Unexpected status code: ${statusCode}`);
-        }
+          if (statusCode !== 404) {
+            throw new Error(`Unexpected status code: ${statusCode}`);
+          }
 
-        throw new Error('Plugin not ready yet');
-      },
-      {
-        delayFirstAttempt: true,
-        numOfAttempts: 16,
-        startingDelay: 500,
-        maxDelay: 60000,
-        timeMultiple: 2,
-        jitter: 'none',
-        retry: (err: Error) => err.message === 'Plugin not ready yet',
-      },
-    ).catch(() => {
+          throw new Error('Plugin not ready yet');
+        },
+        {
+          delayFirstAttempt: true,
+          numOfAttempts: 11,
+          startingDelay: 500,
+          maxDelay: 60000,
+          timeMultiple: 2,
+          jitter: 'none',
+          retry: (err: Error) => err.message === 'Plugin not ready yet',
+        },
+      );
+    } catch {
       throw new Error(
         `Timed out waiting for plugin "${pluginSlug}" to become ready`,
       );
-    });
+    }
 
     return { id: data.id, outs: {} };
   },

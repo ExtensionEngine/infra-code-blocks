@@ -59,6 +59,7 @@ export class GrafanaBuilder {
 
   public addPlugin(plugin: Grafana.PluginArgs): this {
     this.plugins.push(plugin);
+
     return this;
   }
 
