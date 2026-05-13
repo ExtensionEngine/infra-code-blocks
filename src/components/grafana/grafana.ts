@@ -74,7 +74,7 @@ export class Grafana extends pulumi.ComponentResource {
   public readonly serviceAccount: grafana.cloud.StackServiceAccount;
   public readonly serviceAccountToken: grafana.cloud.StackServiceAccountRotatingToken;
   public readonly provider: grafana.Provider;
-  public readonly plugins?: PluginReady[];
+  public readonly plugins?: grafana.cloud.PluginInstallation[];
   public readonly connections: GrafanaConnection[];
   public readonly folder: grafana.oss.Folder;
   public readonly dashboards: grafana.oss.Dashboard[];
@@ -105,16 +105,19 @@ export class Grafana extends pulumi.ComponentResource {
 
     this.provider = this.createProvider();
 
+    const pluginsReadiness: PluginReady[] = [];
+
     if (argsWithDefaults.plugins?.length) {
       this.plugins = [];
       let previous;
 
-      for (const plugin of argsWithDefaults.plugins) {
-        this.plugins.push(
-          this.createPlugin(plugin, this.provider, {
-            dependsOn: previous ? [previous] : [],
-          }),
-        );
+      for (const pluginArgs of argsWithDefaults.plugins) {
+        const { plugin, readiness } = this.createPlugin(pluginArgs, {
+          dependsOn: previous ? [previous] : [],
+        });
+
+        this.plugins.push(plugin);
+        pluginsReadiness.push(readiness);
         previous = this.plugins.at(-1);
       }
     }
@@ -122,7 +125,7 @@ export class Grafana extends pulumi.ComponentResource {
     this.connections = argsWithDefaults.connectionBuilders.map(build => {
       return build(
         { stack: this.stack },
-        { parent: this, provider: this.provider, dependsOn: this.plugins },
+        { parent: this, provider: this.provider, dependsOn: pluginsReadiness },
       );
     });
 
@@ -229,9 +232,8 @@ export class Grafana extends pulumi.ComponentResource {
 
   private createPlugin(
     { name, slug, version = 'latest' }: Grafana.PluginArgs,
-    provider: grafana.Provider,
     opts: pulumi.ComponentResourceOptions,
-  ): PluginReady {
+  ): { plugin: grafana.cloud.PluginInstallation; readiness: PluginReady } {
     const plugin = new grafana.cloud.PluginInstallation(
       `${this.name}-${name}-plugin`,
       {
@@ -239,10 +241,10 @@ export class Grafana extends pulumi.ComponentResource {
         slug,
         version,
       },
-      { parent: this, provider, ...opts },
+      { ...opts, parent: this, provider: this.provider },
     );
 
-    const pluginReady = new PluginReady(
+    const readiness = new PluginReady(
       `${this.name}-${name}-plugin-ready`,
       {
         grafanaToken: this.serviceAccountToken.key,
@@ -254,7 +256,7 @@ export class Grafana extends pulumi.ComponentResource {
       },
     );
 
-    return pluginReady;
+    return { plugin, readiness };
   }
 
   private createProvider(): grafana.Provider {
