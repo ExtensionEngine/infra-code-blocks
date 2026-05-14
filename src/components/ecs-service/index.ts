@@ -12,6 +12,7 @@ const awsRegion = config.require('region');
 type PersistentStorage = {
   fileSystem: aws.efs.FileSystem;
   accessPoint: aws.efs.AccessPoint;
+  mountTargets: pulumi.Output<aws.efs.MountTarget[]>;
 };
 
 export namespace EcsService {
@@ -201,7 +202,7 @@ export class EcsService extends pulumi.ComponentResource {
   service: aws.ecs.Service;
   securityGroups: pulumi.Output<aws.ec2.SecurityGroup>[];
   serviceDiscoveryService?: aws.servicediscovery.Service;
-  persistentStorage?: PersistentStorage;
+  persistentStorage: pulumi.Output<PersistentStorage | undefined>;
 
   constructor(
     name: string,
@@ -234,11 +235,12 @@ export class EcsService extends pulumi.ComponentResource {
     );
     this.taskRole = this.createTaskRole(taskRoleInlinePolicies);
 
-    pulumi.output(argsWithDefaults.volumes).apply(volume => {
-      if (volume.length) {
-        this.persistentStorage = this.createPersistentStorage(this.vpc);
-      }
-    });
+    this.persistentStorage = pulumi
+      .output(argsWithDefaults.volumes)
+      .apply(volumes => {
+        if (!volumes.length) return undefined;
+        return this.createPersistentStorage(this.vpc);
+      });
 
     this.taskDefinition = this.createTaskDefinition(
       argsWithDefaults.containers,
@@ -333,21 +335,23 @@ export class EcsService extends pulumi.ComponentResource {
   private createTaskDefinitionVolumes(
     volumes: pulumi.Output<EcsService.PersistentStorageVolume[]>,
   ) {
-    return volumes.apply(volumes => {
-      if (!volumes.length || !this.persistentStorage) return;
+    return pulumi
+      .all([volumes, this.persistentStorage])
+      .apply(([volumes, storage]) => {
+        if (!volumes.length || !storage) return;
 
-      return volumes.map(volume => ({
-        name: pulumi.output(volume).name,
-        efsVolumeConfiguration: {
-          fileSystemId: this.persistentStorage!.fileSystem.id,
-          transitEncryption: 'ENABLED',
-          authorizationConfig: {
-            accessPointId: this.persistentStorage!.accessPoint.id,
-            iam: 'ENABLED',
+        return volumes.map(volume => ({
+          name: pulumi.output(volume).name,
+          efsVolumeConfiguration: {
+            fileSystemId: storage.fileSystem.id,
+            transitEncryption: 'ENABLED',
+            authorizationConfig: {
+              accessPointId: storage.accessPoint.id,
+              iam: 'ENABLED',
+            },
           },
-        },
-      }));
-    });
+        }));
+      });
   }
 
   private createContainerDefinition(container: EcsService.Container) {
@@ -510,6 +514,10 @@ export class EcsService extends pulumi.ComponentResource {
         .apply(groups => groups.map(it => it.id)),
     };
 
+    const dependsOn = this.persistentStorage.apply(
+      s => s?.mountTargets ?? pulumi.output([]),
+    );
+
     return new aws.ecs.Service(
       `${this.name}-service`,
       {
@@ -531,7 +539,7 @@ export class EcsService extends pulumi.ComponentResource {
         }),
         tags: { ...commonTags, ...ecsServiceArgs.tags },
       },
-      { parent: this },
+      { parent: this, dependsOn },
     );
   }
 
@@ -666,19 +674,20 @@ export class EcsService extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    this.vpc.privateSubnetIds.apply(subnetIds => {
-      subnetIds.forEach(subnetId => {
-        const mountTarget = new aws.efs.MountTarget(
-          `${this.name}-mount-target-${subnetId}`,
-          {
-            fileSystemId: efs.id,
-            subnetId,
-            securityGroups: [securityGroup.id],
-          },
-          { parent: this },
-        );
-      });
-    });
+    const mountTargets = this.vpc.privateSubnetIds.apply(subnetIds =>
+      subnetIds.map(
+        subnetId =>
+          new aws.efs.MountTarget(
+            `${this.name}-mount-target-${subnetId}`,
+            {
+              fileSystemId: efs.id,
+              subnetId,
+              securityGroups: [securityGroup.id],
+            },
+            { parent: this },
+          ),
+      ),
+    );
 
     const accessPoint = new aws.efs.AccessPoint(
       `${this.name}-efs-ap`,
@@ -700,6 +709,6 @@ export class EcsService extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    return { fileSystem: efs, accessPoint };
+    return { fileSystem: efs, accessPoint, mountTargets };
   }
 }
