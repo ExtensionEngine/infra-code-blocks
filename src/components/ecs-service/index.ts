@@ -9,13 +9,17 @@ import { TaskSize, parseTaskSize } from './task-size';
 const config = new pulumi.Config('aws');
 const awsRegion = config.require('region');
 
-type PersistentStorage = {
-  fileSystem: aws.efs.FileSystem;
-  accessPoint: aws.efs.AccessPoint;
-  mountTargets: pulumi.Output<aws.efs.MountTarget[]>;
-};
-
 export namespace EcsService {
+  /**
+   * Represents the EFS-backed persistent storage attached to an ECS service.
+   * Created automatically when `volumes` are configured.
+   */
+  export type PersistentStorage = {
+    fileSystem: aws.efs.FileSystem;
+    accessPoint: aws.efs.AccessPoint;
+    mountTargets: pulumi.Output<aws.efs.MountTarget[]>;
+  };
+
   /**
    * Create a named volume that can be mounted into one or more containers.
    * Used with Amazon EFS to enable persistent storage across:
@@ -202,7 +206,7 @@ export class EcsService extends pulumi.ComponentResource {
   service: aws.ecs.Service;
   securityGroups: pulumi.Output<aws.ec2.SecurityGroup>[];
   serviceDiscoveryService?: aws.servicediscovery.Service;
-  persistentStorage: pulumi.Output<PersistentStorage | undefined>;
+  persistentStorage: pulumi.Output<EcsService.PersistentStorage | undefined>;
 
   constructor(
     name: string,
@@ -239,7 +243,7 @@ export class EcsService extends pulumi.ComponentResource {
       .output(argsWithDefaults.volumes)
       .apply(volumes => {
         if (!volumes.length) return undefined;
-        return this.createPersistentStorage(this.vpc);
+        return this.createPersistentStorage(this.vpc); // TODO: ternary
       });
 
     this.taskDefinition = this.createTaskDefinition(
@@ -634,7 +638,7 @@ export class EcsService extends pulumi.ComponentResource {
 
   private createPersistentStorage(
     vpc: pulumi.Output<awsx.ec2.Vpc>,
-  ): PersistentStorage {
+  ): EcsService.PersistentStorage {
     const efs = new aws.efs.FileSystem(
       `${this.name}-efs`,
       {
