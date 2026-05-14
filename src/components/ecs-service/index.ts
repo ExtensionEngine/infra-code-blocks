@@ -241,10 +241,9 @@ export class EcsService extends pulumi.ComponentResource {
 
     this.persistentStorage = pulumi
       .output(argsWithDefaults.volumes)
-      .apply(volumes => {
-        if (!volumes.length) return undefined;
-        return this.createPersistentStorage(this.vpc); // TODO: ternary
-      });
+      .apply(volumes =>
+        volumes.length ? this.createPersistentStorage(this.vpc) : undefined,
+      );
 
     this.taskDefinition = this.createTaskDefinition(
       argsWithDefaults.containers,
