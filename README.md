@@ -1,908 +1,358 @@
 # `@studion/infra-code-blocks`
 
-Studion Platform common infra components.
+[![npm version](https://img.shields.io/npm/v/@studion/infra-code-blocks)](https://www.npmjs.com/package/@studion/infra-code-blocks)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/ExtensionEngine/infra-code-blocks/tree/master.svg?style=shield)](https://dl.circleci.com/status-badge/redirect/gh/ExtensionEngine/infra-code-blocks/tree/master)
 
-## Table of Contents
+Opinionated TypeScript building blocks for Pulumi-based AWS infrastructure.
 
-1. [Prerequisites](#prerequisites)
-2. [Installation](#installation)
-3. [Usage](#usage)
-4. [API](#api)
+> Deploying examples or components can create billable AWS resources. Preview changes before deploying and run `pulumi destroy` when resources are no longer needed.
 
-## Prerequisites
+## Table of contents
 
-- Working [Pulumi](https://www.pulumi.com/docs/clouds/aws/get-started/begin/#pulumi-aws-before-you-begin) project
-- AWS account with necessary permissions for each Studion component
+- [Overview](#overview)
+- [Quick start](#quick-start)
+- [Usage](#usage)
+- [SSM Connect](#ssm-connect)
+- [API reference](#api-reference)
+- [Development](#development)
+- [Contributing](#contributing)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
-## Installation
+## Overview
 
-- Run the command:
+`@studion/infra-code-blocks` provides reusable Pulumi components for common AWS infrastructure patterns used in Studion projects.
+
+### When to use this package
+
+Use this package when you want to:
+
+- provision common AWS infrastructure patterns without rewriting Pulumi boilerplate
+- standardize networking, compute, data, and observability setup across multiple services
+- compose higher-level infrastructure from opinionated building blocks instead of low-level resources
+
+This package is most useful for teams already working with Pulumi, AWS, and TypeScript.
+
+### Scope
+
+The package provides building blocks across four areas:
+
+| Area                    | What it covers                                                             | Typical entry points                                                                                              |
+| ----------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Networking and delivery | VPCs, ACM certificates, CloudFront, and static hosting                     | `Vpc`, `AcmCertificate`, `CloudFront`, `StaticSite`, `S3Assets`                                                   |
+| Compute                 | Generic ECS services and ALB-backed web services                           | `EcsService`, `WebServer`, `WebServerBuilder`, `WebServerLoadBalancer`                                            |
+| Data                    | PostgreSQL, replicas, SSM access helpers, Redis, and password storage      | `Database`, `DatabaseBuilder`, `DatabaseReplica`, `Ec2SSMConnect`, `ElastiCacheRedis`, `UpstashRedis`, `Password` |
+| Observability           | OpenTelemetry collector integration, Grafana resources, and PromQL helpers | `openTelemetry`, `grafana`, `prometheus`                                                                          |
+
+## Quick start
+
+### Prerequisites
+
+**Required for all usage**
+
+- Node.js 20 or newer and npm.
+- A Pulumi TypeScript project. If you do not already have one, `pulumi new aws-typescript` is a suitable starting point.
+
+**Required for AWS deployment**
+
+- Pulumi CLI authenticated with `pulumi login`.
+- AWS credentials with permissions for the resources you create.
+- Pulumi AWS provider region configuration, for example `pulumi config set aws:region eu-central-1` (environment: `AWS_REGION`).
+
+**Required only for ECS/web-service components**
+
+- An ECS cluster when using `EcsService`, `WebServer`, or `WebServerBuilder`.
+
+**Required only for DNS/TLS/static-site/custom-domain components**
+
+- A Route 53 hosted zone.
+- A domain name managed by or delegated to that hosted zone.
+
+**Required only for database and SSM Connect components**
+
+- Private or isolated subnets from this package's `Vpc` component or a compatible AWSX VPC.
+- AWS CLI and the Session Manager plugin when opening local SSM tunnels.
+
+**Required only for Grafana components**
+
+- Grafana Cloud stack URL configured as Pulumi config `grafana:url` or environment variable `GRAFANA_URL`, for example `https://<stack>.grafana.net`.
+- Grafana Cloud access policy token configured for the Grafana provider as Pulumi config `grafana:cloudAccessPolicyToken` or environment variable `GRAFANA_CLOUD_ACCESS_POLICY_TOKEN`.
+- Initial Grafana Cloud token scopes: `accesspolicies:read`, `accesspolicies:write`, `accesspolicies:delete`, `stacks:read`, and `stack-service-accounts:write`.
+- The access policy managed by this package includes the scopes needed for data sources, dashboards, and plugins.
+
+**Required only for Upstash components**
+
+- Pulumi config value `upstash:apiKey` (environment: `UPSTASH_API_KEY`).
+- Pulumi config value `upstash:email` (environment: `UPSTASH_EMAIL`).
+
+### Install
 
 ```bash
-$ npm i @studion/infra-code-blocks
+npm install @studion/infra-code-blocks
 ```
+
+### Minimal deploy flow
+
+Use this flow in a new directory if you want the shortest domain-free path from a Pulumi project to a deployed resource:
+
+```bash
+pulumi new aws-typescript
+npm install @studion/infra-code-blocks
+pulumi config set aws:region eu-central-1
+```
+
+Add a minimal VPC to your Pulumi program:
+
+```ts
+import * as studion from '@studion/infra-code-blocks';
+
+const vpc = new studion.Vpc('app', {});
+
+export const vpcId = vpc.vpc.vpcId;
+```
+
+Preview, deploy, and clean up when finished:
+
+```bash
+pulumi up
+pulumi destroy
+```
+
+This example avoids Route 53 and ACM, but creating a VPC can still create billable AWS resources such as NAT gateways depending on provider defaults and region.
+
+### Typical next steps
+
+1. Start with a foundation resource such as `Vpc`.
+2. Add higher-level components such as `WebServer`, `Database`, `ElastiCacheRedis`, or `StaticSite`.
+3. Export the resulting IDs, ARNs, hostnames, or endpoints from your stack.
+4. Use `pulumi preview` before deploying and `pulumi destroy` for cleanup in temporary environments.
 
 ## Usage
 
-- Import Studion infra components in your project
+### Create a VPC and ACM certificate
+
+Use this example when your stack already has a public Route 53 hosted zone and you need a DNS-validated certificate:
 
 ```ts
-import * as studion from '@studion/infra-code-blocks';
-```
-
-- Use Studion components
-
-```ts
+import * as aws from '@pulumi/aws';
 import * as studion from '@studion/infra-code-blocks';
 
-const project = new studion.Project('demo-project', {
-  services: [
-    {
-      type: 'REDIS',
-      serviceName: 'redis',
-      dbName: 'test-db',
-    },
-  ],
+const hostedZone = aws.route53.getZoneOutput({
+  name: 'example.com',
+  privateZone: false,
 });
 
-export const projectName = project.name;
-```
+const vpc = new studion.Vpc('app', {});
 
-- Deploy Pulumi stack
-
-```bash
-$ pulumi up
-```
-
-## API
-
-1. [Project](#project)
-2. [Database](#database)
-3. [Database Replica](#database-replica)
-4. [Redis](#redis)
-5. [StaticSite](#static-site)
-6. [WebServer](#web-server)
-7. [Nuxt SSR](#nuxt-ssr-preset)
-8. [Mongo](#mongo)
-9. [EcsService](#ecs-service)
-
-### Project
-
-Project component makes it easy to spin up project infrastructure,
-hiding infrastructure complexity.
-<br>
-The component creates its own VPC used for resources within the project.
-<br><br>
-Services are created only if specified in the `services` list.
-<br>
-If `services` is an empty list, VPC is the only service created by default.
-
-```ts
-new Project(name: string, args: ProjectArgs, opts?: pulumi.CustomResourceOptions);
-```
-
-| Argument |                  Description                   |
-| :------- | :--------------------------------------------: |
-| name \*  |        The unique name of the resource.        |
-| args \*  |     The arguments to resource properties.      |
-| opts     | Bag of options to control resource's behavior. |
-
-```ts
-type ProjectArgs = {
-  services: (
-    | DatabaseServiceOptions
-    | RedisServiceOptions
-    | StaticSiteServiceOptions
-    | WebServerServiceOptions
-    | NuxtSSRServiceOptions
-    | MongoServiceOptions
-    | EcsServiceOptions
-  )[];
-  enableSSMConnect?: pulumi.Input<boolean>;
-  numberOfAvailabilityZones?: number;
-};
-```
-
-| Argument                  |                                                                          Description                                                                          |
-| :------------------------ | :-----------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| services \*               |                                                                         Service list.                                                                         |
-| enableSSMConnect          | Set up ec2 instance and SSM in order to connect to the database in the private subnet. Please refer to the [SSM Connect](#ssm-connect) section for more info. |
-| numberOfAvailabilityZones |                   Default is 2 which is recommended. If building a dev server, we can reduce to 1 availability zone to reduce hosting cost.                   |
-
-```ts
-type DatabaseServiceOptions = {
-  type: 'DATABASE';
-  serviceName: string;
-  dbName: pulumi.Input<string>;
-  username: pulumi.Input<string>;
-  password?: pulumi.Input<string>;
-  multiAz?: pulumi.Input<boolean>;
-  applyImmediately?: pulumi.Input<boolean>;
-  skipFinalSnapshot?: pulumi.Input<boolean>;
-  allocatedStorage?: pulumi.Input<number>;
-  maxAllocatedStorage?: pulumi.Input<number>;
-  instanceClass?: pulumi.Input<string>;
-  enableMonitoring?: pulumi.Input<boolean>;
-  parameterGroupName?: pulumi.Input<string>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
-```
-
-```ts
-export type RedisServiceOptions = {
-  type: 'REDIS';
-  serviceName: string;
-  dbName: pulumi.Input<string>;
-  region?: pulumi.Input<string>;
-};
-```
-
-```ts
-export type StaticSiteServiceOptions = {
-  type: 'STATIC_SITE';
-  serviceName: string;
-  domain?: pulumi.Input<string>;
-  hostedZoneId?: pulumi.Input<string>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
-```
-
-```ts
-export type WebServerServiceOptions = {
-  type: 'WEB_SERVER';
-  serviceName: string;
-  image: pulumi.Input<string>;
-  port: pulumi.Input<number>;
-  domain?: pulumi.Input<string>;
-  hostedZoneId?: pulumi.Input<string>;
-  environment?:
-    | aws.ecs.KeyValuePair[]
-    | ((services: Services) => aws.ecs.KeyValuePair[]);
-  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
-  desiredCount?: pulumi.Input<number>;
-  autoscaling?: pulumi.Input<{
-    enabled: pulumi.Input<boolean>;
-    minCount?: pulumi.Input<number>;
-    maxCount?: pulumi.Input<number>;
-  }>;
-  size?: pulumi.Input<Size>;
-  healthCheckPath?: pulumi.Input<string>;
-  persistentStorageConfig?: pulumi.Input<{
-    volumes: { name: string }[];
-    mountPoints: {
-      sourceVolume: string;
-      containerPath: string;
-      readOnly?: boolean;
-    }[];
-  }>;
-  taskExecutionRoleInlinePolicies?: pulumi.Input<
-    pulumi.Input<RoleInlinePolicy>[]
-  >;
-  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
-```
-
-```ts
-export type NuxtSSRServiceOptions = {
-  type: 'NUXT_SSR';
-  serviceName: string;
-  image: pulumi.Input<string>;
-  port: pulumi.Input<number>;
-  domain?: pulumi.Input<string>;
-  hostedZoneId?: pulumi.Input<string>;
-  environment?:
-    | aws.ecs.KeyValuePair[]
-    | ((services: Services) => aws.ecs.KeyValuePair[]);
-  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
-  desiredCount?: pulumi.Input<number>;
-  autoscaling?: pulumi.Input<{
-    enabled: pulumi.Input<boolean>;
-    minCount?: pulumi.Input<number>;
-    maxCount?: pulumi.Input<number>;
-  }>;
-  size?: pulumi.Input<Size>;
-  healthCheckPath?: pulumi.Input<string>;
-  taskExecutionRoleInlinePolicies?: pulumi.Input<
-    pulumi.Input<RoleInlinePolicy>[]
-  >;
-  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
-```
-
-```ts
-type MongoServiceOptions = {
-  type: 'MONGO';
-  serviceName: string;
-  username: pulumi.Input<string>;
-  password?: pulumi.Input<string>;
-  port?: pulumi.Input<number>;
-  size?: pulumi.Input<Size>;
-  persistentStorageConfig?: pulumi.Input<{
-    volumes: { name: string }[];
-    mountPoints: {
-      sourceVolume: string;
-      containerPath: string;
-      readOnly?: boolean;
-    }[];
-  }>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
-```
-
-```ts
-type EcsServiceOptions = {
-  type: 'ECS_SERVICE';
-  serviceName: string;
-  image: pulumi.Input<string>;
-  port: pulumi.Input<number>;
-  enableServiceAutoDiscovery: pulumi.Input<boolean>;
-  lbTargetGroupArn?: aws.lb.TargetGroup['arn'];
-  persistentStorageConfig?: pulumi.Input<{
-    volumes: { name: string }[];
-    mountPoints: {
-      sourceVolume: string;
-      containerPath: string;
-      readOnly?: boolean;
-    }[];
-  }>;
-  securityGroup?: aws.ec2.SecurityGroup;
-  assignPublicIp?: pulumi.Input<boolean>;
-  dockerCommand?: pulumi.Input<string[]>;
-  environment?:
-    | aws.ecs.KeyValuePair[]
-    | ((services: Services) => aws.ecs.KeyValuePair[]);
-  secrets?: aws.ecs.Secret[] | ((services: Services) => aws.ecs.Secret[]);
-  desiredCount?: pulumi.Input<number>;
-  autoscaling?: pulumi.Input<{
-    enabled: pulumi.Input<boolean>;
-    minCount?: pulumi.Input<number>;
-    maxCount?: pulumi.Input<number>;
-  }>;
-  size?: pulumi.Input<Size>;
-  healthCheckPath?: pulumi.Input<string>;
-  taskExecutionRoleInlinePolicies?: pulumi.Input<
-    pulumi.Input<RoleInlinePolicy>[]
-  >;
-  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
-```
-
-Often, web server depends on other services such as database, Redis, etc.
-For that purpose, environment factory can be used. The factory function
-receives services bag as argument.
-
-```ts
-const project = new studion.Project('demo-project', {
-  services: [
-    {
-      type: 'REDIS',
-      serviceName: 'redis',
-      dbName: 'test-db',
-    },
-    {
-      type: 'WEB_SERVER',
-      serviceName: 'api',
-      image: imageUri,
-      port: 3000,
-      domain: 'api.my-domain.com',
-      hostedZoneId: 'my-domain.com-hostedZoneId',
-      environment: (services: Services) => {
-        const redisServiceName = 'redis';
-        const redis = services[redisServiceName];
-        return [
-          { name: 'REDIS_HOST', value: redis.endpoint },
-          { name: 'REDIS_PORT', value: redis.port.apply(port => String(port)) },
-        ];
-      },
-    },
-  ],
+const certificate = new studion.AcmCertificate('app-cert', {
+  domain: 'app.example.com',
+  hostedZoneId: hostedZone.zoneId,
 });
+
+export const vpcId = vpc.vpc.vpcId;
+export const certificateArn = certificate.certificate.arn;
 ```
 
-In order to pass sensitive information to the container, use `secrets` instead of `environment`. AWS will fetch values from
-Secret Manager based on arn that is provided for the `valueFrom` field.
+### Create an ECS web service with OpenTelemetry
+
+This example creates the surrounding AWS resources required by the web service instrumentation: a VPC, ECS cluster, CloudWatch log group, and AWS Managed Service for Prometheus workspace. It also expects the AWS provider region to be configured through `aws:region` or `AWS_REGION`.
 
 ```ts
-const project = new studion.Project('demo-project', {
-  services: [
-    {
-      type: 'WEB_SERVER',
-      serviceName: 'api',
-      image: imageUri,
-      port: 3000,
-      domain: 'api.my-domain.com',
-      hostedZoneId: 'my-domain.com-hostedZoneId',
-      secrets: [
-        { name: 'DB_PASSWORD', valueFrom: 'arn-of-the-secret-manager-secret' },
-      ],
-    },
-  ],
-});
+import * as aws from '@pulumi/aws';
+import * as pulumi from '@pulumi/pulumi';
+import * as studion from '@studion/infra-code-blocks';
+
+const env = pulumi.getStack();
+const vpc = new studion.Vpc('app', {});
+const cluster = new aws.ecs.Cluster('app-cluster', {});
+const logGroup = new aws.cloudwatch.LogGroup('app-otel-logs', {});
+const workspace = new aws.amp.Workspace('app-amp', {});
+
+const otelCollector = new studion.openTelemetry.OtelCollectorBuilder('app', env)
+  .withDefault({
+    prometheusNamespace: 'app',
+    prometheusWorkspace: workspace,
+    region: aws.config.requireRegion(),
+    logGroup,
+    logStreamName: 'app',
+  })
+  .build();
+
+const web = new studion.WebServerBuilder('app')
+  .withContainer('nginx:stable', 80, {
+    environment: [
+      { name: 'OTEL_SERVICE_NAME', value: 'app' },
+      { name: 'OTEL_EXPORTER_OTLP_ENDPOINT', value: 'http://127.0.0.1:4318' },
+      { name: 'OTEL_EXPORTER_OTLP_PROTOCOL', value: 'http/json' },
+    ],
+  })
+  .withEcsConfig({
+    cluster,
+    desiredCount: 1,
+    size: 'small',
+    autoscaling: { enabled: false },
+  })
+  .withVpc(vpc.vpc)
+  .withOtelCollector(otelCollector)
+  .build();
+
+export const webServiceName = web.service.apply(
+  ecsService => ecsService.service.name,
+);
 ```
-
-```ts
-const project = new studion.Project('demo-project', {
-  services: [
-    {
-      type: 'REDIS',
-      serviceName: 'redis',
-      dbName: 'test-db',
-    },
-    {
-      type: 'WEB_SERVER',
-      serviceName: 'api',
-      image: imageUri,
-      port: 3000,
-      domain: 'api.my-domain.com',
-      hostedZoneId: 'my-domain.com-hostedZoneId',
-      secrets: (services: Services) => {
-        const redisServiceName = 'redis';
-        const redis = services[redisServiceName];
-        return [
-          { name: 'REDIS_PASSWORD', valueFrom: redis.passwordSecret.arn },
-        ];
-      },
-    },
-  ],
-});
-```
-
-### Persistent Storage Configuration
-
-Services that require persistent storage (e.g. `ECS`, `Mongo`) can be configured with multiple EFS volumes and mount points.
-Currently, only one access point is configured, with root directory set to `/data`.
-The configuration consists of two main parts:
-
-1. `volumes`: Define the EFS volumes to be created
-2. `mountPoints`: Specify where these volumes should be mounted in the container
-
-Example configuration:
-
-```ts
-persistentStorageConfig: {
-  volumes: [
-    { name: 'data-volume' },
-    { name: 'config-volume' }
-  ],
-  mountPoints: [
-    {
-      sourceVolume: 'data-volume',
-      containerPath: '/data',
-    },
-    {
-      sourceVolume: 'config-volume',
-      containerPath: '/config',
-      readOnly: true
-    }
-  ]
-}
-```
-
-### Database
-
-AWS RDS Postgres instance.
-
-Features:
-
-- enabled encryption with a symmetric encryption key
-- deployed inside an isolated subnet
-- backup enabled with retention period set to 14 days
-
-<br>
-
-```ts
-new Database(name: string, args: DatabaseArgs, opts?: pulumi.CustomResourceOptions);
-```
-
-| Argument |                  Description                   |
-| :------- | :--------------------------------------------: |
-| name \*  |        The unique name of the resource.        |
-| args \*  |     The arguments to resource properties.      |
-| opts     | Bag of options to control resource's behavior. |
-
-```ts
-type DatabaseArgs = {
-  dbName: pulumi.Input<string>;
-  username: pulumi.Input<string>;
-  vpcId: pulumi.Input<string>;
-  isolatedSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
-  vpcCidrBlock: pulumi.Input<string>;
-  password?: pulumi.Input<string>;
-  multiAz?: pulumi.Input<boolean>;
-  applyImmediately?: pulumi.Input<boolean>;
-  skipFinalSnapshot?: pulumi.Input<boolean>;
-  allocatedStorage?: pulumi.Input<number>;
-  maxAllocatedStorage?: pulumi.Input<number>;
-  instanceClass?: pulumi.Input<string>;
-  enableMonitoring?: pulumi.Input<boolean>;
-  parameterGroupName?: pulumi.Input<string>;
-  engineVersion?: pulumi.Input<string>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
-```
-
-If the password is not specified, it will be autogenerated.
-The database password is stored as a secret inside AWS Secret Manager.
-The secret will be available on the `Database` resource as `password.secret`.
-
-### Database Replica
-
-AWS RDS Postgres instance.
-
-Features:
-
-- enabled encryption with a symmetric encryption key
-- deployed inside an isolated subnet
-
-<br>
-
-```ts
-new DatabaseReplica(name: string, args: DatabaseReplicaArgs, opts?: pulumi.CustomResourceOptions);
-```
-
-| Argument |                  Description                   |
-| :------- | :--------------------------------------------: |
-| name \*  |        The unique name of the resource.        |
-| args \*  |     The arguments to resource properties.      |
-| opts     | Bag of options to control resource's behavior. |
-
-```ts
-type DatabaseReplicaArgs = {
-  replicateSourceDb: pulumi.Input<string>;
-  dbSecurityGroupId: pulumi.Input<string>;
-  dbSubnetGroupName?: pulumi.Input<string>;
-  monitoringRole?: aws.iam.Role;
-  multiAz?: pulumi.Input<boolean>;
-  applyImmediately?: pulumi.Input<boolean>;
-  allocatedStorage?: pulumi.Input<number>;
-  maxAllocatedStorage?: pulumi.Input<number>;
-  instanceClass?: pulumi.Input<string>;
-  parameterGroupName?: pulumi.Input<string>;
-  engineVersion?: pulumi.Input<string>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
-```
-
-Database replica requires primary DB instance to exist. If the replica is in the same
-region as primary instance, we should not set `dbSubnetGroupNameParam`.
-The `replicateSourceDb` param is referenced like this:
-
-```javascript
-  const primaryDb = new studion.Database(...);
-  const replica = new studion.DatabaseReplica('replica', {
-    replicateSourceDb: primaryDb.instance.identifier
-  });
-```
-
-### Redis
-
-[Upstash](https://upstash.com) Redis instance.
-
-**Prerequisites**
-
-1. Stack Config
-
-| Name              |     Description     | Secret |
-| :---------------- | :-----------------: | :----: |
-| upstash:email \*  | Upstash user email. |  true  |
-| upstash:apiKey \* |  Upstash API key.   |  true  |
-
-```bash
-$ pulumi config set --secret upstash:email myemail@example.com
-$ pulumi config set --secret upstash:apiKey my-api-key
-```
-
-<br>
-
-```ts
-new Redis(name: string, args: RedisArgs, opts: RedisOptions);
-```
-
-| Argument |                  Description                   |
-| :------- | :--------------------------------------------: |
-| name \*  |        The unique name of the resource.        |
-| args \*  |     The arguments to resource properties.      |
-| opts     | Bag of options to control resource's behavior. |
-
-```ts
-type RedisArgs = {
-  dbName: pulumi.Input<string>;
-  region?: pulumi.Input<string>;
-};
-
-interface RedisOptions extends pulumi.ComponentResourceOptions {
-  provider: upstash.Provider;
-}
-```
-
-After creating the Redis resource, the `passwordSecret` AWS Secret Manager Secret
-will exist on the resource.
-
-### Static Site
-
-AWS S3 + Cloudfront.
-
-Features:
-
-- creates TLS certificate for the specified domain
-- redirects HTTP traffic to HTTPS
-- enables http2 and http3 protocols
-- uses North America and Europe edge locations
-
-<br>
-
-```ts
-new StaticSite(name: string, args: StaticSiteArgs, opts?: pulumi.ComponentResourceOptions );
-```
-
-| Argument |                  Description                   |
-| :------- | :--------------------------------------------: |
-| name \*  |        The unique name of the resource.        |
-| args \*  |     The arguments to resource properties.      |
-| opts     | Bag of options to control resource's behavior. |
-
-```ts
-type StaticSiteArgs = {
-  domain?: pulumi.Input<string>;
-  hostedZoneId?: pulumi.Input<string>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
-```
-
-### Web Server
-
-AWS ECS Fargate.
-
-Features:
-
-- memory and CPU autoscaling enabled
-- creates TLS certificate for the specified domain
-- redirects HTTP traffic to HTTPS
-- creates CloudWatch log group
-- comes with predefined CPU and memory options: `small`, `medium`, `large`, `xlarge`
-
-<br>
-
-```ts
-new WebServer(name: string, args: WebServerArgs, opts?: pulumi.ComponentResourceOptions );
-```
-
-| Argument |                  Description                   |
-| :------- | :--------------------------------------------: |
-| name \*  |        The unique name of the resource.        |
-| args \*  |     The arguments to resource properties.      |
-| opts     | Bag of options to control resource's behavior. |
-
-```ts
-export type WebServerArgs = {
-  image: pulumi.Input<string>;
-  port: pulumi.Input<number>;
-  clusterId: pulumi.Input<string>;
-  clusterName: pulumi.Input<string>;
-  vpcId: pulumi.Input<string>;
-  vpcCidrBlock: pulumi.Input<string>;
-  publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
-  domain?: pulumi.Input<string>;
-  hostedZoneId?: pulumi.Input<string>;
-  desiredCount?: pulumi.Input<number>;
-  autoscaling?: pulumi.Input<{
-    enabled: pulumi.Input<boolean>;
-    minCount?: pulumi.Input<number>;
-    maxCount?: pulumi.Input<number>;
-  }>;
-  size?: pulumi.Input<Size>;
-  environment?: aws.ecs.KeyValuePair[];
-  secrets?: aws.ecs.Secret[];
-  healthCheckPath?: pulumi.Input<string>;
-  persistentStorageConfig?: pulumi.Input<{
-    volumes: { name: string }[];
-    mountPoints: {
-      sourceVolume: string;
-      containerPath: string;
-      readOnly?: boolean;
-    }[];
-  }>;
-  taskExecutionRoleInlinePolicies?: pulumi.Input<
-    pulumi.Input<RoleInlinePolicy>[]
-  >;
-  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
-```
-
-### Nuxt SSR preset
-
-AWS ECS Fargate + Cloudfront.
-
-Features:
-
-- memory and CPU autoscaling enabled
-- creates TLS certificate for the specified domain
-- redirects HTTP traffic to HTTPS
-- creates CloudWatch log group
-- comes with predefined CPU and memory options: `small`, `medium`, `large`, `xlarge`
-- CDN in front of the application load balancer for static resource caching
-
-<br>
-
-```ts
-new NuxtSSR(name: string, args: NuxtSSRArgs, opts?: pulumi.ComponentResourceOptions );
-```
-
-| Argument |                  Description                   |
-| :------- | :--------------------------------------------: |
-| name \*  |        The unique name of the resource.        |
-| args \*  |     The arguments to resource properties.      |
-| opts     | Bag of options to control resource's behavior. |
-
-```ts
-export type NuxtSSRArgs = {
-  image: pulumi.Input<string>;
-  port: pulumi.Input<number>;
-  clusterId: pulumi.Input<string>;
-  clusterName: pulumi.Input<string>;
-  vpcId: pulumi.Input<string>;
-  vpcCidrBlock: pulumi.Input<string>;
-  publicSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
-  domain?: pulumi.Input<string>;
-  hostedZoneId?: pulumi.Input<string>;
-  desiredCount?: pulumi.Input<number>;
-  autoscaling?: pulumi.Input<{
-    enabled: pulumi.Input<boolean>;
-    minCount?: pulumi.Input<number>;
-    maxCount?: pulumi.Input<number>;
-  }>;
-  size?: pulumi.Input<Size>;
-  environment?: aws.ecs.KeyValuePair[];
-  secrets?: aws.ecs.Secret[];
-  healthCheckPath?: pulumi.Input<string>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
-```
-
-### Mongo
-
-AWS ECS Fargate.
-
-Features:
-
-- persistent storage
-- service auto-discovery
-- creates CloudWatch log group
-- comes with predefined CPU and memory options: `small`, `medium`, `large`, `xlarge`
-
-<br>
-
-```ts
-new Mongo(name: string, args: MongoArgs, opts?: pulumi.ComponentResourceOptions );
-```
-
-| Argument |                  Description                   |
-| :------- | :--------------------------------------------: |
-| name \*  |        The unique name of the resource.        |
-| args \*  |     The arguments to resource properties.      |
-| opts     | Bag of options to control resource's behavior. |
-
-```ts
-export type MongoArgs = {
-  clusterId: pulumi.Input<string>;
-  clusterName: pulumi.Input<string>;
-  vpcId: pulumi.Input<string>;
-  vpcCidrBlock: pulumi.Input<string>;
-  privateSubnetIds: pulumi.Input<pulumi.Input<string>[]>;
-  username: pulumi.Input<string>;
-  password?: pulumi.Input<string>;
-  port?: pulumi.Input<number>;
-  size?: pulumi.Input<Size>;
-  persistentStorageConfig?: pulumi.Input<{
-    volumes: { name: string }[];
-    mountPoints: {
-      sourceVolume: string;
-      containerPath: string;
-      readOnly?: boolean;
-    }[];
-  }>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
-```
-
-If the password is not specified it will be autogenerated.
-The Mongo password is stored as a secret inside AWS Secret Manager.
-The secret will be available on the `Mongo` resource as `password.secret`.
-
-The Mongo component comes with a default persistent storage configuration that mounts an EFS volume `mongo` to `/data/db`. You can override this by providing your own `persistentStorageConfig`.
-
-### Ecs Service
-
-AWS ECS Fargate.
-
-Features:
-
-- memory and CPU autoscaling
-- service auto-discovery
-- persistent storage
-- CloudWatch logs
-- comes with predefined cpu and memory options: `small`, `medium`, `large`, `xlarge`
-
-<br>
-
-```ts
-new EcsService(name: string, args: EcsServiceArgs, opts?: pulumi.ComponentResourceOptions );
-```
-
-| Argument |                  Description                   |
-| :------- | :--------------------------------------------: |
-| name \*  |        The unique name of the resource.        |
-| args \*  |     The arguments to resource properties.      |
-| opts     | Bag of options to control resource's behavior. |
-
-```ts
-export type EcsServiceArgs = {
-  image: pulumi.Input<string>;
-  port: pulumi.Input<number>;
-  clusterId: pulumi.Input<string>;
-  clusterName: pulumi.Input<string>;
-  vpcId: pulumi.Input<string>;
-  vpcCidrBlock: pulumi.Input<string>;
-  subnetIds: pulumi.Input<pulumi.Input<string>[]>;
-  desiredCount?: pulumi.Input<number>;
-  autoscaling?: pulumi.Input<{
-    enabled: pulumi.Input<boolean>;
-    minCount?: pulumi.Input<number>;
-    maxCount?: pulumi.Input<number>;
-  }>;
-  size?: pulumi.Input<Size>;
-  environment?: aws.ecs.KeyValuePair[];
-  secrets?: aws.ecs.Secret[];
-  enableServiceAutoDiscovery: pulumi.Input<boolean>;
-  persistentStorageConfig?: pulumi.Input<{
-    volumes: { name: string }[];
-    mountPoints: {
-      sourceVolume: string;
-      containerPath: string;
-      readOnly?: boolean;
-    }[];
-  }>;
-  dockerCommand?: pulumi.Input<string[]>;
-  lbTargetGroupArn?: aws.lb.TargetGroup['arn'];
-  securityGroup?: aws.ec2.SecurityGroup;
-  assignPublicIp?: pulumi.Input<boolean>;
-  taskExecutionRoleInlinePolicies?: pulumi.Input<
-    pulumi.Input<RoleInlinePolicy>[]
-  >;
-  taskRoleInlinePolicies?: pulumi.Input<pulumi.Input<RoleInlinePolicy>[]>;
-  tags?: pulumi.Input<{
-    [key: string]: pulumi.Input<string>;
-  }>;
-};
-```
-
-#### Exec into running ECS task
-
-**Prerequisites**
-
-1. Install the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/install-plugin-macos-overview.html#install-plugin-macos)
-
-```bash
-$ brew install --cask session-manager-plugin
-```
-
-2. Install jq
-
-```bash
-$ brew install jq
-```
-
-In order to exec into running ECS container run the following command:
-
-```bash
-aws ecs execute-command  \
-  --cluster CLUSTER_NAME \
-  --task $(aws ecs list-tasks --cluster CLUSTER_NAME --family TASK_FAMILY_NAME | jq -r '.taskArns[0] | split("/")[2]') \
-  --command "/bin/sh" \
-  --interactive
-```
-
-Where `CLUSTER_NAME` is the name of the ECS cluster and `TASK_FAMILY_NAME` is the name of the task family that task belongs to.
 
 ## SSM Connect
 
-The [Database](#database) component deploys a database instance inside an isolated subnet,
-and it's not publicly accessible from outside of VPC.
-<br>
-In order to connect to the database we need to deploy the ec2 instance which will be used
-to forward traffic to the database instance.
-<br>
-Because of security reasons, the ec2 instance is deployed inside a private subnet
-which means we can't directly connect to it. For that purpose, we use AWS System Manager
-which enables us to connect to the ec2 instance even though it's inside a private subnet.
-Another benefit of using AWS SSM is that we don't need a ssh key pair.
+`Database` instances are deployed inside isolated subnets and are not publicly reachable. When you need operator access for migrations, debugging, or a desktop database client, this package can provision an `Ec2SSMConnect` helper host that stays private and is reachable through AWS Systems Manager.
 
-![AWS RDS connection schema](/assets/images/ssm-rds.png)
+This workflow reuses the helper EC2 instance plus the SSM, EC2 Messages, and SSM Messages VPC interface endpoints created by the component, so you do not need a bastion with a public IP or SSH key pair. The helper instance itself accepts SSH only from within the VPC, while your local machine connects through an SSM session.
 
-**Prerequisites**
+![AWS RDS connection schema](https://raw.githubusercontent.com/ExtensionEngine/infra-code-blocks/master/assets/images/ssm-rds.png)
 
-1. Install the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/install-plugin-macos-overview.html#install-plugin-macos)
+### Prerequisites
 
-```bash
-$ brew install --cask session-manager-plugin
-```
+1. Install the AWS CLI and the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html).
+2. Ensure your stack sets `aws:region`, because `Ec2SSMConnect` uses region-specific VPC endpoint service names.
+3. Provision a `Database` with SSM helper access enabled.
 
-SSM Connect can be enabled by setting `enableSSMConnect` property to `true`.
+### Enable SSM access
+
+Use the database builder when you want the database and helper instance created together:
 
 ```ts
-const project = new studion.Project('demo-project', {
-  enableSSMConnect: true,
-  ...
-});
+import * as studion from '@studion/infra-code-blocks';
 
-export const ec2InstanceId = project.ec2SSMConnect?.ec2.id;
+const vpc = new studion.Vpc('platform', {});
+
+const database = new studion.DatabaseBuilder('platform-db')
+  .withVpc(vpc.vpc)
+  .withInstance({ dbName: 'platform' })
+  .withCredentials({ username: 'platform_user' })
+  .withSSMConnect({ instanceType: 't4g.small' })
+  .build();
+
+export const databaseAddress = database.instance.address;
+export const databasePort = database.instance.port;
+export const ssmHostId = database.ec2SSMConnect!.ec2.id;
 ```
 
-Open up your terminal and run the following command:
-
-```bash
-$ aws ssm start-session --target EC2_INSTANCE_ID --document-name AWS-StartPortForwardingSessionToRemoteHost --parameters '{"host": ["DATABASE_ADDRESS"], "portNumber":["DATABASE_PORT"], "localPortNumber":["5555"]}'
-```
-
-Where `EC2_INSTANCE_ID` is an ID of the EC2 instance that is created for you
-(ID can be obtained by exporting it from the stack), and
-`DATABASE_ADDRESS` and `DATABASE_PORT` are the address and port of the
-database instance.
-
-And that is it! 🥳
-Now you can use your favorite database client to connect to the database.
-
-![RDS connection](/assets/images/rds-connection.png)
-
-It is important that for the host you set `localhost` and for the port you set `5555`
-because we are port-forwarding traffic from
-localhost:5555 to DATABASE_ADDRESS:DATABASE_PORT.
-For the user, password, and database field, set values which are set in the `Project`.
+You can also provision `Ec2SSMConnect` directly when you want a standalone helper host for an existing VPC:
 
 ```ts
-const project = new studion.Project('demo-project', {
-  enableSSMConnect: true,
-  services: [
-    {
-      type: 'DATABASE',
-      dbName: 'database_name',
-      username: 'username',
-      password: 'password',
-      ...
-    }
-  ]
+import * as studion from '@studion/infra-code-blocks';
+
+const vpc = new studion.Vpc('platform', {});
+
+const ssmConnect = new studion.Ec2SSMConnect('platform-db-ssm', {
+  vpc: vpc.vpc,
+  instanceType: 't4g.small',
 });
+
+export const ssmHostId = ssmConnect.ec2.id;
 ```
 
-## 🚧 TODO
+### Open the tunnel
 
-- [ ] Add worker service for executing tasks
-- [ ] Enable RDS password rotation
+Export the stack outputs into local shell variables:
+
+```bash
+export SSM_HOST_ID=$(pulumi stack output ssmHostId)
+export DATABASE_ADDRESS=$(pulumi stack output databaseAddress)
+export DATABASE_PORT=$(pulumi stack output databasePort)
+```
+
+Start a single SSM port-forwarding session from your laptop to the private database through the helper instance:
+
+```bash
+aws ssm start-session --target "$SSM_HOST_ID" --document-name AWS-StartPortForwardingSessionToRemoteHost --parameters "{\"host\":[\"$DATABASE_ADDRESS\"],\"portNumber\":[\"$DATABASE_PORT\"],\"localPortNumber\":[\"5555\"]}"
+```
+
+Where:
+
+- `SSM_HOST_ID` is the exported EC2 instance ID from `database.ec2SSMConnect.ec2.id` or `ssmConnect.ec2.id`.
+- `DATABASE_ADDRESS` is the RDS endpoint, for example `database.instance.address`.
+- `DATABASE_PORT` is the RDS port, for example `database.instance.port`.
+
+Keep that command running, then connect your database client to `localhost:5555` using the same database name, username, and password you configured for the `Database` component. The examples above do not export database credentials automatically.
+
+![RDS connection](https://raw.githubusercontent.com/ExtensionEngine/infra-code-blocks/master/assets/images/rds-connection.png)
+
+## API reference
+
+| Export                  | Kind      | Use it for                                     | Docs                                                        |
+| ----------------------- | --------- | ---------------------------------------------- | ----------------------------------------------------------- |
+| `Vpc`                   | class     | Standard AWSX VPC with fixed subnet ordering.  | [vpc](src/components/vpc/README.md)                         |
+| `AcmCertificate`        | class     | ACM certificate with Route 53 DNS validation.  | [acm-certificate](src/components/acm-certificate/README.md) |
+| `EcsService`            | class     | Generic ECS/Fargate service composition.       | [ecs-service](src/components/ecs-service/README.md)         |
+| `WebServer`             | class     | ALB-backed ECS web service.                    | [web-server](src/components/web-server/README.md)           |
+| `WebServerBuilder`      | class     | Fluent builder for `WebServer`.                | [web-server](src/components/web-server/README.md)           |
+| `WebServerLoadBalancer` | class     | Standalone ALB and target group.               | [web-server](src/components/web-server/README.md)           |
+| `Database`              | class     | PostgreSQL primary instance with extras.       | [database](src/components/database/README.md)               |
+| `DatabaseBuilder`       | class     | Fluent builder for `Database`.                 | [database](src/components/database/README.md)               |
+| `DatabaseReplica`       | class     | PostgreSQL read replica.                       | [database](src/components/database/README.md)               |
+| `Ec2SSMConnect`         | class     | Private EC2 helper reachable through SSM.      | [database](src/components/database/README.md)               |
+| `ElastiCacheRedis`      | class     | VPC-scoped Redis on ElastiCache.               | [redis](src/components/redis/README.md)                     |
+| `UpstashRedis`          | class     | Managed Redis on Upstash.                      | [redis](src/components/redis/README.md)                     |
+| `Password`              | class     | Secret-backed password generation and storage. | [password](src/components/password/README.md)               |
+| `CloudFront`            | class     | Behavior-driven CloudFront distribution.       | [cloudfront](src/components/cloudfront/README.md)           |
+| `StaticSite`            | class     | S3 website plus CloudFront composition.        | [static-site](src/components/static-site/README.md)         |
+| `S3Assets`              | class     | Public S3 website bucket for static assets.    | [static-site](src/components/static-site/README.md)         |
+| `openTelemetry`         | namespace | ECS-side collector container generation.       | [otel](src/otel/README.md)                                  |
+| `grafana`               | namespace | Grafana folders, data sources, and dashboards. | [grafana](src/components/grafana/README.md)                 |
+| `prometheus`            | namespace | PromQL query helpers for SLOs and latency.     | [prometheus](src/components/prometheus/README.md)           |
+
+## Development
+
+These steps are for contributors developing this package, not for consumers using it in a Pulumi project.
+
+### Prerequisites
+
+- Install dependencies with `npm install`.
+- Install the AWS and Pulumi CLIs.
+- Configure AWS credentials, preferably with an `AWS_PROFILE` that uses SSO.
+- Authenticate Pulumi with `pulumi login`.
+- Set these environment variables when running the full test suite; all are required for the complete integration/E2E suite:
+  - `AWS_REGION`
+  - `ICB_DOMAIN_NAME`
+  - `ICB_HOSTED_ZONE_ID`
+  - `GRAFANA_AWS_ACCOUNT_ID`
+  - `GRAFANA_CLOUD_ACCESS_POLICY_TOKEN`
+  - `GRAFANA_URL`
+  - `UPSTASH_API_KEY`
+  - `UPSTASH_EMAIL`
+
+### Commands
+
+```bash
+npm run build                                        # Compile the package into dist/
+npm run format                                       # Format code using Prettier
+npm run test                                         # Run the integration/E2E test suite
+npm run test -- tests/<component-name>/index.test.ts # Run integration/E2E tests for specific component(s)
+npm run test:build                                   # Run build validation and type-level checks
+```
+
+## Contributing
+
+Contributions should keep the documentation and exported API aligned.
+
+1. Install dependencies with `npm install`.
+2. Make your changes in `src/` and update any affected README files.
+3. Add or update integration/E2E tests and run `npm run test -- tests/<component-name>/index.test.ts` when your change affects infrastructure behavior.
+4. Add or update build-level tests and run `npm run test:build` when your change affects public API.
+5. The pre-commit hook will automatically format code before committing, or you can run `npm run format` manually.
+
+## Troubleshooting
+
+- **Missing AWS region or provider-region error:** run `pulumi config set aws:region <region>` or set `AWS_REGION`. ECS service and SSM Connect components require the region explicitly.
+- **AWS credentials, profile, or authorization errors:** configure AWS credentials, set the intended `AWS_PROFILE`, and confirm the identity has the required permissions.
+- **Route 53 validation or custom-domain setup failure:** confirm that the domain is managed by, or delegated to, the hosted zone whose ID you passed to the component.
+- **ACM certificate validation appears stuck:** DNS validation can take time. Check that the generated Route 53 validation record exists in the public hosted zone.
+- **`aws ssm start-session` fails before opening a tunnel:** install the Session Manager plugin, verify `SSM_HOST_ID`, and confirm the helper instance is managed by Systems Manager.
+- **Grafana authentication or authorization errors:** check `grafana:cloudAccessPolicyToken`, `grafana:url`, and the required access-policy scopes.
+- **Upstash provider authentication errors:** check `upstash:apiKey` and `upstash:email`.
+- **CloudFront or static-site deployments appear slow:** CloudFront distribution creation and updates commonly take several minutes.
+
+## License
+
+[MIT](LICENSE)
