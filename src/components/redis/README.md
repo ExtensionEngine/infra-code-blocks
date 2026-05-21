@@ -43,7 +43,6 @@ export const passwordSecretArn = redis.password.secret.arn;
 - `ElastiCacheRedis` always creates a VPC-bound, single-node Redis `aws.elasticache.Cluster` with `numCacheNodes: 1` and port `6379`; it does not create a replication group.
 - The ElastiCache subnet group is built from `vpc.isolatedSubnetIds`, and the Redis security group allows TCP/6379 ingress from the VPC CIDR block.
 - `ElastiCacheRedis` does not configure transit encryption, auth tokens, automatic failover, replication groups, backups, or multi-AZ failover.
-- `UpstashRedis.Args.dbName` is currently required for TypeScript callers. The implementation still computes a fallback database name of `${project}-${stack}` before merging caller input, but callers should provide `dbName` until the public type is relaxed.
 - `UpstashRedis` merges internal defaults of `region: 'global'` and `primaryRegion: 'us-east-1'` before creating the database.
 - `UpstashRedis` always sets `eviction: true` and `tls: true` on the Upstash database.
 - `UpstashRedis` creates a nested `Password` component from `instance.password`, so the Upstash password is copied into AWS Secrets Manager.
