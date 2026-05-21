@@ -101,7 +101,7 @@ export function testReplicaDb(ctx: DatabaseTestContext) {
         performanceInsightsEnabled: false,
         allowMajorVersionUpgrade: false,
         autoMinorVersionUpgrade: true,
-        engineVersion: '17.2',
+        engineVersion: '18',
         engine: 'postgres',
         storageEncrypted: true,
         publiclyAccessible: false,

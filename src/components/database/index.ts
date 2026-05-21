@@ -72,7 +72,7 @@ const defaults = {
   enableMonitoring: false,
   allowMajorVersionUpgrade: false,
   autoMinorVersionUpgrade: true,
-  engineVersion: '17.2',
+  engineVersion: '18',
 };
 
 export class Database extends pulumi.ComponentResource {

@@ -39,7 +39,7 @@ const kms = new aws.kms.Key(
 const paramGroup = new aws.rds.ParameterGroup(
   `${config.appName}-parameter-group`,
   {
-    family: 'postgres17',
+    family: 'postgres18',
     tags: config.tags,
   },
   { parent },
