@@ -11,7 +11,7 @@ Use it as the shared networking foundation for components such as `Database`, `E
 ```ts
 import { Vpc } from '@studion/infra-code-blocks';
 
-const vpc = new Vpc('app', {});
+const vpc = new Vpc('app');
 
 export const vpcId = vpc.vpc.vpcId;
 ```
@@ -60,15 +60,15 @@ class Vpc extends pulumi.ComponentResource {
 
 **Constructor Parameters**
 
-| Parameter                                    | Description                                 |
-| -------------------------------------------- | ------------------------------------------- |
-| `name`\*<br/>`string`                        | Logical Pulumi component name.              |
-| `args`\*<br/>`VpcArgs`                       | Direct VPC configuration object.            |
-| `opts`<br/>`pulumi.ComponentResourceOptions` | Optional Pulumi component resource options. |
+| Parameter                                    | Description                                     |
+| -------------------------------------------- | ----------------------------------------------- |
+| `name`\*<br/>`string`                        | Logical Pulumi component name.                  |
+| `args`<br/>`Vpc.Args`                        | Direct VPC configuration object. Default: `{}`. |
+| `opts`<br/>`pulumi.ComponentResourceOptions` | Optional Pulumi component resource options.     |
 
 **Configuration Options**
 
-Direct constructor input: `args: VpcArgs`
+Direct constructor input: `args: Vpc.Args`
 
 | Property                                                           | Description                                                      |
 | ------------------------------------------------------------------ | ---------------------------------------------------------------- |

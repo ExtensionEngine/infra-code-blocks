@@ -12,7 +12,7 @@ Use it when you need ECS service plumbing—task definition, IAM roles, logging,
 import * as aws from '@pulumi/aws';
 import * as studion from '@studion/infra-code-blocks';
 
-const vpc = new studion.Vpc('app', {});
+const vpc = new studion.Vpc('app');
 const cluster = new aws.ecs.Cluster('app-cluster', {});
 
 const ecsService = new studion.EcsService('worker', {
@@ -37,7 +37,7 @@ export const logGroupName = ecsService.logGroup.name;
 import * as aws from '@pulumi/aws';
 import * as studion from '@studion/infra-code-blocks';
 
-const vpc = new studion.Vpc('internal', {});
+const vpc = new studion.Vpc('internal');
 const cluster = new aws.ecs.Cluster('internal-cluster', {});
 
 const taskRolePolicy: aws.types.input.iam.RoleInlinePolicy = {

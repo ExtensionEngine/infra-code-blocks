@@ -11,7 +11,7 @@ Use `Database` or `DatabaseBuilder` when you want secure-by-default networking, 
 ```ts
 import * as studion from '@studion/infra-code-blocks';
 
-const vpc = new studion.Vpc('app', {});
+const vpc = new studion.Vpc('app');
 
 const database = new studion.DatabaseBuilder('app-db')
   .withVpc(vpc.vpc)
@@ -28,7 +28,7 @@ export const passwordSecretArn = database.password.secret.arn;
 ```ts
 import * as studion from '@studion/infra-code-blocks';
 
-const vpc = new studion.Vpc('platform', {});
+const vpc = new studion.Vpc('platform');
 
 const database = new studion.Database('platform-db', {
   vpc: vpc.vpc,
