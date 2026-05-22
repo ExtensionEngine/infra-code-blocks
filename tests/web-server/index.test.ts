@@ -131,6 +131,16 @@ describe('Web server component deployment', () => {
       ctx.config.healthCheckPath,
       'Target group should have correct health check path',
     );
+    assert.deepStrictEqual(
+      {
+        healthyThreshold: tg.HealthyThresholdCount,
+        unhealthyThreshold: tg.UnhealthyThresholdCount,
+        interval: tg.HealthCheckIntervalSeconds,
+        timeout: tg.HealthCheckTimeoutSeconds,
+      },
+      ctx.config.healthCheckConfig,
+      'Target group should have correct health check configuration',
+    );
 
     const attributesCommand = new DescribeTargetGroupAttributesCommand({
       TargetGroupArn: webServer.lb.targetGroup.arn,

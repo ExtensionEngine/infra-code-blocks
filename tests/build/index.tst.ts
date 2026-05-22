@@ -91,8 +91,8 @@ describe('Build output', () => {
         );
       });
 
-      it('should have withCustomHealthCheckPath method', () => {
-        expect(builder.withCustomHealthCheckPath).type.toBeCallableWith(
+      it('should have withHealthCheck method', () => {
+        expect(builder.withHealthCheck).type.toBeCallableWith(
           '/custom/healthCheck/path',
         );
       });

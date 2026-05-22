@@ -8,6 +8,12 @@ import { Route53Client } from '@aws-sdk/client-route-53';
 interface WebServerTestConfig {
   webServerName: string;
   healthCheckPath: string;
+  healthCheckConfig: {
+    healthyThreshold: number;
+    unhealthyThreshold: number;
+    interval: number;
+    timeout: number;
+  };
   webServerImageName: string;
   webServerPort: number;
   webServerWithDomainConfig: {
@@ -42,6 +48,4 @@ interface AwsContext {
 }
 
 export interface WebServerTestContext
-  extends ConfigContext,
-    PulumiProgramContext,
-    AwsContext {}
+  extends ConfigContext, PulumiProgramContext, AwsContext {}

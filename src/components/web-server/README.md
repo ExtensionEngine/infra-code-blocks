@@ -2,7 +2,7 @@
 
 The web-server module supplies components to expose ECS services via an internet-facing ALB, using a fluent builder interface for easy assembly.
 
-Use it when a workload needs package-standard public HTTP/HTTPS ingress, load-balancer security groups, target-group wiring, health checks, and optional TLS/Route53 custom-domain support on top of `EcsService`.
+Use it when a workload needs package-standard public HTTP/HTTPS ingress, load-balancer security groups, target-group wiring, configurable health checks, and optional TLS/Route53 custom-domain support on top of `EcsService`.
 
 ## Usage examples
 
@@ -75,6 +75,12 @@ const webServer = new studion.WebServer('platform-api', {
   domain: 'api.example.com',
   hostedZoneId: hostedZone.zoneId,
   healthCheckPath: '/readyz',
+  healthCheckConfig: {
+    healthyThreshold: 5,
+    unhealthyThreshold: 3,
+    interval: 15,
+    timeout: 3,
+  },
   loadBalancingAlgorithmType: 'round_robin',
   taskExecutionRoleInlinePolicies: [taskExecutionPolicy],
   volumes: [{ name: 'shared-data' }],
@@ -131,7 +137,8 @@ export const ecsServiceArn = webServer.service.apply(
 - Current implementation note: when `otelCollector` is provided, task-role policy fragments from the collector are combined with `taskExecutionRoleInlinePolicies` and passed to the nested `EcsService` as task-role inline policies. Review generated IAM roles when combining custom execution-role policies with OTEL.
 - The nested ECS service disables service discovery, sets `assignPublicIp: true`, and registers the main container with the load balancer target group.
 - `WebServerLoadBalancer` creates an internet-facing application load balancer in public subnets and defaults `healthCheckPath` to `'/healthcheck'`.
-- Target group health checks always use HTTP with `healthyThreshold: 3`, `unhealthyThreshold: 2`, `interval: 60`, and `timeout: 5`; only the path and load-balancing algorithm are configurable.
+- Target-group health checks use `healthCheckPath` for `healthCheck.path` and merge `healthCheckConfig` into the remaining target-group health-check settings. The component default config is `{ healthyThreshold: 3, unhealthyThreshold: 2, interval: 60, timeout: 5 }`.
+- `healthCheckConfig` is shallow-merged through the component defaults; supplying it replaces the default health-check config object, so include every non-path health-check value you want to control explicitly.
 - If a certificate is provided to `WebServerLoadBalancer`, port `80` redirects to HTTPS and a TLS listener on port `443` is created with `ELBSecurityPolicy-TLS13-1-2-2021-06`. Without a certificate, port `80` forwards directly to the target group.
 - The load balancer security group always allows inbound TCP on ports `80` and `443` from `0.0.0.0/0` and allows all outbound traffic.
 - The web-server service security group allows all protocols and ports from the load balancer security group and allows all outbound traffic.
@@ -166,34 +173,35 @@ class WebServer extends pulumi.ComponentResource {
 
 Direct constructor input: `args: WebServer.Args`
 
-| Property                                                                                                                               | Description                                                                                  |
-| -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `image`\*<br/>`pulumi.Input<string>`                                                                                                   | Main application container image.                                                            |
-| `port`\*<br/>`pulumi.Input<number>`                                                                                                    | Main application container port.                                                             |
-| `environment`<br/>`pulumi.Input<aws.ecs.KeyValuePair[]>`                                                                               | Static environment variables for the main container.                                         |
-| `secrets`<br/>`pulumi.Input<aws.ecs.Secret[]>`                                                                                         | ECS secret references for the main container.                                                |
-| `mountPoints`<br/>`EcsService.PersistentStorageMountPoint[]`                                                                           | Persistent storage mounts for the main container.                                            |
-| `cluster`\*<br/>`pulumi.Input<aws.ecs.Cluster>`                                                                                        | ECS cluster used by the nested `EcsService`.                                                 |
-| `vpc`\*<br/>`pulumi.Input<awsx.ec2.Vpc>`                                                                                               | Source of public subnets for the ALB and network data for ECS.                               |
-| `volumes`<br/>`pulumi.Input<pulumi.Input<EcsService.PersistentStorageVolume>[]>`                                                       | Logical ECS volumes passed into the nested `EcsService`. Default: `[]`.                      |
-| `name`<br/>`pulumi.Input<string>`                                                                                                      | Optional ECS service name override forwarded to `EcsService`. Default: `EcsService` default. |
-| `deploymentController`<br/>`'ECS' \| 'CODE_DEPLOY' \| 'EXTERNAL'`                                                                      | Optional ECS deployment controller. Default: `EcsService` default.                           |
-| `desiredCount`<br/>`pulumi.Input<number>`                                                                                              | Desired task count for the nested ECS service. Default: `EcsService` default.                |
-| `autoscaling`<br/>`pulumi.Input<{ enabled: pulumi.Input<boolean>; minCount?: pulumi.Input<number>; maxCount?: pulumi.Input<number> }>` | ECS target-tracking autoscaling configuration. Default: `EcsService` default.                |
-| `family`<br/>`pulumi.Input<string>`                                                                                                    | Optional task definition family override. Default: `EcsService` default.                     |
-| `size`<br/>`pulumi.Input<TaskSize>`                                                                                                    | ECS CPU/memory preset or explicit size object. Default: `EcsService` default.                |
-| `logGroupNamePrefix`<br/>`pulumi.Input<string>`                                                                                        | CloudWatch log group name prefix forwarded to `EcsService`. Default: `EcsService` default.   |
-| `taskExecutionRoleInlinePolicies`<br/>`pulumi.Input<pulumi.Input<EcsService.RoleInlinePolicy>[]>`                                      | Extra execution-role inline policies.                                                        |
-| `taskRoleInlinePolicies`<br/>`pulumi.Input<pulumi.Input<EcsService.RoleInlinePolicy>[]>`                                               | Extra task-role inline policies.                                                             |
-| `tags`<br/>`pulumi.Input<{ [key: string]: pulumi.Input<string> }>`                                                                     | Extra tags forwarded to nested ECS resources.                                                |
-| `domain`<br/>`pulumi.Input<string>`                                                                                                    | Custom DNS name for the ALB endpoint.                                                        |
-| `certificate`<br/>`pulumi.Input<aws.acm.Certificate>`                                                                                  | Existing ACM certificate for TLS termination.                                                |
-| `hostedZoneId`<br/>`pulumi.Input<string>`                                                                                              | Required: whenever `domain` or `certificate` is provided.                                    |
-| `healthCheckPath`<br/>`pulumi.Input<string>`                                                                                           | ALB target-group health-check path. Default: `'/healthcheck'`.                               |
-| `loadBalancingAlgorithmType`<br/>`pulumi.Input<string>`                                                                                | Forwarded directly to the ALB target group. Default: AWS default.                            |
-| `initContainers`<br/>`pulumi.Input<pulumi.Input<WebServer.InitContainer>[]>`                                                           | Additional init containers. Default: `[]`.                                                   |
-| `sidecarContainers`<br/>`pulumi.Input<pulumi.Input<WebServer.SidecarContainer>[]>`                                                     | Additional sidecars. Default: `[]`.                                                          |
-| `otelCollector`<br/>`pulumi.Input<OtelCollector>`                                                                                      | Collector integration that contributes containers, volumes, and IAM policy fragments.        |
+| Property                                                                                                                               | Description                                                                                                                                                                           |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `image`\*<br/>`pulumi.Input<string>`                                                                                                   | Main application container image.                                                                                                                                                     |
+| `port`\*<br/>`pulumi.Input<number>`                                                                                                    | Main application container port.                                                                                                                                                      |
+| `environment`<br/>`pulumi.Input<aws.ecs.KeyValuePair[]>`                                                                               | Static environment variables for the main container.                                                                                                                                  |
+| `secrets`<br/>`pulumi.Input<aws.ecs.Secret[]>`                                                                                         | ECS secret references for the main container.                                                                                                                                         |
+| `mountPoints`<br/>`EcsService.PersistentStorageMountPoint[]`                                                                           | Persistent storage mounts for the main container.                                                                                                                                     |
+| `cluster`\*<br/>`pulumi.Input<aws.ecs.Cluster>`                                                                                        | ECS cluster used by the nested `EcsService`.                                                                                                                                          |
+| `vpc`\*<br/>`pulumi.Input<awsx.ec2.Vpc>`                                                                                               | Source of public subnets for the ALB and network data for ECS.                                                                                                                        |
+| `volumes`<br/>`pulumi.Input<pulumi.Input<EcsService.PersistentStorageVolume>[]>`                                                       | Logical ECS volumes passed into the nested `EcsService`. Default: `[]`.                                                                                                               |
+| `name`<br/>`pulumi.Input<string>`                                                                                                      | Optional ECS service name override forwarded to `EcsService`. Default: `EcsService` default.                                                                                          |
+| `deploymentController`<br/>`'ECS' \| 'CODE_DEPLOY' \| 'EXTERNAL'`                                                                      | Optional ECS deployment controller. Default: `EcsService` default.                                                                                                                    |
+| `desiredCount`<br/>`pulumi.Input<number>`                                                                                              | Desired task count for the nested ECS service. Default: `EcsService` default.                                                                                                         |
+| `autoscaling`<br/>`pulumi.Input<{ enabled: pulumi.Input<boolean>; minCount?: pulumi.Input<number>; maxCount?: pulumi.Input<number> }>` | ECS target-tracking autoscaling configuration. Default: `EcsService` default.                                                                                                         |
+| `family`<br/>`pulumi.Input<string>`                                                                                                    | Optional task definition family override. Default: `EcsService` default.                                                                                                              |
+| `size`<br/>`pulumi.Input<TaskSize>`                                                                                                    | ECS CPU/memory preset or explicit size object. Default: `EcsService` default.                                                                                                         |
+| `logGroupNamePrefix`<br/>`pulumi.Input<string>`                                                                                        | CloudWatch log group name prefix forwarded to `EcsService`. Default: `EcsService` default.                                                                                            |
+| `taskExecutionRoleInlinePolicies`<br/>`pulumi.Input<pulumi.Input<EcsService.RoleInlinePolicy>[]>`                                      | Extra execution-role inline policies.                                                                                                                                                 |
+| `taskRoleInlinePolicies`<br/>`pulumi.Input<pulumi.Input<EcsService.RoleInlinePolicy>[]>`                                               | Extra task-role inline policies.                                                                                                                                                      |
+| `tags`<br/>`pulumi.Input<{ [key: string]: pulumi.Input<string> }>`                                                                     | Extra tags forwarded to nested ECS resources.                                                                                                                                         |
+| `domain`<br/>`pulumi.Input<string>`                                                                                                    | Custom DNS name for the ALB endpoint.                                                                                                                                                 |
+| `certificate`<br/>`pulumi.Input<aws.acm.Certificate>`                                                                                  | Existing ACM certificate for TLS termination.                                                                                                                                         |
+| `hostedZoneId`<br/>`pulumi.Input<string>`                                                                                              | Required: whenever `domain` or `certificate` is provided.                                                                                                                             |
+| `healthCheckPath`<br/>`pulumi.Input<string>`                                                                                           | ALB target-group health-check path. Default: `'/healthcheck'`.                                                                                                                        |
+| `healthCheckConfig`<br/>`Omit<aws.types.input.lb.TargetGroupHealthCheck, 'path'>`                                                      | Target-group health-check settings other than `path`; `path` is controlled by `healthCheckPath`. Default: `{ healthyThreshold: 3, unhealthyThreshold: 2, interval: 60, timeout: 5 }`. |
+| `loadBalancingAlgorithmType`<br/>`pulumi.Input<string>`                                                                                | Forwarded directly to the ALB target group. Default: AWS default.                                                                                                                     |
+| `initContainers`<br/>`pulumi.Input<pulumi.Input<WebServer.InitContainer>[]>`                                                           | Additional init containers. Default: `[]`.                                                                                                                                            |
+| `sidecarContainers`<br/>`pulumi.Input<pulumi.Input<WebServer.SidecarContainer>[]>`                                                     | Additional sidecars. Default: `[]`.                                                                                                                                                   |
+| `otelCollector`<br/>`pulumi.Input<OtelCollector>`                                                                                      | Collector integration that contributes containers, volumes, and IAM policy fragments.                                                                                                 |
 
 **Outputs**
 
@@ -287,20 +295,20 @@ class WebServerBuilder {
 
 **Builder Methods**
 
-| Method                       | Parameters                                                                                                                          | Description                                                               |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `withContainer`              | `image: WebServer.Container['image'], port: WebServer.Container['port'], config: Omit<WebServer.Container, 'image' \| 'port'> = {}` | Stores the main application container.                                    |
-| `withEcsConfig`              | `config: WebServerBuilder.EcsConfig`                                                                                                | Stores ECS cluster and service configuration.                             |
-| `withVpc`                    | `vpc: pulumi.Input<awsx.ec2.Vpc>`                                                                                                   | Stores the required VPC.                                                  |
-| `withVolume`                 | `volume: EcsService.PersistentStorageVolume`                                                                                        | Adds one logical ECS volume.                                              |
-| `withCustomDomain`           | `domain: pulumi.Input<string>, hostedZoneId: pulumi.Input<string>`                                                                  | Stores custom-domain settings and enables managed ACM flow.               |
-| `withCertificate`            | `certificate: WebServer.Args['certificate'], hostedZoneId: pulumi.Input<string>, domain?: pulumi.Input<string>`                     | Stores an existing certificate and hosted zone configuration.             |
-| `addInitContainer`           | `container: WebServer.InitContainer`                                                                                                | Adds one init container.                                                  |
-| `addSidecarContainer`        | `container: WebServer.SidecarContainer`                                                                                             | Adds one sidecar container.                                               |
-| `withOtelCollector`          | `collector: OtelCollector`                                                                                                          | Attaches collector-provided containers, volume, and IAM policy fragments. |
-| `withCustomHealthCheckPath`  | `path: WebServer.Args['healthCheckPath']`                                                                                           | Overrides the ALB health-check path.                                      |
-| `withLoadBalancingAlgorithm` | `algorithm: pulumi.Input<string>`                                                                                                   | Stores the target-group load-balancing algorithm.                         |
-| `build`                      | `opts?: pulumi.ComponentResourceOptions`                                                                                            | Validates collected state and returns a `WebServer`.                      |
+| Method                       | Parameters                                                                                                                          | Description                                                                       |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `withContainer`              | `image: WebServer.Container['image'], port: WebServer.Container['port'], config: Omit<WebServer.Container, 'image' \| 'port'> = {}` | Stores the main application container.                                            |
+| `withEcsConfig`              | `config: WebServerBuilder.EcsConfig`                                                                                                | Stores ECS cluster and service configuration.                                     |
+| `withVpc`                    | `vpc: pulumi.Input<awsx.ec2.Vpc>`                                                                                                   | Stores the required VPC.                                                          |
+| `withVolume`                 | `volume: EcsService.PersistentStorageVolume`                                                                                        | Adds one logical ECS volume.                                                      |
+| `withCustomDomain`           | `domain: pulumi.Input<string>, hostedZoneId: pulumi.Input<string>`                                                                  | Stores custom-domain settings and enables managed ACM flow.                       |
+| `withCertificate`            | `certificate: WebServer.Args['certificate'], hostedZoneId: pulumi.Input<string>, domain?: pulumi.Input<string>`                     | Stores an existing certificate and hosted zone configuration.                     |
+| `addInitContainer`           | `container: WebServer.InitContainer`                                                                                                | Adds one init container.                                                          |
+| `addSidecarContainer`        | `container: WebServer.SidecarContainer`                                                                                             | Adds one sidecar container.                                                       |
+| `withOtelCollector`          | `collector: OtelCollector`                                                                                                          | Attaches collector-provided containers, volume, and IAM policy fragments.         |
+| `withHealthCheck`            | `path: WebServer.Args['healthCheckPath'], config?: WebServer.Args['healthCheckConfig']`                                             | Stores the ALB health-check path and optional target-group health-check settings. |
+| `withLoadBalancingAlgorithm` | `algorithm: pulumi.Input<string>`                                                                                                   | Stores the target-group load-balancing algorithm.                                 |
+| `build`                      | `opts?: pulumi.ComponentResourceOptions`                                                                                            | Validates collected state and returns a `WebServer`.                              |
 
 **Build Result**
 
@@ -351,13 +359,14 @@ class WebServerLoadBalancer extends pulumi.ComponentResource {
 
 Direct constructor input: `args: WebServerLoadBalancer.Args`
 
-| Property                                                | Description                                                   |
-| ------------------------------------------------------- | ------------------------------------------------------------- |
-| `vpc`\*<br/>`pulumi.Input<awsx.ec2.Vpc>`                | VPC whose public subnets host the ALB.                        |
-| `port`\*<br/>`pulumi.Input<number>`                     | Target-group port.                                            |
-| `certificate`<br/>`pulumi.Input<aws.acm.Certificate>`   | Enables a TLS listener and HTTP-to-HTTPS redirect.            |
-| `healthCheckPath`<br/>`pulumi.Input<string>`            | Target-group health-check path. Default: `'/healthcheck'`.    |
-| `loadBalancingAlgorithmType`<br/>`pulumi.Input<string>` | Forwarded directly to the target group. Default: AWS default. |
+| Property                                                                          | Description                                                                                                                                |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `vpc`\*<br/>`pulumi.Input<awsx.ec2.Vpc>`                                          | VPC whose public subnets host the ALB.                                                                                                     |
+| `port`\*<br/>`pulumi.Input<number>`                                               | Target-group port.                                                                                                                         |
+| `certificate`<br/>`pulumi.Input<aws.acm.Certificate>`                             | Enables a TLS listener and HTTP-to-HTTPS redirect.                                                                                         |
+| `healthCheckPath`<br/>`pulumi.Input<string>`                                      | Target-group health-check path. Default: `'/healthcheck'`.                                                                                 |
+| `healthCheckConfig`<br/>`Omit<aws.types.input.lb.TargetGroupHealthCheck, 'path'>` | Target-group health-check settings other than `path`. Default: `{ healthyThreshold: 3, unhealthyThreshold: 2, interval: 60, timeout: 5 }`. |
+| `loadBalancingAlgorithmType`<br/>`pulumi.Input<string>`                           | Forwarded directly to the target group. Default: AWS default.                                                                              |
 
 **Outputs**
 
