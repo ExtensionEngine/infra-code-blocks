@@ -4,6 +4,7 @@ import {
   getAvailabilityQuery,
   getSuccessRateQuery,
   getPercentileLatencyQuery,
+  getLatencyRateQuery,
   getLatencyPercentageQuery,
   TimeRange,
 } from './queries';
@@ -17,8 +18,8 @@ describe('Prometheus Query Builders', async () => {
     it('should build correct query', () => {
       const result = getAvailabilityQuery(namespace, timeRange);
       const expected =
-        `(sum(rate(${namespace}_http_server_duration_milliseconds_count{http_status_code!~"5.."}[${timeRange}]))) / ` +
-        `(sum(rate(${namespace}_http_server_duration_milliseconds_count[${timeRange}]))) * 100`;
+        `sum(rate(${namespace}_http_server_duration_milliseconds_count{http_status_code!~"5.."}[${timeRange}])) / ` +
+        `sum(rate(${namespace}_http_server_duration_milliseconds_count[${timeRange}]))`;
       assert.equal(result, expected);
     });
   });
@@ -27,8 +28,8 @@ describe('Prometheus Query Builders', async () => {
     it('should build correct query', () => {
       const result = getSuccessRateQuery(namespace, timeRange, apiRouteFilter);
       const expected =
-        `(sum(rate(${namespace}_http_server_duration_milliseconds_count{http_status_code=~"[2-4]..",${apiRouteFilter}}[2m]))) / ` +
-        `(sum(rate(${namespace}_http_server_duration_milliseconds_count{${apiRouteFilter}}[2m]))) * 100`;
+        `sum(rate(${namespace}_http_server_duration_milliseconds_count{http_status_code=~"[2-4]..",${apiRouteFilter}}[2m])) / ` +
+        `sum(rate(${namespace}_http_server_duration_milliseconds_count{${apiRouteFilter}}[2m]))`;
       assert.equal(result, expected);
     });
   });
@@ -47,6 +48,17 @@ describe('Prometheus Query Builders', async () => {
     });
   });
 
+  describe('getLatencyRateQuery', async () => {
+    it('should build correct query without optional filter', () => {
+      const threshold = 200;
+      const result = getLatencyRateQuery(namespace, timeRange, threshold);
+      const expected =
+        `sum(rate(${namespace}_http_server_duration_milliseconds_bucket{le="200"}[2m])) / ` +
+        `sum(rate(${namespace}_http_server_duration_milliseconds_count[2m]))`;
+      assert.equal(result, expected);
+    });
+  });
+
   describe('getLatencyPercentageQuery', async () => {
     it('should build correct query', () => {
       const threshold = 200;
@@ -57,8 +69,8 @@ describe('Prometheus Query Builders', async () => {
         apiRouteFilter,
       );
       const expected =
-        `(sum(rate(${namespace}_http_server_duration_milliseconds_bucket{le="200",${apiRouteFilter}}[2m]))) / ` +
-        `(sum(rate(${namespace}_http_server_duration_milliseconds_count{${apiRouteFilter}}[2m]))) * 100`;
+        `sum(rate(${namespace}_http_server_duration_milliseconds_bucket{le="200",${apiRouteFilter}}[2m])) / ` +
+        `sum(rate(${namespace}_http_server_duration_milliseconds_count{${apiRouteFilter}}[2m])) * 100`;
       assert.equal(result, expected);
     });
   });

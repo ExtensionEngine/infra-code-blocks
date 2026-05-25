@@ -84,7 +84,9 @@ export function getLatencyRateQuery(
   threshold: number,
   filter?: string,
 ): string {
-  const filterWithThreshold = [`le="${threshold}"`, filter].join(',');
+  const filterWithThreshold = [`le="${threshold}"`, filter]
+    .filter(it => it != null)
+    .join(',');
 
   const requestsUnderThreshold = getBucketRate(
     namespace,
