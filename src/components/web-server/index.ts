@@ -224,10 +224,7 @@ export class WebServer extends pulumi.ComponentResource {
     args: WebServer.Args,
   ): pulumi.Output<EcsService.RoleInlinePolicy[]> {
     return pulumi
-      .all([
-        pulumi.output(args.taskExecutionRoleInlinePolicies),
-        args.otelCollector,
-      ])
+      .all([pulumi.output(args.taskRoleInlinePolicies), args.otelCollector])
       .apply(([passedTaskRoleInlinePolicies, otelCollector]) => {
         const inlinePolicies = [];
         if (passedTaskRoleInlinePolicies)
