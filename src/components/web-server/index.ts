@@ -32,6 +32,11 @@ export namespace WebServer {
     | 'tags'
   >;
 
+  export type LoadBalancerConfig = Pick<
+    WebServerLoadBalancer.Args,
+    'healthCheckPath' | 'healthCheckConfig' | 'loadBalancingAlgorithmType'
+  >;
+
   export type InitContainer = Omit<EcsService.Container, 'essential'>;
   export type SidecarContainer = Omit<
     EcsService.Container,
@@ -40,28 +45,29 @@ export namespace WebServer {
     Required<Pick<EcsService.Container, 'healthCheck'>>;
 
   export type Args = EcsConfig &
-    Container & {
+    Container &
+    LoadBalancerConfig & {
       /**
-       * Domain name for CloudFront distribution. Implies creation of certificate
+       * Domain name for the ALB endpoint. Implies creation of certificate
        * and alias record. Must belong to the provided hosted zone.
        * Providing the `certificate` argument has following effects:
        * - Certificate creation is skipped
        * - Provided certificate must cover the domain name
        * Responsibility to ensure mentioned requirements in on the consumer, and
-       * falling to do so will result in unexpected behavior.
+       * failing to do so will result in unexpected behavior.
        */
       domain?: pulumi.Input<string>;
       /**
-       * Certificate for CloudFront distribution. Domain and alternative domains
+       * Certificate for the ALB HTTPS listener. Domain and alternative domains
        * are automatically pulled from the certificate and translated into alias
        * records. Domains covered by the certificate, must belong to the provided
-       * hosted zone. The certificate must be in `us-east-1` region. In a case
-       * of wildcard certificate the `domain` argument is required.
+       * hosted zone. In a case of wildcard certificate the `domain` argument
+       * is required.
        * Providing the `domain` argument has following effects:
        * - Alias records creation, from automatically pulled domains, is skipped
        * - Certificate must cover the provided domain name
        * Responsibility to ensure mentioned requirements in on the consumer, and
-       * falling to do so will result in unexpected behavior.
+       * failing to do so will result in unexpected behavior.
        */
       certificate?: pulumi.Input<aws.acm.Certificate>;
       /**
@@ -69,18 +75,6 @@ export namespace WebServer {
        * arguments are provided.
        */
       hostedZoneId?: pulumi.Input<string>;
-      /**
-       * Path for the load balancer target group health check request.
-       *
-       * @default
-       * "/healthcheck"
-       */
-      healthCheckPath?: pulumi.Input<string>;
-      healthCheckConfig?: Omit<
-        aws.types.input.lb.TargetGroupHealthCheck,
-        'path'
-      >;
-      loadBalancingAlgorithmType?: pulumi.Input<string>;
       initContainers?: pulumi.Input<pulumi.Input<WebServer.InitContainer>[]>;
       sidecarContainers?: pulumi.Input<
         pulumi.Input<WebServer.SidecarContainer>[]

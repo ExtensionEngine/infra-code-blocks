@@ -232,7 +232,7 @@ type Container = Pick<
 };
 ```
 
-Used to define the main application container before ECS-specific transformation. Combined with the other types to create `WebServer.Args` intersection type.
+Used to define the main application container before ECS-specific transformation. Combined with `WebServer.EcsConfig`, `WebServer.LoadBalancerConfig`, and WebServer-specific fields to create the `WebServer.Args` intersection type.
 
 **`WebServer.EcsConfig`**
 
@@ -255,7 +255,18 @@ type EcsConfig = Pick<
 >;
 ```
 
-Forwarded into the nested `EcsService` after the web-server-specific ALB wiring is added. Combined with the other types to create `WebServer.Args` intersection type.
+Forwarded into the nested `EcsService` after the web-server-specific ALB wiring is added. Combined with `WebServer.Container`, `WebServer.LoadBalancerConfig`, and WebServer-specific fields to create the `WebServer.Args` intersection type.
+
+**`WebServer.LoadBalancerConfig`**
+
+```ts
+type LoadBalancerConfig = Pick<
+  WebServerLoadBalancer.Args,
+  'healthCheckPath' | 'healthCheckConfig' | 'loadBalancingAlgorithmType'
+>;
+```
+
+Used to group the load-balancer-specific options that `WebServer` forwards into the nested `WebServerLoadBalancer`. Combined with `WebServer.Container`, `WebServer.EcsConfig`, and WebServer-specific fields to create the `WebServer.Args` intersection type.
 
 **`WebServer.InitContainer`**
 
@@ -306,8 +317,8 @@ class WebServerBuilder {
 | `addInitContainer`           | `container: WebServer.InitContainer`                                                                                                | Adds one init container.                                                          |
 | `addSidecarContainer`        | `container: WebServer.SidecarContainer`                                                                                             | Adds one sidecar container.                                                       |
 | `withOtelCollector`          | `collector: OtelCollector`                                                                                                          | Attaches collector-provided containers, volume, and IAM policy fragments.         |
-| `withHealthCheck`            | `path: WebServer.Args['healthCheckPath'], config?: WebServer.Args['healthCheckConfig']`                                             | Stores the ALB health-check path and optional target-group health-check settings. |
-| `withLoadBalancingAlgorithm` | `algorithm: pulumi.Input<string>`                                                                                                   | Stores the target-group load-balancing algorithm.                                 |
+| `withHealthCheck`            | `path: WebServer.LoadBalancerConfig['healthCheckPath'], config?: WebServer.LoadBalancerConfig['healthCheckConfig']`                 | Stores the ALB health-check path and optional target-group health-check settings. |
+| `withLoadBalancingAlgorithm` | `algorithm: WebServer.LoadBalancerConfig['loadBalancingAlgorithmType']`                                                             | Stores the target-group load-balancing algorithm.                                 |
 | `build`                      | `opts?: pulumi.ComponentResourceOptions`                                                                                            | Validates collected state and returns a `WebServer`.                              |
 
 **Build Result**
