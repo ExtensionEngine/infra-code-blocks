@@ -101,6 +101,8 @@ export class StaticSite extends pulumi.ComponentResource {
       },
       { parent: this },
     );
+
+    this.registerOutputs();
   }
 
   private getCloudFrontBehaviors(
