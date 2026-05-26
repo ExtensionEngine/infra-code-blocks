@@ -85,7 +85,6 @@ export const dashboardFactory = sloSummaryDashboard;
 - `createBurnRatePanel()` ignores `metric.thresholds` and always returns a `stat` panel with `unit: 'none'`, `reduceOptions.calcs = ['last']`, `colorMode: 'value'`, `graphMode: 'none'`, `textMode: 'value'`, and fixed green/orange/red thresholds at `null`, `1`, and `2`.
 - The availability, success-rate, and latency helpers each return fixed titles and fixed grid positions so they compose into the package's standard SLO dashboard layout.
 - `createAvailabilityPanel()` accepts `target` for config-shape consistency, but the generated availability query itself does not use it.
-- Some SLO panel titles are hard-coded with `250ms`; changing `targetLatency` changes the generated PromQL threshold but does not change those panel titles.
 - Burn-rate panel helpers use a hard-coded `1h` PromQL range for the underlying availability, success-rate, and latency rate queries.
 - `createLatencyBurnRatePanel()` follows its configuration shape and creates a namespace-wide latency burn-rate panel; use a custom generic panel when you need route or label filtered latency burn-rate visualization.
 - `createSuccessRateBurnRatePanel()` always uses a `1h` rate window for the underlying success-rate query.

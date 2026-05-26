@@ -16,11 +16,11 @@ export function createLatencyPanel(config: {
   dataSourceName: string;
 }): Panel {
   return createStatPercentagePanel(
-    'Request % below 250ms',
+    `Request % below ${config.targetLatency}ms`,
     { x: 16, y: 0, w: 8, h: 8 },
     config.dataSourceName,
     {
-      label: 'Request % below 250ms',
+      label: `Request % below ${config.targetLatency}ms`,
       query: promQ.getLatencyPercentageQuery(
         config.ampNamespace,
         config.window,
@@ -65,11 +65,11 @@ export function createLatencyPercentagePanel(config: {
   dataSourceName: string;
 }): Panel {
   return createTimeSeriesPercentagePanel(
-    'Request percentage below 250ms',
+    `Request percentage below ${config.targetLatency}ms`,
     { x: 0, y: 24, w: 12, h: 8 },
     config.dataSourceName,
     {
-      label: 'Request percentage below 250ms',
+      label: `Request percentage below ${config.targetLatency}ms`,
       query: promQ.getLatencyPercentageQuery(
         config.ampNamespace,
         config.shortWindow,
