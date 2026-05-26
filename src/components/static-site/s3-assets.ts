@@ -42,6 +42,8 @@ export class S3Assets extends pulumi.ComponentResource {
 
     this.bucket = bucket;
     this.websiteConfig = websiteConfig;
+
+    this.registerOutputs();
   }
 
   private setupWebsiteBucketAccess(bucket: aws.s3.Bucket): void {
