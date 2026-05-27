@@ -114,8 +114,8 @@ export class WebServerBuilder {
   }
 
   public withHealthCheck(
-    path: WebServer.Args['healthCheckPath'],
-    config?: WebServer.Args['healthCheckConfig'],
+    path: WebServer.LoadBalancerConfig['healthCheckPath'],
+    config?: WebServer.LoadBalancerConfig['healthCheckConfig'],
   ): this {
     this._healthCheckPath = path;
     this._healthCheckConfig = config;
@@ -123,7 +123,9 @@ export class WebServerBuilder {
     return this;
   }
 
-  public withLoadBalancingAlgorithm(algorithm: pulumi.Input<string>) {
+  public withLoadBalancingAlgorithm(
+    algorithm: WebServer.LoadBalancerConfig['loadBalancingAlgorithmType'],
+  ) {
     this._loadBalancingAlgorithmType = algorithm;
 
     return this;
