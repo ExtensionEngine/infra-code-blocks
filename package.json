@@ -82,7 +82,8 @@
   "overrides": {
     "basic-ftp": ">5.3.0",
     "fast-xml-builder": ">=1.2.0",
-    "protobufjs": ">7.5.5"
+    "protobufjs": ">7.5.5",
+    "tmp": ">0.2.6"
   },
   "publishConfig": {
     "access": "public"
