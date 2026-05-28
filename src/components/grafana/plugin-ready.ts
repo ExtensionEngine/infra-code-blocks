@@ -4,17 +4,35 @@ import { request } from 'undici';
 
 export namespace PluginReady {
   export type Args = {
-    grafanaToken: pulumi.Input<string>;
-    grafanaUrl: string;
-    pluginSlug: string;
+    grafanaToken: pulumi.Output<string>;
+    grafanaUrl: pulumi.Input<string>;
+    slug: pulumi.Input<string>;
   };
 }
 
-const pluginReadyProvider: pulumi.dynamic.ResourceProvider = {
-  async create(inputs: PluginReady.Args) {
-    const { grafanaToken, grafanaUrl, pluginSlug } = inputs;
+export class PluginReady extends pulumi.dynamic.Resource {
+  constructor(
+    name: string,
+    props: PluginReady.Args,
+    opts?: pulumi.CustomResourceOptions,
+  ) {
+    super(new PluginReadyProvider(), name, props, opts);
+  }
+}
 
-    const url = new URL(`/api/plugins/${pluginSlug}/settings`, grafanaUrl).href;
+type PluginReadyProviderInputs = {
+  grafanaToken: string;
+  grafanaUrl: string;
+  slug: string;
+};
+
+class PluginReadyProvider implements pulumi.dynamic.ResourceProvider {
+  async create(
+    inputs: PluginReadyProviderInputs,
+  ): Promise<pulumi.dynamic.CreateResult> {
+    const { grafanaToken, grafanaUrl, slug } = inputs;
+
+    const url = new URL(`/api/plugins/${slug}/settings`, grafanaUrl).href;
 
     let data: { id: string };
     try {
@@ -49,21 +67,9 @@ const pluginReadyProvider: pulumi.dynamic.ResourceProvider = {
         },
       );
     } catch {
-      throw new Error(
-        `Timed out waiting for plugin "${pluginSlug}" to become ready`,
-      );
+      throw new Error(`Timed out waiting for plugin "${slug}" to become ready`);
     }
 
     return { id: data.id, outs: {} };
-  },
-};
-
-export class PluginReady extends pulumi.dynamic.Resource {
-  constructor(
-    name: string,
-    props: PluginReady.Args,
-    opts?: pulumi.CustomResourceOptions,
-  ) {
-    super(pluginReadyProvider, name, props, opts);
   }
 }

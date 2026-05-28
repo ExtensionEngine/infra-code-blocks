@@ -99,7 +99,7 @@ export const persistentMountTargetIds = ecsService.persistentStorage.apply(
 
 ## Implementation notes
 
-- The component requires Pulumi config `aws:region` because every container definition receives an `awslogs` log configuration with `awslogs-region` set from that value.
+- The component uses an explicit `region` when provided and otherwise derives the region from the active AWS provider for each container definition's `awslogs-region` setting.
 - The CloudWatch log group always uses `retentionInDays: 14` and defaults `namePrefix` to `/ecs/${name}-` unless `logGroupNamePrefix` is provided.
 - The service always uses `launchType: 'FARGATE'` and `enableExecuteCommand: true`.
 - The task definition always uses `networkMode: 'awsvpc'` and `requiresCompatibilities: ['FARGATE']`.
@@ -146,26 +146,27 @@ class EcsService extends pulumi.ComponentResource {
 
 Direct constructor input: `args: EcsService.Args`
 
-| Property                                                                                                                               | Description                                                                                                  |
-| -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `cluster`\*<br/>`pulumi.Input<aws.ecs.Cluster>`                                                                                        | ECS cluster that will run the service.                                                                       |
-| `vpc`\*<br/>`pulumi.Input<awsx.ec2.Vpc>`                                                                                               | Provides subnets, VPC ID, and CIDR-based security group rules.                                               |
-| `containers`\*<br/>`EcsService.Container[]`                                                                                            | Full task container list.                                                                                    |
-| `loadBalancers`<br/>`pulumi.Input<EcsService.LoadBalancerConfig[]>`                                                                    | Optional ECS service-to-target-group registrations.                                                          |
-| `volumes`<br/>`pulumi.Input<pulumi.Input<EcsService.PersistentStorageVolume>[]>`                                                       | Any non-empty value triggers creation of shared EFS-backed persistent storage. Default: `[]`.                |
-| `name`<br/>`pulumi.Input<string>`                                                                                                      | ECS service name override. Default: component name.                                                          |
-| `deploymentController`<br/>`'ECS' \| 'CODE_DEPLOY' \| 'EXTERNAL'`                                                                      | ECS deployment controller type. Default: `'ECS'`.                                                            |
-| `desiredCount`<br/>`pulumi.Input<number>`                                                                                              | Initial desired task count. Default: `1`.                                                                    |
-| `family`<br/>`pulumi.Input<string>`                                                                                                    | Task definition family. Default: `<name>-task-definition-<stack>`.                                           |
-| `size`<br/>`pulumi.Input<TaskSize>`                                                                                                    | CPU/memory preset or explicit `{ cpu, memory }` object. Default: `'small'`.                                  |
-| `logGroupNamePrefix`<br/>`pulumi.Input<string>`                                                                                        | Passed to `aws.cloudwatch.LogGroup.namePrefix`. Default: `/ecs/<name>-`.                                     |
-| `securityGroup`<br/>`pulumi.Input<aws.ec2.SecurityGroup>`                                                                              | If omitted, the component creates a VPC-wide internal service security group. Default: generated default SG. |
-| `assignPublicIp`<br/>`pulumi.Input<boolean>`                                                                                           | Selects public subnets when `true`, otherwise private subnets. Default: `false`.                             |
-| `taskExecutionRoleInlinePolicies`<br/>`pulumi.Input<pulumi.Input<EcsService.RoleInlinePolicy>[]>`                                      | Extra inline policies merged into the generated execution role. Default: `[]`.                               |
-| `taskRoleInlinePolicies`<br/>`pulumi.Input<pulumi.Input<EcsService.RoleInlinePolicy>[]>`                                               | Extra inline policies merged into the generated task role. Default: `[]`.                                    |
-| `enableServiceAutoDiscovery`<br/>`pulumi.Input<boolean>`                                                                               | Creates a private DNS namespace and Cloud Map service. Default: `false`.                                     |
-| `autoscaling`<br/>`pulumi.Input<{ enabled: pulumi.Input<boolean>; minCount?: pulumi.Input<number>; maxCount?: pulumi.Input<number> }>` | ECS target-tracking autoscaling configuration. Default: disabled.                                            |
-| `tags`<br/>`pulumi.Input<EcsService.Tags>`                                                                                             | Additional tags merged with the package common tags.                                                         |
+| Property                                                                                                                               | Description                                                                                                      |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `cluster`\*<br/>`pulumi.Input<aws.ecs.Cluster>`                                                                                        | ECS cluster that will run the service.                                                                           |
+| `vpc`\*<br/>`pulumi.Input<awsx.ec2.Vpc>`                                                                                               | Provides subnets, VPC ID, and CIDR-based security group rules.                                                   |
+| `containers`\*<br/>`EcsService.Container[]`                                                                                            | Full task container list.                                                                                        |
+| `loadBalancers`<br/>`pulumi.Input<EcsService.LoadBalancerConfig[]>`                                                                    | Optional ECS service-to-target-group registrations.                                                              |
+| `volumes`<br/>`pulumi.Input<pulumi.Input<EcsService.PersistentStorageVolume>[]>`                                                       | Any non-empty value triggers creation of shared EFS-backed persistent storage. Default: `[]`.                    |
+| `name`<br/>`pulumi.Input<string>`                                                                                                      | ECS service name override. Default: component name.                                                              |
+| `deploymentController`<br/>`'ECS' \| 'CODE_DEPLOY' \| 'EXTERNAL'`                                                                      | ECS deployment controller type. Default: `'ECS'`.                                                                |
+| `desiredCount`<br/>`pulumi.Input<number>`                                                                                              | Initial desired task count. Default: `1`.                                                                        |
+| `family`<br/>`pulumi.Input<string>`                                                                                                    | Task definition family. Default: `<name>-task-definition-<stack>`.                                               |
+| `size`<br/>`pulumi.Input<TaskSize>`                                                                                                    | CPU/memory preset or explicit `{ cpu, memory }` object. Default: `'small'`.                                      |
+| `logGroupNamePrefix`<br/>`pulumi.Input<string>`                                                                                        | Passed to `aws.cloudwatch.LogGroup.namePrefix`. Default: `/ecs/<name>-`.                                         |
+| `securityGroup`<br/>`pulumi.Input<aws.ec2.SecurityGroup>`                                                                              | If omitted, the component creates a VPC-wide internal service security group. Default: generated default SG.     |
+| `assignPublicIp`<br/>`pulumi.Input<boolean>`                                                                                           | Selects public subnets when `true`, otherwise private subnets. Default: `false`.                                 |
+| `taskExecutionRoleInlinePolicies`<br/>`pulumi.Input<pulumi.Input<EcsService.RoleInlinePolicy>[]>`                                      | Extra inline policies merged into the generated execution role. Default: `[]`.                                   |
+| `taskRoleInlinePolicies`<br/>`pulumi.Input<pulumi.Input<EcsService.RoleInlinePolicy>[]>`                                               | Extra inline policies merged into the generated task role. Default: `[]`.                                        |
+| `enableServiceAutoDiscovery`<br/>`pulumi.Input<boolean>`                                                                               | Creates a private DNS namespace and Cloud Map service. Default: `false`.                                         |
+| `autoscaling`<br/>`pulumi.Input<{ enabled: pulumi.Input<boolean>; minCount?: pulumi.Input<number>; maxCount?: pulumi.Input<number> }>` | ECS target-tracking autoscaling configuration. Default: disabled.                                                |
+| `region`<br/>`pulumi.Input<string>`                                                                                                    | AWS region used for region-specific ECS settings such as CloudWatch Logs. Default: active AWS provider's region. |
+| `tags`<br/>`pulumi.Input<EcsService.Tags>`                                                                                             | Additional tags merged with the package common tags.                                                             |
 
 **Outputs**
 

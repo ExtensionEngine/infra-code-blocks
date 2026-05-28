@@ -3,15 +3,14 @@ import * as awsx from '@pulumi/awsx';
 import * as pulumi from '@pulumi/pulumi';
 import { commonTags } from '../../shared/common-tags';
 import { mergeWithDefaults } from '../../shared/merge-with-defaults';
-
-const config = new pulumi.Config('aws');
-const awsRegion = config.require('region');
+import { resolveAwsRegion } from '../../shared/resolve-aws-region';
 
 export namespace Ec2SSMConnect {
   export type Args = {
     vpc: pulumi.Input<awsx.ec2.Vpc>;
     ami?: pulumi.Input<string>;
     instanceType?: pulumi.Input<string>;
+    region?: pulumi.Input<string>;
     tags?: pulumi.Input<{
       [key: string]: pulumi.Input<string>;
     }>;
@@ -56,6 +55,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
     this.name = name;
 
     const vpcOutput = pulumi.output(vpc);
+    const region = resolveAwsRegion(args, this);
     const subnetId = vpcOutput.privateSubnetIds.apply(ids => ids[0]);
     const amiId =
       ami ??
@@ -159,7 +159,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
       {
         vpcId: vpcOutput.vpcId,
         ipAddressType: 'ipv4',
-        serviceName: `com.amazonaws.${awsRegion}.ssm`,
+        serviceName: pulumi.interpolate`com.amazonaws.${region}.ssm`,
         vpcEndpointType: 'Interface',
         subnetIds: [subnetId],
         securityGroupIds: [this.ec2SecurityGroup.id],
@@ -174,7 +174,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
       {
         vpcId: vpcOutput.vpcId,
         ipAddressType: 'ipv4',
-        serviceName: `com.amazonaws.${awsRegion}.ec2messages`,
+        serviceName: pulumi.interpolate`com.amazonaws.${region}.ec2messages`,
         vpcEndpointType: 'Interface',
         subnetIds: [subnetId],
         securityGroupIds: [this.ec2SecurityGroup.id],
@@ -189,7 +189,7 @@ export class Ec2SSMConnect extends pulumi.ComponentResource {
       {
         vpcId: vpcOutput.vpcId,
         ipAddressType: 'ipv4',
-        serviceName: `com.amazonaws.${awsRegion}.ssmmessages`,
+        serviceName: pulumi.interpolate`com.amazonaws.${region}.ssmmessages`,
         vpcEndpointType: 'Interface',
         subnetIds: [subnetId],
         securityGroupIds: [this.ec2SecurityGroup.id],

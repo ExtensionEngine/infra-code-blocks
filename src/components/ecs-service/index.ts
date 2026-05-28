@@ -3,11 +3,9 @@ import * as aws from '@pulumi/aws';
 import * as awsx from '@pulumi/awsx';
 import { commonTags } from '../../shared/common-tags';
 import { mergeWithDefaults } from '../../shared/merge-with-defaults';
+import { resolveAwsRegion } from '../../shared/resolve-aws-region';
 import { assumeRolePolicy } from './policies';
 import { TaskSize, parseTaskSize } from './task-size';
-
-const config = new pulumi.Config('aws');
-const awsRegion = config.require('region');
 
 export namespace EcsService {
   /**
@@ -158,6 +156,11 @@ export namespace EcsService {
       maxCount?: pulumi.Input<number>;
     }>;
     /**
+     * AWS region used for region-specific ECS settings such as CloudWatch Logs.
+     * When omitted, the region is resolved from the active AWS provider.
+     */
+    region?: pulumi.Input<string>;
+    /**
      * A map of tags to assign to the resource.
      */
     tags?: pulumi.Input<EcsService.Tags>;
@@ -223,6 +226,7 @@ export class EcsService extends pulumi.ComponentResource {
       },
     );
     const argsWithDefaults = mergeWithDefaults(defaults, args);
+    const region = resolveAwsRegion(argsWithDefaults, this);
     const taskExecutionRoleInlinePolicies = pulumi.output(
       args.taskExecutionRoleInlinePolicies ||
         defaults.taskExecutionRoleInlinePolicies,
@@ -253,6 +257,7 @@ export class EcsService extends pulumi.ComponentResource {
       argsWithDefaults.family,
       argsWithDefaults.size,
       { ...commonTags, ...argsWithDefaults.tags },
+      region,
     );
 
     if (argsWithDefaults.enableServiceAutoDiscovery) {
@@ -304,11 +309,12 @@ export class EcsService extends pulumi.ComponentResource {
     family: pulumi.Input<string> | undefined,
     size: pulumi.Input<TaskSize>,
     tags: pulumi.Input<EcsService.Tags>,
+    region: pulumi.Input<string>,
   ): pulumi.Output<aws.ecs.TaskDefinition> {
     const stack = pulumi.getStack();
     const { cpu, memory } = pulumi.output(size).apply(parseTaskSize);
     const containerDefinitions = containers.map(container => {
-      return this.createContainerDefinition(container);
+      return this.createContainerDefinition(container, region);
     });
 
     const taskDefinitionVolumes = this.createTaskDefinitionVolumes(volumes);
@@ -357,34 +363,39 @@ export class EcsService extends pulumi.ComponentResource {
       });
   }
 
-  private createContainerDefinition(container: EcsService.Container) {
-    return this.logGroup.name.apply(logGroupName => ({
-      ...container,
-      readonlyRootFilesystem: false,
-      ...(container.mountPoints && {
-        mountPoints: container.mountPoints.map(mountPoint =>
-          pulumi
-            .all([
-              mountPoint.sourceVolume,
-              mountPoint.containerPath,
-              mountPoint.readOnly,
-            ])
-            .apply(([sourceVolume, containerPath, readOnly]) => ({
-              containerPath,
-              sourceVolume,
-              readOnly: readOnly ?? false,
-            })),
-        ),
-      }),
-      logConfiguration: {
-        logDriver: 'awslogs',
-        options: {
-          'awslogs-group': logGroupName,
-          'awslogs-region': awsRegion,
-          'awslogs-stream-prefix': 'ecs',
+  private createContainerDefinition(
+    container: EcsService.Container,
+    region: pulumi.Input<string>,
+  ) {
+    return pulumi
+      .all([this.logGroup.name, region])
+      .apply(([logGroupName, region]) => ({
+        ...container,
+        readonlyRootFilesystem: false,
+        ...(container.mountPoints && {
+          mountPoints: container.mountPoints.map(mountPoint =>
+            pulumi
+              .all([
+                mountPoint.sourceVolume,
+                mountPoint.containerPath,
+                mountPoint.readOnly,
+              ])
+              .apply(([sourceVolume, containerPath, readOnly]) => ({
+                containerPath,
+                sourceVolume,
+                readOnly: readOnly ?? false,
+              })),
+          ),
+        }),
+        logConfiguration: {
+          logDriver: 'awslogs',
+          options: {
+            'awslogs-group': logGroupName,
+            'awslogs-region': region,
+            'awslogs-stream-prefix': 'ecs',
+          },
         },
-      },
-    }));
+      }));
   }
 
   private createTaskExecutionRole(

@@ -58,7 +58,7 @@ The package provides building blocks across four areas:
 
 - Pulumi CLI authenticated with `pulumi login`.
 - AWS credentials with permissions for the resources you create.
-- Pulumi AWS provider region configuration, for example `pulumi config set aws:region eu-central-1` (environment: `AWS_REGION`).
+- Pulumi AWS provider region configuration, for example `pulumi config set aws:region eu-central-1` (environment: `AWS_REGION`). Region-aware components use an explicit component `region` when provided and otherwise derive the region from the active AWS provider.
 
 **Required only for ECS/web-service components**
 
@@ -213,7 +213,7 @@ This workflow reuses the helper EC2 instance plus the SSM, EC2 Messages, and SSM
 ### Prerequisites
 
 1. Install the AWS CLI and the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html).
-2. Ensure your stack sets `aws:region`, because `Ec2SSMConnect` uses region-specific VPC endpoint service names.
+2. Ensure an AWS region is available. `Ec2SSMConnect` uses explicit `region` when provided and otherwise derives the region from the active AWS provider for region-specific VPC endpoint service names.
 3. Provision a `Database` with SSM helper access enabled.
 
 ### Enable SSM access
@@ -344,7 +344,7 @@ Contributions should keep the documentation and exported API aligned.
 
 ## Troubleshooting
 
-- **Missing AWS region or provider-region error:** run `pulumi config set aws:region <region>` or set `AWS_REGION`. ECS service and SSM Connect components require the region explicitly.
+- **Missing AWS region or provider-region error:** configure the AWS provider region, for example with `pulumi config set aws:region <region>` or `AWS_REGION`, or pass an explicit component `region` where supported.
 - **AWS credentials, profile, or authorization errors:** configure AWS credentials, set the intended `AWS_PROFILE`, and confirm the identity has the required permissions.
 - **Route 53 validation or custom-domain setup failure:** confirm that the domain is managed by, or delegated to, the hosted zone whose ID you passed to the component.
 - **ACM certificate validation appears stuck:** DNS validation can take time. Check that the generated Route 53 validation record exists in the public hosted zone.

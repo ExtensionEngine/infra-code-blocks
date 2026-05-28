@@ -1,21 +1,15 @@
 import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
-import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
+import { resolveAwsRegion } from '../../../shared/resolve-aws-region';
 import { GrafanaConnection } from './connection';
-
-const awsConfig = new pulumi.Config('aws');
 
 export namespace AMPConnection {
   export type Args = GrafanaConnection.Args & {
     endpoint: pulumi.Input<string>;
-    region?: string;
+    region?: pulumi.Input<string>;
   };
 }
-
-const defaults = {
-  region: awsConfig.require('region'),
-};
 
 export class AMPConnection extends GrafanaConnection {
   public readonly name: string;
@@ -29,16 +23,13 @@ export class AMPConnection extends GrafanaConnection {
   ) {
     super('studion:grafana:AMPConnection', name, args, opts);
 
-    const argsWithDefaults = mergeWithDefaults(defaults, args);
+    const region = resolveAwsRegion(args, this);
 
     this.name = name;
 
     this.rolePolicy = this.createRolePolicy();
 
-    this.dataSource = this.createDataSource(
-      argsWithDefaults.region,
-      argsWithDefaults.endpoint,
-    );
+    this.dataSource = this.createDataSource(args.endpoint, region);
 
     this.registerOutputs();
   }
@@ -70,8 +61,8 @@ export class AMPConnection extends GrafanaConnection {
   }
 
   private createDataSource(
-    region: string,
     endpoint: AMPConnection.Args['endpoint'],
+    region: AMPConnection.Args['region'],
   ): grafana.oss.DataSource {
     return new grafana.oss.DataSource(
       `${this.name}-amp-datasource`,
