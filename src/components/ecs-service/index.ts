@@ -123,7 +123,7 @@ export namespace EcsService {
      * In case no security group is provided, default security group will be automatically created.
      */
     securityGroup?: pulumi.Input<aws.ec2.SecurityGroup>;
-    assignPublicIp?: pulumi.Input<boolean>;
+    assignPublicIp?: boolean;
     taskExecutionRoleInlinePolicies?: pulumi.Input<
       pulumi.Input<RoleInlinePolicy>[]
     >;
@@ -134,14 +134,14 @@ export namespace EcsService {
      *
      * @default false
      */
-    enableServiceAutoDiscovery?: pulumi.Input<boolean>;
+    enableServiceAutoDiscovery?: boolean;
     autoscaling?: pulumi.Input<{
       /**
        * Is autoscaling enabled or disabled.
        *
        * @default false
        */
-      enabled: pulumi.Input<boolean>;
+      enabled: boolean;
       /**
        * Min capacity of the scalable target.
        *
