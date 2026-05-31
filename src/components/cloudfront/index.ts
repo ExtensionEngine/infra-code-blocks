@@ -280,7 +280,7 @@ export class CloudFront extends pulumi.ComponentResource {
                 {
                   name: this.distribution.domainName,
                   zoneId: this.distribution.hostedZoneId,
-                  evaluateTargetHealth: true,
+                  evaluateTargetHealth: false,
                 },
               ],
             },
