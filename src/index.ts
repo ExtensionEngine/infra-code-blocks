@@ -15,9 +15,8 @@ export { CloudFront } from './components/cloudfront';
 export { StaticSite } from './components/static-site';
 export { S3Assets } from './components/static-site/s3-assets';
 
-import { OtelCollectorBuilder } from './otel/builder';
-import { OtelCollector } from './otel';
-export const openTelemetry = { OtelCollector, OtelCollectorBuilder };
+export { OtelCollector } from './otel';
+export { OtelCollectorBuilder } from './otel/builder';
 
 export * as grafana from './components/grafana';
 export * as prometheus from './components/prometheus';

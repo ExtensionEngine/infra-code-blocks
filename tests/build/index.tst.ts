@@ -106,7 +106,7 @@ describe('Build output', () => {
 
       it('should have withOtelCollector method', () => {
         expect(builder.withOtelCollector).type.toBeCallableWith(
-          new studion.openTelemetry.OtelCollector('serviceName', 'testEnv', {
+          new studion.OtelCollector('serviceName', 'testEnv', {
             receivers: {},
             processors: {},
             exporters: {},
@@ -141,22 +141,16 @@ describe('Build output', () => {
   });
 
   describe('Open Telemetry', () => {
-    it('should export openTelemetry', () => {
-      expect(studion).type.toHaveProperty('openTelemetry');
-    });
-
     it('should contain OtelCollector', () => {
-      expect(studion.openTelemetry).type.toHaveProperty('OtelCollector');
+      expect(studion).type.toHaveProperty('OtelCollector');
     });
 
     it('should contain OtelCollectorBuilder', () => {
-      expect(studion.openTelemetry).type.toHaveProperty('OtelCollectorBuilder');
+      expect(studion).type.toHaveProperty('OtelCollectorBuilder');
     });
 
     describe('Instantiation', () => {
-      const {
-        openTelemetry: { OtelCollector, OtelCollectorBuilder },
-      } = studion;
+      const { OtelCollector, OtelCollectorBuilder } = studion;
 
       it('should construct OtelCollector', () => {
         expect(OtelCollector).type.toBeConstructableWith(
@@ -183,7 +177,7 @@ describe('Build output', () => {
     });
 
     describe('Builder', () => {
-      const builder = new studion.openTelemetry.OtelCollectorBuilder(
+      const builder = new studion.OtelCollectorBuilder(
         'serviceName',
         'testEnv',
       );
