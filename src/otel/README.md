@@ -1,6 +1,6 @@
 # `src/otel`
 
-The `OtelCollector` and `OtelCollectorBuilder` exports provide package-standard OpenTelemetry collector sidecar helpers for ECS-based application components.
+The `OtelCollector` and `OtelCollectorBuilder` implement the package-standard OpenTelemetry collector sidecar helpers for ECS-based application components.
 
 Use it to render collector configuration into ECS init/sidecar containers, shared config volume settings, OTLP ports, resource attributes, and task-role IAM policy fragments that components such as `WebServer` can attach to application tasks.
 
@@ -86,13 +86,6 @@ export const webServerName = webServer.name;
 - The source tree contains `OtelCollectorConfigBuilder` in `src/otel/config.ts`, and `OtelCollectorBuilder` relies on it internally to assemble and validate collector config. It is an internal implementation detail and is not exported through `@studion/infra-code-blocks`, so end consumers should treat `OtelCollector`, `OtelCollectorBuilder`, and `OtelCollector.Config` as the supported public surface.
 
 ## API Reference
-
-### Exported Members
-
-| Export                 | Kind  | Signature reference                                        |
-| ---------------------- | ----- | ---------------------------------------------------------- |
-| `OtelCollector`        | class | See [`OtelCollector`](#otelcollector) below.               |
-| `OtelCollectorBuilder` | class | See [`OtelCollectorBuilder`](#otelcollectorbuilder) below. |
 
 ### `OtelCollector`
 
