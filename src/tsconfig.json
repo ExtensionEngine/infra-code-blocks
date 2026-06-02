@@ -2,6 +2,7 @@
   "extends": "../tsconfig.options.json",
   "files": [],
   "include": ["**/*"],
+  "exclude": ["**/*.test.ts"],
   "references": [],
   "compilerOptions": {
     "rootDir": ".",
