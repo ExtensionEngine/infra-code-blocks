@@ -34,10 +34,7 @@ const cloudWatchLogGroup = new aws.cloudwatch.LogGroup(
   { parent },
 );
 
-const otelCollector = new studion.openTelemetry.OtelCollectorBuilder(
-  appName,
-  stackName,
-)
+const otelCollector = new studion.OtelCollectorBuilder(appName, stackName)
   .withDefault({
     prometheusNamespace,
     prometheusWorkspace,

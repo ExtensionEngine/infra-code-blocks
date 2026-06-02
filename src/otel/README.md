@@ -1,6 +1,6 @@
 # `src/otel`
 
-The `openTelemetry` namespace provides package-standard OpenTelemetry collector sidecar helpers for ECS-based application components.
+The `OtelCollector` and `OtelCollectorBuilder` implement the package-standard OpenTelemetry collector sidecar helpers for ECS-based application components.
 
 Use it to render collector configuration into ECS init/sidecar containers, shared config volume settings, OTLP ports, resource attributes, and task-role IAM policy fragments that components such as `WebServer` can attach to application tasks.
 
@@ -11,7 +11,7 @@ Use it to render collector configuration into ECS init/sidecar containers, share
 ```ts
 import * as studion from '@studion/infra-code-blocks';
 
-const collector = new studion.openTelemetry.OtelCollectorBuilder('app', 'dev')
+const collector = new studion.OtelCollectorBuilder('app', 'dev')
   .withOTLPReceiver(['http'])
   .withDebug('basic')
   .withTracesPipeline(['otlp'], [], ['debug'])
@@ -35,7 +35,7 @@ const logGroup = new aws.cloudwatch.LogGroup('otel-logs', {
 });
 const workspace = new aws.amp.Workspace('otel-amp', {});
 
-const collector = new studion.openTelemetry.OtelCollectorBuilder('api', env)
+const collector = new studion.OtelCollectorBuilder('api', env)
   .withDefault({
     prometheusNamespace: 'api',
     prometheusWorkspace: workspace,
@@ -83,20 +83,11 @@ export const webServerName = webServer.name;
 - `OtelCollectorBuilder.withDefault()` wires HTTP OTLP reception, a memory limiter, three named batch processors (`batch/metrics`, `batch/traces`, `batch/logs`), AMP remote write with SigV4 auth, AWS X-Ray export, CloudWatch Logs export, a health-check extension, metrics/traces/logs pipelines, and default telemetry settings.
 - `OtelCollectorBuilder` appends task-role IAM policies only when you call `withAPS()`, `withAWSXRayExporter()`, `withCloudWatchLogsExporter()`, or `withDefault()`; `withDebug()`, `withTelemetry()`, and extension methods only affect collector YAML.
 - The config builder validates that every receiver, processor, and exporter named in a pipeline has been defined, and that `memory_limiter` is not placed after another processor in any pipeline.
-- The source tree contains `OtelCollectorConfigBuilder` in `src/otel/config.ts`, and `OtelCollectorBuilder` relies on it internally to assemble and validate collector config. It is an internal implementation detail and is not exported through `@studion/infra-code-blocks`, so end consumers should treat `openTelemetry.OtelCollector`, `openTelemetry.OtelCollectorBuilder`, and `openTelemetry.OtelCollector.Config` as the supported public surface.
+- The source tree contains `OtelCollectorConfigBuilder` in `src/otel/config.ts`, and `OtelCollectorBuilder` relies on it internally to assemble and validate collector config. It is an internal implementation detail and is not exported through `@studion/infra-code-blocks`, so end consumers should treat `OtelCollector`, `OtelCollectorBuilder`, and `OtelCollector.Config` as the supported public surface.
 
 ## API Reference
 
-### `openTelemetry`
-
-**Exported Members**
-
-| Export                 | Kind  | Signature reference                                                                   |
-| ---------------------- | ----- | ------------------------------------------------------------------------------------- |
-| `OtelCollector`        | class | See [`openTelemetry.OtelCollector`](#opentelemetryotelcollector) below.               |
-| `OtelCollectorBuilder` | class | See [`openTelemetry.OtelCollectorBuilder`](#opentelemetryotelcollectorbuilder) below. |
-
-### `openTelemetry.OtelCollector`
+### `OtelCollector`
 
 **Signature**
 
@@ -432,7 +423,7 @@ type TelemetryConfig = {
 | `logs`<br/>`{ level: string }`    | Builder helpers constrain values to `'debug'`, `'warn'`, or `'error'`.      |
 | `metrics`<br/>`{ level: string }` | Builder helpers constrain values to `'basic'`, `'normal'`, or `'detailed'`. |
 
-### `openTelemetry.OtelCollectorBuilder`
+### `OtelCollectorBuilder`
 
 **Signature**
 

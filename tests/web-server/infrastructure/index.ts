@@ -38,10 +38,7 @@ const sidecar = {
     startPeriod: 10,
   },
 };
-const otelCollector = new studion.openTelemetry.OtelCollectorBuilder(
-  webServerName,
-  stackName,
-)
+const otelCollector = new studion.OtelCollectorBuilder(webServerName, stackName)
   .withOTLPReceiver()
   .withDebug()
   .withMetricsPipeline(['otlp'], [], ['debug'])

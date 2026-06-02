@@ -43,7 +43,7 @@ The package provides building blocks across four areas:
 | Networking and delivery | VPCs, ACM certificates, CloudFront, and static hosting                     | `Vpc`, `AcmCertificate`, `CloudFront`, `StaticSite`, `S3Assets`                                                   |
 | Compute                 | Generic ECS services and ALB-backed web services                           | `EcsService`, `WebServer`, `WebServerBuilder`, `WebServerLoadBalancer`                                            |
 | Data                    | PostgreSQL, replicas, SSM access helpers, Redis, and password storage      | `Database`, `DatabaseBuilder`, `DatabaseReplica`, `Ec2SSMConnect`, `ElastiCacheRedis`, `UpstashRedis`, `Password` |
-| Observability           | OpenTelemetry collector integration, Grafana resources, and PromQL helpers | `openTelemetry`, `grafana`, `prometheus`                                                                          |
+| Observability           | OpenTelemetry collector integration, Grafana resources, and PromQL helpers | `OtelCollector`, `OtelCollectorBuilder`, `grafana`, `prometheus`                                                  |
 
 ## Quick start
 
@@ -169,7 +169,7 @@ const cluster = new aws.ecs.Cluster('app-cluster', {});
 const logGroup = new aws.cloudwatch.LogGroup('app-otel-logs', {});
 const workspace = new aws.amp.Workspace('app-amp', {});
 
-const otelCollector = new studion.openTelemetry.OtelCollectorBuilder('app', env)
+const otelCollector = new studion.OtelCollectorBuilder('app', env)
   .withDefault({
     prometheusNamespace: 'app',
     prometheusWorkspace: workspace,
@@ -298,7 +298,8 @@ Keep that command running, then connect your database client to `localhost:5555`
 | `CloudFront`            | class     | Behavior-driven CloudFront distribution.       | [cloudfront](src/components/cloudfront/README.md)           |
 | `StaticSite`            | class     | S3 website plus CloudFront composition.        | [static-site](src/components/static-site/README.md)         |
 | `S3Assets`              | class     | Public S3 website bucket for static assets.    | [static-site](src/components/static-site/README.md)         |
-| `openTelemetry`         | namespace | ECS-side collector container generation.       | [otel](src/otel/README.md)                                  |
+| `OtelCollector`         | class     | ECS-side collector container generation.       | [otel](src/otel/README.md)                                  |
+| `OtelCollectorBuilder`  | class     | Fluent builder for OTel collector sidecars.    | [otel](src/otel/README.md)                                  |
 | `grafana`               | namespace | Grafana folders, data sources, and dashboards. | [grafana](src/components/grafana/README.md)                 |
 | `prometheus`            | namespace | PromQL query helpers for SLOs and latency.     | [prometheus](src/components/prometheus/README.md)           |
 
