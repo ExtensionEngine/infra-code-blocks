@@ -33,6 +33,7 @@ const overviewDashboard = new studion.grafana.dashboard.DashboardBuilder(
   .build();
 
 const grafana = new studion.grafana.GrafanaBuilder('platform-observability')
+  .withStackSlug('exampleslug')
   .addPlugin({
     name: 'amp',
     slug: 'grafana-amazonprometheus-datasource',
@@ -69,7 +70,7 @@ import * as studion from '@studion/infra-code-blocks';
 
 type CustomMetricsConnectionArgs = studion.grafana.GrafanaConnection.Args & {
   endpoint: pulumi.Input<string>;
-  region: string;
+  region: pulumi.Input<string>;
 };
 
 class CustomMetricsConnection extends studion.grafana.GrafanaConnection {
@@ -155,6 +156,7 @@ const tracesDashboard = new studion.grafana.dashboard.DashboardBuilder('traces')
   .build();
 
 const grafana = new studion.grafana.GrafanaBuilder('custom-observability')
+  .withStackSlug('exampleslug')
   .addConnection(
     (ctx, opts) =>
       new CustomMetricsConnection(
@@ -214,7 +216,7 @@ export const customDataSourceName = grafana.connections[0].dataSource.name;
 - Concrete connection subclasses create their own Grafana data source and any additional IAM role policies.
 - `addConnection()` is the extension point for registering built-in or custom connection classes with `GrafanaBuilder`.
 - `GrafanaBuilder` helpers such as `addAmp()`, `addCloudWatchLogs()`, and `addXRay()` are convenience wrappers for common built-in connection classes.
-- The built-in connection modules read Pulumi config `aws:region` for their default region at module load time; provide that config whenever these classes are imported.
+- Built-in AWS connection classes use an explicit `region` when provided and otherwise derive the region from the active AWS provider.
 - AMP and X-Ray still create plugin-backed Grafana data source types, so the matching plugins must be declared on the surrounding `Grafana` / `GrafanaBuilder` or preinstalled externally.
 - `AMPConnection` creates a `grafana-amazonprometheus-datasource` data source configured for SigV4 assume-role auth against the connection IAM role.
 - `XRayConnection` creates a `grafana-x-ray-datasource` data source configured for assume-role auth against the connection IAM role.
@@ -327,13 +329,13 @@ class AMPConnection extends GrafanaConnection {
 
 Direct constructor input: `args: AMPConnection.Args`
 
-| Property                                                   | Description                                                                              |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `awsAccountId`\*<br/>`string`                              | AWS account ID whose root principal is allowed to assume the generated role.             |
-| `dataSourceName`<br/>`string`                              | Display name used for the Grafana data source. Default: `<name>-datasource`.             |
-| `stack`\*<br/>`pulumi.Input<grafana.cloud.GetStackResult>` | Grafana Cloud stack metadata used for IAM trust and supplied by the enclosing `Grafana`. |
-| `endpoint`\*<br/>`pulumi.Input<string>`                    | AMP workspace endpoint used as the data source URL.                                      |
-| `region`<br/>`string`                                      | AWS region written into SigV4 data source configuration. Default: `aws:region`.          |
+| Property                                                   | Description                                                                                                                                                 |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `awsAccountId`\*<br/>`string`                              | AWS account ID whose root principal is allowed to assume the generated role.                                                                                |
+| `dataSourceName`<br/>`string`                              | Display name used for the Grafana data source. Default: `<name>-datasource`.                                                                                |
+| `stack`\*<br/>`pulumi.Input<grafana.cloud.GetStackResult>` | Grafana Cloud stack metadata used for IAM trust and supplied by the enclosing `Grafana`.                                                                    |
+| `endpoint`\*<br/>`pulumi.Input<string>`                    | AMP workspace endpoint used as the data source URL.                                                                                                         |
+| `region`<br/>`pulumi.Input<string>`                        | AWS region written into SigV4 data source configuration. Uses this explicit value when provided; otherwise derives the region from the active AWS provider. |
 
 **Outputs**
 
@@ -375,12 +377,12 @@ class CloudWatchLogsConnection extends GrafanaConnection {
 
 Direct constructor input: `args: CloudWatchLogsConnection.Args`
 
-| Property                                                   | Description                                                                              |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `awsAccountId`\*<br/>`string`                              | AWS account ID whose root principal is allowed to assume the generated role.             |
-| `dataSourceName`<br/>`string`                              | Display name used for the Grafana data source. Default: `<name>-datasource`.             |
-| `stack`\*<br/>`pulumi.Input<grafana.cloud.GetStackResult>` | Grafana Cloud stack metadata used for IAM trust and supplied by the enclosing `Grafana`. |
-| `region`<br/>`string`                                      | AWS region written to `jsonDataEncoded.defaultRegion`. Default: `aws:region`.            |
+| Property                                                   | Description                                                                                                                                               |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `awsAccountId`\*<br/>`string`                              | AWS account ID whose root principal is allowed to assume the generated role.                                                                              |
+| `dataSourceName`<br/>`string`                              | Display name used for the Grafana data source. Default: `<name>-datasource`.                                                                              |
+| `stack`\*<br/>`pulumi.Input<grafana.cloud.GetStackResult>` | Grafana Cloud stack metadata used for IAM trust and supplied by the enclosing `Grafana`.                                                                  |
+| `region`<br/>`pulumi.Input<string>`                        | AWS region written to `jsonDataEncoded.defaultRegion`. Uses this explicit value when provided; otherwise derives the region from the active AWS provider. |
 
 **Outputs**
 
@@ -417,12 +419,12 @@ class XRayConnection extends GrafanaConnection {
 
 Direct constructor input: `args: XRayConnection.Args`
 
-| Property                                                   | Description                                                                              |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `awsAccountId`\*<br/>`string`                              | AWS account ID whose root principal is allowed to assume the generated role.             |
-| `dataSourceName`<br/>`string`                              | Display name used for the Grafana data source. Default: `<name>-datasource`.             |
-| `stack`\*<br/>`pulumi.Input<grafana.cloud.GetStackResult>` | Grafana Cloud stack metadata used for IAM trust and supplied by the enclosing `Grafana`. |
-| `region`<br/>`string`                                      | AWS region written to the X-Ray data source configuration. Default: `aws:region`.        |
+| Property                                                   | Description                                                                                                                                                   |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `awsAccountId`\*<br/>`string`                              | AWS account ID whose root principal is allowed to assume the generated role.                                                                                  |
+| `dataSourceName`<br/>`string`                              | Display name used for the Grafana data source. Default: `<name>-datasource`.                                                                                  |
+| `stack`\*<br/>`pulumi.Input<grafana.cloud.GetStackResult>` | Grafana Cloud stack metadata used for IAM trust and supplied by the enclosing `Grafana`.                                                                      |
+| `region`<br/>`pulumi.Input<string>`                        | AWS region written to the X-Ray data source configuration. Uses this explicit value when provided; otherwise derives the region from the active AWS provider. |
 
 **Outputs**
 

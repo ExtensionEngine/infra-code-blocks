@@ -67,9 +67,12 @@ const webServer = new studion.WebServerBuilder(appName)
   .build({ parent });
 
 const awsAccountId = process.env.GRAFANA_AWS_ACCOUNT_ID!;
+const grafanaUrl = process.env.GRAFANA_URL!;
+const stackSlug = studion.grafana.Grafana.getStackSlug(grafanaUrl);
 
 const ampDataSourceName = `${appName}-amp-datasource`;
 const ampGrafana = new studion.grafana.GrafanaBuilder(`${appName}-amp`)
+  .withStackSlug(stackSlug)
   .addPlugin({
     name: 'amp',
     slug: 'grafana-amazonprometheus-datasource',
@@ -97,6 +100,7 @@ const configurableAmpDataSourceName = `${appName}-configurable-amp-datasource`;
 const configurableGrafana = new studion.grafana.GrafanaBuilder(
   `${appName}-configurable`,
 )
+  .withStackSlug(stackSlug)
   .withFolderName('ICB Configurable Test Folder')
   .addConnection(
     (ctx, opts) =>
@@ -147,6 +151,7 @@ const xRayDataSourceName = `${appName}-x-ray-datasource`;
 const logsAndTracesGrafana = new studion.grafana.GrafanaBuilder(
   `${appName}-logs-traces`,
 )
+  .withStackSlug(stackSlug)
   .addPlugin({
     name: 'x-ray',
     slug: 'grafana-x-ray-datasource',

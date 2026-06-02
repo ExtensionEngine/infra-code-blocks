@@ -50,6 +50,7 @@ export namespace Grafana {
   };
 
   export type Args = {
+    stackSlug: string;
     connectionBuilders: GrafanaConnection.CreateConnection[];
     dashboardBuilders: GrafanaDashboardBuilder.CreateDashboard[];
     folderName?: string;
@@ -67,7 +68,6 @@ export namespace Grafana {
  */
 export class Grafana extends pulumi.ComponentResource {
   public readonly name: string;
-  public readonly grafanaUrl: string;
   public readonly stack: pulumi.Output<grafana.cloud.GetStackResult>;
   public readonly accessPolicy: grafana.cloud.AccessPolicy;
   public readonly accessPolicyToken: grafana.cloud.AccessPolicyRotatingToken;
@@ -89,9 +89,9 @@ export class Grafana extends pulumi.ComponentResource {
     const argsWithDefaults = mergeWithDefaults(defaults, args);
 
     this.name = name;
-
-    this.grafanaUrl = this.getGrafanaUrl();
-    this.stack = grafana.cloud.getStackOutput({ slug: this.getStackSlug() });
+    this.stack = grafana.cloud.getStackOutput({
+      slug: argsWithDefaults.stackSlug,
+    });
 
     this.accessPolicy = this.createAccessPolicy(argsWithDefaults.scopes);
     this.accessPolicyToken = this.createAccessPolicyToken(
@@ -141,21 +141,8 @@ export class Grafana extends pulumi.ComponentResource {
     this.registerOutputs();
   }
 
-  private getGrafanaUrl(): string {
-    const grafanaConfig = new pulumi.Config('grafana');
-    const grafanaUrl = grafanaConfig.get('url') ?? process.env.GRAFANA_URL;
-
-    if (!grafanaUrl) {
-      throw new Error(
-        'Grafana URL is not configured. Set it via Pulumi config (grafana:url) or GRAFANA_URL env var.',
-      );
-    }
-
-    return grafanaUrl;
-  }
-
-  private getStackSlug(): string {
-    return new URL(this.grafanaUrl).hostname.split('.')[0];
+  public static getStackSlug(grafanaUrl: string): string {
+    return new URL(grafanaUrl).hostname.split('.')[0];
   }
 
   private createAccessPolicy(scopes?: string[]): grafana.cloud.AccessPolicy {
@@ -248,8 +235,8 @@ export class Grafana extends pulumi.ComponentResource {
       `${this.name}-${name}-plugin-ready`,
       {
         grafanaToken: this.serviceAccountToken.key,
-        grafanaUrl: this.grafanaUrl,
-        pluginSlug: slug,
+        grafanaUrl: this.stack.url,
+        slug,
       },
       {
         dependsOn: [plugin],

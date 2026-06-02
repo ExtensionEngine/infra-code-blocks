@@ -68,7 +68,7 @@ export const ssmHostId = ssmConnect.ec2.id;
 - The primary RDS resource always receives a generated `finalSnapshotIdentifier` of `${name}-final-snapshot-${stack}`; AWS uses it only when `skipFinalSnapshot` is false.
 - Replica instances are always created with `storageEncrypted: true`, `publiclyAccessible: false`, `skipFinalSnapshot: true`, and the same maintenance window as the primary.
 - Enhanced monitoring and Performance Insights are enabled only when a monitoring role is available; the primary creates that role only when `enableMonitoring` is truthy.
-- `Ec2SSMConnect` requires Pulumi config `aws:region` because the VPC endpoint service names are region-specific.
+- `Ec2SSMConnect` uses an explicit `region` when provided and otherwise derives the region from the active AWS provider for region-specific VPC endpoint service names.
 - `Ec2SSMConnect` always places the helper instance and all three interface endpoints in the first private subnet only, and the helper instance does not receive a public IP.
 - The helper security group is attached to the EC2 instance and interface endpoints, allows TCP/22 and TCP/443 from the VPC CIDR, and allows all outbound traffic; database access relies on the database security group allowing TCP/5432 from the VPC CIDR.
 - When `ami` is omitted, `Ec2SSMConnect` looks up the most recent Amazon Linux 2023 ARM64 EBS HVM AMI with ENA support and defaults the instance type to `t4g.nano`.
@@ -208,9 +208,9 @@ type ReplicaConfig = Partial<
 type SSMConnectConfig = Omit<Ec2SSMConnect.Args, 'vpc'>;
 ```
 
-| Difference from `Ec2SSMConnect.Args` | Description                                                           |
-| ------------------------------------ | --------------------------------------------------------------------- |
-| Omits `vpc`                          | `Database` always passes its own `vpc` to the nested `Ec2SSMConnect`. |
+| Difference from `Ec2SSMConnect.Args` | Description                                                                                                       |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Omits `vpc`                          | `Database` always passes its own `vpc` to the nested `Ec2SSMConnect`; options such as `region` pass through here. |
 
 ### `DatabaseBuilder`
 
@@ -374,12 +374,13 @@ class Ec2SSMConnect extends pulumi.ComponentResource {
 
 Direct constructor input: `args: Ec2SSMConnect.Args`
 
-| Property                                                        | Description                                                                                                                                         |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `vpc`\*<br/>`pulumi.Input<awsx.ec2.Vpc>`                        | Source of private subnets and VPC ID.                                                                                                               |
-| `ami`<br/>`pulumi.Input<string>`                                | If omitted, the component looks up the most recent AL2023 ARM64 EBS HVM AMI with ENA support. Default: latest matching Amazon Linux 2023 ARM64 AMI. |
-| `instanceType`<br/>`pulumi.Input<string>`                       | Helper EC2 instance type. Default: `'t4g.nano'`.                                                                                                    |
-| `tags`<br/>`pulumi.Input<Record<string, pulumi.Input<string>>>` | Extra tags merged into the instance `Name` tag and package common tags.                                                                             |
+| Property                                                        | Description                                                                                                                                                                            |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vpc`\*<br/>`pulumi.Input<awsx.ec2.Vpc>`                        | Source of private subnets and VPC ID.                                                                                                                                                  |
+| `ami`<br/>`pulumi.Input<string>`                                | If omitted, the component looks up the most recent AL2023 ARM64 EBS HVM AMI with ENA support. Default: latest matching Amazon Linux 2023 ARM64 AMI.                                    |
+| `instanceType`<br/>`pulumi.Input<string>`                       | Helper EC2 instance type. Default: `'t4g.nano'`.                                                                                                                                       |
+| `region`<br/>`pulumi.Input<string>`                             | AWS region used for SSM, EC2 Messages, and SSM Messages VPC endpoint service names. Uses this explicit value when provided; otherwise derives the region from the active AWS provider. |
+| `tags`<br/>`pulumi.Input<Record<string, pulumi.Input<string>>>` | Extra tags merged into the instance `Name` tag and package common tags.                                                                                                                |
 
 **Outputs**
 

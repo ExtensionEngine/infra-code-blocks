@@ -1,19 +1,14 @@
 import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
 import * as grafana from '@pulumiverse/grafana';
-import { mergeWithDefaults } from '../../../shared/merge-with-defaults';
+import { resolveAwsRegion } from '../../../shared/resolve-aws-region';
 import { GrafanaConnection } from './connection';
 
-const awsConfig = new pulumi.Config('aws');
 export namespace XRayConnection {
   export type Args = GrafanaConnection.Args & {
-    region?: string;
+    region?: pulumi.Input<string>;
   };
 }
-
-const defaults = {
-  region: awsConfig.require('region'),
-};
 
 export class XRayConnection extends GrafanaConnection {
   public readonly name: string;
@@ -27,13 +22,13 @@ export class XRayConnection extends GrafanaConnection {
   ) {
     super('studion:grafana:XRayConnection', name, args, opts);
 
-    const argsWithDefaults = mergeWithDefaults(defaults, args);
+    const region = resolveAwsRegion(args, this);
 
     this.name = name;
 
     this.rolePolicy = this.createRolePolicy();
 
-    this.dataSource = this.createDataSource(argsWithDefaults.region);
+    this.dataSource = this.createDataSource(region);
 
     this.registerOutputs();
   }
@@ -69,7 +64,9 @@ export class XRayConnection extends GrafanaConnection {
     );
   }
 
-  private createDataSource(region: string): grafana.oss.DataSource {
+  private createDataSource(
+    region: XRayConnection.Args['region'],
+  ): grafana.oss.DataSource {
     return new grafana.oss.DataSource(
       `${this.name}-x-ray-datasource`,
       {

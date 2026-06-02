@@ -21,12 +21,19 @@ export class GrafanaBuilder {
     [];
   private readonly scopes: string[] = [];
   private readonly plugins: Grafana.PluginArgs[] = [];
+  private stackSlug?: string;
   private folderName?: string;
   private serviceAccountTokenRotation?: Grafana.ServiceAccountTokenRotation;
   private accessPolicyTokenRotation?: Grafana.AccessPolicyTokenRotation;
 
   constructor(name: string) {
     this.name = name;
+  }
+
+  public withStackSlug(stackSlug: string): this {
+    this.stackSlug = stackSlug;
+
+    return this;
   }
 
   public withFolderName(folderName: string): this {
@@ -118,6 +125,12 @@ export class GrafanaBuilder {
   }
 
   public build(opts: pulumi.ComponentResourceOptions = {}): Grafana {
+    if (!this.stackSlug) {
+      throw new Error(
+        'Stack slug not provided. Make sure to call GrafanaBuilder.withStackSlug().',
+      );
+    }
+
     if (!this.connectionBuilders.length) {
       throw new Error(
         'At least one connection is required. Call addConnection() to add a custom connection or use one of the existing connection builders.',
@@ -133,6 +146,7 @@ export class GrafanaBuilder {
     return new Grafana(
       this.name,
       {
+        stackSlug: this.stackSlug,
         connectionBuilders: this.connectionBuilders,
         dashboardBuilders: this.dashboardBuilders,
         folderName: this.folderName,
