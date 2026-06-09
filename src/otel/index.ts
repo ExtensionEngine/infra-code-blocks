@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import * as pulumi from '@pulumi/pulumi';
 import * as aws from '@pulumi/aws';
 import * as yaml from 'yaml';
@@ -202,6 +203,22 @@ export class OtelCollector {
     ];
   }
 
+  private createConfigWriterCommand(config: OtelCollector.Config): string[] {
+    const configYaml = yaml.stringify(config);
+    const encodedConfig = Buffer.from(configYaml, 'utf8').toString('base64');
+
+    return [
+      'sh',
+      '-c',
+      [
+        'set -eu',
+        'tmp_config=$(mktemp /etc/otelcol-contrib/config.yaml.XXXXXX)',
+        `printf '%s' '${encodedConfig}' | base64 -d > "$tmp_config"`,
+        'mv "$tmp_config" /etc/otelcol-contrib/config.yaml',
+      ].join('\n'),
+    ];
+  }
+
   private createConfigContainer(
     config: pulumi.Output<OtelCollector.Config>,
     volume: pulumi.Input<string>,
@@ -210,11 +227,7 @@ export class OtelCollector {
       name: 'otel-config-writer',
       image: 'amazonlinux:latest',
       essential: false,
-      command: config.apply(config => [
-        'sh',
-        '-c',
-        `echo '${yaml.stringify(config)}' > /etc/otelcol-contrib/config.yaml`,
-      ]),
+      command: config.apply(config => this.createConfigWriterCommand(config)),
       mountPoints: [
         {
           sourceVolume: volume,
