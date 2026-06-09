@@ -203,7 +203,7 @@ export class EcsService extends pulumi.ComponentResource {
   name: string;
   vpc: pulumi.Output<awsx.ec2.Vpc>;
   logGroup: aws.cloudwatch.LogGroup;
-  taskDefinition: pulumi.Output<aws.ecs.TaskDefinition>;
+  taskDefinition: aws.ecs.TaskDefinition;
   taskExecutionRole: aws.iam.Role;
   taskRole: aws.iam.Role;
   service: aws.ecs.Service;
@@ -310,35 +310,30 @@ export class EcsService extends pulumi.ComponentResource {
     size: pulumi.Input<TaskSize>,
     tags: pulumi.Input<EcsService.Tags>,
     region: pulumi.Input<string>,
-  ): pulumi.Output<aws.ecs.TaskDefinition> {
+  ): aws.ecs.TaskDefinition {
     const stack = pulumi.getStack();
     const { cpu, memory } = pulumi.output(size).apply(parseTaskSize);
     const containerDefinitions = containers.map(container => {
       return this.createContainerDefinition(container, region);
     });
-
     const taskDefinitionVolumes = this.createTaskDefinitionVolumes(volumes);
 
-    return pulumi.all(containerDefinitions).apply(containerDefinitions => {
-      return taskDefinitionVolumes.apply(volumes => {
-        return new aws.ecs.TaskDefinition(
-          `${this.name}-task-definition`,
-          {
-            family: family ?? `${this.name}-task-definition-${stack}`,
-            networkMode: 'awsvpc',
-            executionRoleArn: taskExecutionRole.arn,
-            taskRoleArn: taskRole.arn,
-            cpu,
-            memory,
-            requiresCompatibilities: ['FARGATE'],
-            containerDefinitions: JSON.stringify(containerDefinitions),
-            ...(volumes?.length ? { volumes } : {}),
-            tags: { ...commonTags, ...tags },
-          },
-          { parent: this },
-        );
-      });
-    });
+    return new aws.ecs.TaskDefinition(
+      `${this.name}-task-definition`,
+      {
+        family: family ?? `${this.name}-task-definition-${stack}`,
+        networkMode: 'awsvpc',
+        executionRoleArn: taskExecutionRole.arn,
+        taskRoleArn: taskRole.arn,
+        cpu,
+        memory,
+        requiresCompatibilities: ['FARGATE'],
+        containerDefinitions: pulumi.jsonStringify(containerDefinitions),
+        volumes: taskDefinitionVolumes,
+        tags: { ...commonTags, ...tags },
+      },
+      { parent: this },
+    );
   }
 
   private createTaskDefinitionVolumes(

@@ -84,9 +84,7 @@ const service = new studion.EcsService('api', {
 });
 
 export const discoveryArn = service.serviceDiscoveryService?.arn;
-export const taskDefinitionArn = service.taskDefinition.apply(
-  taskDefinition => taskDefinition.arn,
-);
+export const taskDefinitionArn = service.taskDefinition.arn;
 export const logGroupName = service.logGroup.name;
 export const persistentFileSystemId = ecsService.persistentStorage.apply(
   storage => storage?.fileSystem.id,
@@ -175,7 +173,7 @@ Direct constructor input: `args: EcsService.Args`
 | `name`<br/>`string`                                                                | Component name.                                                                                                                                                  |
 | `vpc`<br/>`pulumi.Output<awsx.ec2.Vpc>`                                            | VPC captured from the constructor arguments.                                                                                                                     |
 | `logGroup`<br/>`aws.cloudwatch.LogGroup`                                           | CloudWatch log group for task logs.                                                                                                                              |
-| `taskDefinition`<br/>`pulumi.Output<aws.ecs.TaskDefinition>`                       | Generated ECS task definition.                                                                                                                                   |
+| `taskDefinition`<br/>`aws.ecs.TaskDefinition`                                      | Generated ECS task definition.                                                                                                                                   |
 | `taskExecutionRole`<br/>`aws.iam.Role`                                             | Generated execution role.                                                                                                                                        |
 | `taskRole`<br/>`aws.iam.Role`                                                      | Generated task role.                                                                                                                                             |
 | `service`<br/>`aws.ecs.Service`                                                    | ECS service resource.                                                                                                                                            |
